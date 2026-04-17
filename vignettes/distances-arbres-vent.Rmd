@@ -56,9 +56,15 @@ coords_arbres <- rbind(
   # Quelques arbres isolés
   c(50, 75), c(120, 60), c(150, 100)
 )
+
+# Créer les points individually
+pts <- lapply(1:nrow(coords_arbres), function(i) {
+  sf::st_point(coords_arbres[i, ])
+})
+
 arbres <- sf::st_sf(
   id = 1:nrow(coords_arbres),
-  geometry = sf::st_sfc(sf::st_point(t(coords_arbres)), crs = 32618)
+  geometry = sf::st_sfc(pts, crs = 32618)
 )
 
 # Visualiser les données
