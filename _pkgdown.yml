@@ -1,4 +1,4 @@
-url: https://votrenom.github.io/covariablechamps/
+url: https://cedricbouffard.github.io/covariablechamps/
 
 template:
   bootstrap: 5
@@ -27,12 +27,14 @@ navbar:
           href: articles/haies-brise-vent.html
         - text: "Calcul de l'ombrage"
           href: articles/ombrage.html
+        - text: "Distances aux arbres et vent"
+          href: articles/distances-arbres-vent.html
     news:
       text: Nouvelles
       href: news/index.html
     github:
       icon: fa-github
-      href: https://github.com/votrenom/covariablechamps
+      href: https://github.com/cedricbouffard/covariablechamps
 
 reference:
   - title: "Telechargement LiDAR"
@@ -123,13 +125,14 @@ articles:
       - distances-bordures
       - haies-brise-vent
       - ombrage
+      - distances-arbres-vent
 
 home:
   links:
     - text: Signaler un bug
-      href: https://github.com/votrenom/covariablechamps/issues
+      href: https://github.com/cedricbouffard/covariablechamps/issues
     - text: Code source
-      href: https://github.com/votrenom/covariablechamps
+      href: https://github.com/cedricbouffard/covariablechamps
 
 development:
   mode: auto

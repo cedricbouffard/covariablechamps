@@ -279,4 +279,4 @@ champ_proj <- st_transform(champ, 32618)
 ## Aide
 
 Pour signaler un bug ou demander une fonctionnalité:
-https://github.com/votrenom/covariablechamps/issues
+https://github.com/cedricbouffard/covariablechamps/issues
