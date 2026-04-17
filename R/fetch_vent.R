@@ -199,7 +199,7 @@ visualiser_fetch <- function(fetch,
 #' @return Raster de vitesse
 #' @export
 #'
-simuler_vitesse_vent <- function(fetch,
+simuler_vitesse_vent_fetch <- function(fetch,
                                    vitesse_ref = 5,
                                    coef_acceleration = 0.3) {
 

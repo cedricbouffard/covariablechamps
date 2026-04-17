@@ -202,11 +202,10 @@ ggplot(df_vitesse, aes(x = x, y = y, fill = vitesse)) +
 ### Simulation avec distances amont/aval
 
 ```{r vitesse-amont-aval}
-vitesse_dir <- simuler_vitesse_vent(
-  result = dist_dir,
+vitesse_dir <- simuler_vitesse_vent_simple(
+  dist_result = dist_dir,
   vitesse_ref = 5,
-  coef_amont = 0.5,
-  coef_aval = 0.3
+  coef_protection = 0.5
 )
 
 df_vitesse_dir <- as.data.frame(vitesse_dir$vitesse, xy = TRUE)
