@@ -1,0 +1,124 @@
+url: https://votrenom.github.io/covariablechamps/
+
+template:
+  bootstrap: 5
+  bootswatch: flatly
+
+navbar:
+  structure:
+    left: [home, reference, articles, news]
+    right: [github]
+  components:
+    home:
+      icon: fa-home
+      href: index.html
+    reference:
+      text: Reference
+      href: reference/index.html
+    articles:
+      text: Articles
+      menu:
+        - text: "Guide de demarrage"
+          href: articles/covariables-terrain.html
+        - text: "Distances aux bordures"
+          href: articles/distances-bordures.html
+        - text: "Detection des haies"
+          href: articles/haies-brise-vent.html
+        - text: "Calcul de l'ombrage"
+          href: articles/ombrage.html
+    news:
+      text: Nouvelles
+      href: news/index.html
+    github:
+      icon: fa-github
+      href: https://github.com/votrenom/covariablechamps
+
+reference:
+  - title: "Telechargement LiDAR"
+    desc: "Fonctions pour telecharger les donnees LiDAR depuis les services gouvernementaux"
+    contents:
+      - telecharger_lidar
+      - telecharger_lidar_ponctuel
+      - verifier_disponibilite_lidar
+      - vider_cache_lidar
+
+  - title: "Analyse du terrain"
+    desc: "Fonctions pour calculer les covariables terrain a partir du MNT"
+    contents:
+      - calculer_pente
+      - calculer_aspect
+      - calculer_geomorphons
+      - extraire_covariables_terrain
+      - labels_geomorphons
+
+  - title: "Orientation et distances aux bordures"
+    desc: "Fonctions pour analyser l'orientation des champs et calculer les distances aux bordures"
+    contents:
+      - calculer_orientation_champ
+      - visualiser_orientation
+      - calculer_distance_bordures_orientee
+      - classifier_distances_bordures
+      - visualiser_distances_bordures
+      - visualiser_classes_bordures
+
+  - title: "Detection des arbres et haies"
+    desc: "Fonctions pour detecter, classifier et analyser les arbres et haies brise-vent"
+    contents:
+      - extraire_classifier_haies_lidar
+      - extraire_ligne_centrale_haies
+      - calculer_zones_vent_spline
+      - rasteriser_zones_gradient
+      - rasteriser_zones_gradient_v2
+
+  - title: "Distance aux arbres"
+    desc: "Fonctions pour calculer les distances aux arbres et l'effet du vent"
+    contents:
+      - calculer_distance_arbres
+      - visualiser_distance_arbres
+      - simuler_vitesse_vent_simple
+      - simuler_vitesse_vent
+      - calculer_distances_vent
+
+  - title: "Calcul de l'ombrage"
+    desc: "Fonctions pour calculer l'ombrage des parcelles selon la position du soleil"
+    contents:
+      - calculer_ombrage
+      - calculer_ombrage_periode
+      - calculer_ombrage_visualisation
+
+  - title: "Donnees meteorologiques"
+    desc: "Fonctions pour obtenir et visualiser les donnees de vent"
+    contents:
+      - obtenir_rose_vents
+      - tracer_rose_vents
+      - tracer_rose_vents_stacked
+
+  - title: "Pedologie et sols"
+    desc: "Fonctions pour l'extraction et la desagregation des donnees pedologiques"
+    contents:
+      - proba_et_classement_serie_quota_ilr
+
+  - title: "Extraction complete"
+    desc: "Fonctions d'orchestration pour extraire toutes les covariables"
+    contents:
+      - extraire_covariables_complet
+      - visualiser_covariables
+
+articles:
+  - title: "Guides d'utilisation"
+    navbar: ~
+    contents:
+      - covariables-terrain
+      - distances-bordures
+      - haies-brise-vent
+      - ombrage
+
+home:
+  links:
+    - text: Signaler un bug
+      href: https://github.com/votrenom/covariablechamps/issues
+    - text: Code source
+      href: https://github.com/votrenom/covariablechamps
+
+development:
+  mode: auto

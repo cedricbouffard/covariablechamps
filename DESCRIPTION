@@ -1,0 +1,50 @@
+Package: covariablechamps
+Type: Package
+Title: Extraction des Covariables pour Champs Agricoles
+Version: 0.1.0
+Authors@R: c(
+    person(given = "Votre",
+           family = "Nom",
+           role = c("aut", "cre"),
+           email = "votre.email@exemple.com"))
+Description: Ce package permet d'extraire et de calculer des covariables 
+    pour des champs agricoles au Québec, à partir de diverses sources de 
+    données (LiDAR, pédologiques, etc.). Il fournit des fonctions pour 
+    obtenir le relief (pente, aspect, géomorphons), la texture et la 
+    classe de drainage des sols, l'orientation des champs et la localisation 
+    des arbres bordant les parcelles. Il permet également de calculer 
+    l'ombrage des parcelles à partir du LiDAR et de la position du soleil.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.3
+Depends: 
+    R (>= 4.0.0)
+Imports:
+    sf,
+    terra,
+    rstac,
+    lubridate,
+    rgeomorphon,
+    httr,
+    jsonlite,
+    dplyr,
+    suncalc,
+    rayshader
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown,
+    lidR,
+    dbscan,
+    purrr,
+    tibble,
+    lidaRtRee,
+    ggplot2,
+    tidyr
+VignetteBuilder: knitr
+Remotes:
+    brownag/rgeomorphon
+Config/testthat/edition: 3
+URL: https://github.com/votrenom/covariablechamps
+BugReports: https://github.com/votrenom/covariablechamps/issues
