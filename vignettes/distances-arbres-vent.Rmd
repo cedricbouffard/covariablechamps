@@ -184,20 +184,9 @@ vitesse_simple <- simuler_vitesse_vent_simple(
   coef_protection = 0.5
 )
 
-# Visualiser
-xy <- terra::xyFromCell(vitesse_simple$vitesse, 1:terra::ncell(vitesse_simple$vitesse))
-vals <- terra::values(vitesse_simple$vitesse)
-df_vitesse <- data.frame(x = xy[, 1], y = xy[, 2], vitesse = vals)
-
-ggplot(df_vitesse, aes(x = x, y = y, fill = vitesse)) +
-  geom_raster() +
-  scale_fill_gradientn(colors = c("darkblue", "lightblue", "white", "orange", "red"),
-                        name = "Vitesse (m/s)") +
-  coord_fixed() +
-  theme_minimal() +
-  labs(title = "Vitesse du vent (protection simple)",
-       subtitle = "Plus proche = plus protégé",
-       x = "X (m)", y = "Y (m)")
+# Visualiser directement avec terra
+plot(vitesse_simple$vitesse, main = "Vitesse du vent (m/s)",
+     col = hcl.colors(100, "RdBu"))
 ```
 
 ### Simulation avec distances amont/aval
