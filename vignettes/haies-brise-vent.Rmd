@@ -39,37 +39,39 @@ champ <- sf::st_polygon(list(coords_champ))
 champ <- sf::st_sfc(champ, crs = 32618)
 champ <- sf::st_sf(geometry = champ)
 
-# Créer une ligne de haie à l'ouest (simulée par une multiligne)
-coords_haie <- rbind(c(-5, 30), c(-5, 170))
-haie_ouest <- sf::st_linestring(coords_haie)
-haie_ouest <- sf::st_sfc(haie_ouest, crs = 32618)
+# Créer des haies comme lignes droites
+haie_ouest <- sf::st_sfc(
+  sf::st_linestring(matrix(c(-5, 30, -5, 170), ncol = 2, byrow = TRUE)),
+  crs = 32618
+)
+haie_interieure <- sf::st_sfc(
+  sf::st_linestring(matrix(c(50, 100, 150, 100), ncol = 2, byrow = TRUE)),
+  crs = 32618
+)
 
-coords_haie2 <- rbind(c(50, 100), c(150, 100))
-haie_interieure <- sf::st_linestring(coords_haie2)
-haie_interieure <- sf::st_sfc(haie_interieure, crs = 32618)
-
+# Créer un sf avec deux géométries
 haies <- sf::st_sf(
   id = 1:2,
-  geometry = sf::st_sfc(haie_ouest, haie_interieure, crs = 32618)
+  geometry = c(haie_ouest, haie_interieure)
 )
 
 # Convertir les haies en POINTS pour les fonctions de distance
-# (chaque haie devient une série de points)
 set.seed(42)
 points_haie <- lapply(1:2, function(i) {
   g <- haies$geometry[[i]]
-  if (inherits(g, "sfg_LINESTRING")) {
-    coords <- sf::st_coordinates(g)
-    # Échantillonner des points le long de la ligne
-    n <- max(3, floor(sf::st_length(g) / 10))
+  coords <- sf::st_coordinates(g)
+  n <- max(3, floor(sf::st_length(g) / 10))
+  if (n > 1) {
     seq_idx <- seq(1, nrow(coords), length.out = n)
-    pts <- coords[seq_idx, , drop = FALSE]
-    data.frame(
-      id = i,
-      x = pts[, 1] + rnorm(nrow(pts), 0, 1),
-      y = pts[, 2] + rnorm(nrow(pts), 0, 1)
-    )
+  } else {
+    seq_idx <- 1
   }
+  pts <- coords[seq_idx, , drop = FALSE]
+  data.frame(
+    id = rep(i, nrow(pts)),
+    x = pts[, 1] + rnorm(nrow(pts), 0, 0.5),
+    y = pts[, 2] + rnorm(nrow(pts), 0, 0.5)
+  )
 })
 points_haie <- do.call(rbind, points_haie)
 
