@@ -21,7 +21,7 @@ classifier_distances_bordures(
 - dist_result:
 
   Liste: Résultat de
-  [`calculer_distance_bordures_orientee`](https://votrenom.github.io/covariablechamps/reference/calculer_distance_bordures_orientee.md).
+  [`calculer_distance_bordures_orientee`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_distance_bordures_orientee.md).
 
 - seuils_long:
 
@@ -105,9 +105,9 @@ Adaptez ces seuils selon la taille de vos champs et l'effet étudié.
 
 ## See also
 
-[`calculer_distance_bordures_orientee`](https://votrenom.github.io/covariablechamps/reference/calculer_distance_bordures_orientee.md)
+[`calculer_distance_bordures_orientee`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_distance_bordures_orientee.md)
 pour calculer les distances,
-[`visualiser_classes_bordures`](https://votrenom.github.io/covariablechamps/reference/visualiser_classes_bordures.md)
+[`visualiser_classes_bordures`](https://cedricbouffard.github.io/covariablechamps/reference/visualiser_classes_bordures.md)
 pour visualiser les classes
 
 ## Examples

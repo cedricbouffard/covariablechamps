@@ -1,0 +1,220 @@
+# Distances aux Arbres et Effet du Vent
+
+## Introduction
+
+Ce guide présente les fonctions du package `covariablechamps` pour
+calculer les distances aux arbres en tenant compte de la direction du
+vent. Ces covariables sont essentielles pour modéliser la protection des
+cultures contre le vent et l’ombrage.
+
+Le package offre plusieurs approches:
+
+- **Distance simple**: Distance euclidienne aux arbres les plus proches
+- **Distances directionnelles (amont/aval)**: Distance distinguant le
+  sens du vent
+- **Fetch elliptique**: Distance avec effet de buffer elliptique aligné
+  sur le vent
+
+## Installation et chargement
+
+``` r
+library(covariablechamps)
+library(sf)
+library(terra)
+library(ggplot2)
+```
+
+## Étape 1: Préparer les données d’arbres
+
+``` r
+# Charger un champ depuis un fichier
+champ <- st_read("chemin/vers/champ.shp")
+
+# Les arbres doivent être un objet sf de POINTS
+# (obtenus par exemple via extraire_classifier_haies_lidar)
+arbres <- st_read("chemin/vers/arbres.shp")
+
+# Vérifier le CRS
+st_crs(arbres)
+st_crs(champ)
+```
+
+## Étape 2: Calculer les distances simples
+
+La fonction
+[`calculer_distance_arbres()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_distance_arbres.md)
+calcule la distance euclidienne aux arbres avec un buffer optionnel.
+
+``` r
+# Distance simple avec buffer de 3m autour des arbres
+dist_simple <- calculer_distance_arbres(
+  arbres_sf = arbres,
+  champ_bbox = champ,
+  resolution = 2,
+  buffer_arbre = 3,
+  max_distance = 200
+)
+
+# Visualiser
+visualiser_distance_arbres(dist_simple, type = "buffer")
+```
+
+## Étape 3: Distances amont/aval avec direction du vent
+
+La fonction
+[`calculer_distances_amont_aval()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_distances_amont_aval.md)
+distingue les distances selon la direction du vent:
+
+- **Amont**: Vent qui vient DE l’arbre (protection contre le vent)
+- **Aval**: Vent qui va VERS l’arbre (accélération après l’arbre)
+
+``` r
+# Calcul avec vent de 245 degrés (OSO)
+dist_dir <- calculer_distances_amont_aval(
+  arbres_sf = arbres,
+  angle_vent = 245,
+  champ_bbox = champ,
+  resolution = 2,
+  buffer_arbre = 3,
+  angle_focal = 45,
+  max_distance = 200,
+  taille_lissage = 7
+)
+
+# Visualiser la comparaison
+viz <- visualiser_distances_vent(dist_dir, type = "comparaison")
+viz$amont
+viz$aval
+```
+
+### Paramètres importants
+
+- `angle_vent`: Direction du vent en degrés (0=Nord, 90=Est)
+- `buffer_arbre`: Rayon du buffer autour des arbres (m)
+- `angle_focal`: Angle d’ouverture pour considérer un arbre comme
+  influenceant (degrés)
+- `taille_lissage`: Taille de la fenêtre de lissage (cellules)
+
+## Étape 4: Fetch de vent elliptique
+
+La fonction
+[`calculer_fetch_vent()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_fetch_vent.md)
+calcule un buffer elliptique aligné avec la direction du vent. Le vent a
+plus d’effet dans sa direction de propagation.
+
+``` r
+# Calcul du fetch avec coefficient d'élongation de 3
+fetch <- calculer_fetch_vent(
+  arbres_sf = arbres,
+  angle_vent = 245,
+  champ_bbox = champ,
+  resolution = 2,
+  max_fetch = 200,
+  coef_ellipse = 3
+)
+
+# Visualiser la comparaison
+viz_fetch <- visualiser_fetch(fetch, type = "comparaison")
+viz_fetch$simple
+viz_fetch$elliptique
+```
+
+## Étape 5: Simuler la vitesse du vent
+
+Plusieurs fonctions permettent de simuler la vitesse du vent selon les
+distances calculées:
+
+### Simulation simple (distance euclidienne)
+
+``` r
+vitesse_simple <- simuler_vitesse_vent_simple(
+  dist_result = dist_simple,
+  vitesse_ref = 5,      # Vitesse de référence (m/s)
+  coef_protection = 0.5  # Coefficient de protection
+)
+```
+
+### Simulation avec distances amont/aval
+
+``` r
+vitesse_dir <- simuler_vitesse_vent(
+  result = dist_dir,
+  vitesse_ref = 5,
+  coef_amont = 0.5,   # Ralentissement en amont
+  coef_aval = 0.3     # Accélération en aval
+)
+```
+
+### Simulation avec fetch elliptique
+
+``` r
+vitesse_fetch <- simuler_vitesse_vent(
+  fetch = fetch,
+  vitesse_ref = 5,
+  coef_acceleration = 0.3
+)
+```
+
+## Étape 6: Cartographie avec flèches de vent
+
+La fonction
+[`tracer_carte_vent()`](https://cedricbouffard.github.io/covariablechamps/reference/tracer_carte_vent.md)
+crée une carte avec les distances et des flèches indiquant la direction
+du vent.
+
+``` r
+# Créer d'abord les distances de base
+distances <- calculer_distances_vent(
+  arbres_sf = arbres,
+  angle_vent = 245,
+  champ_bbox = champ,
+  resolution = 2,
+  max_distance = 100,
+  ouverture_angulaire = 45
+)
+
+# Cartographie
+carte_amont <- tracer_carte_vent(distances, type = "amont")
+carte_aval <- tracer_carte_vent(distances, type = "aval")
+carte_combinee <- tracer_carte_vent(distances, type = "les_deux")
+```
+
+## Choisir la bonne approche
+
+| Fonction                                                                                                                          | Usage                                        |
+|-----------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------|
+| [`calculer_distance_arbres()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_distance_arbres.md)           | Distance simple sans direction               |
+| [`calculer_distances_amont_aval()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_distances_amont_aval.md) | Distances avec effet tampon et lissage       |
+| [`calculer_fetch_vent()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_fetch_vent.md)                     | Buffer elliptique pour effet directionnel    |
+| [`calculer_distances_vent()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_distances_vent.md)             | Version simple des distances directionnelles |
+
+## Workflow complet
+
+``` r
+# 1. Charger les données
+champ <- st_read("champ.shp")
+arbres <- st_read("arbres.shp")
+
+# 2. Choisir la méthode selon le besoin
+# Pour modéliser la protection contre le vent:
+dist_amont_aval <- calculer_distances_amont_aval(
+  arbres_sf = arbres,
+  angle_vent = 245,
+  champ_bbox = champ,
+  buffer_arbre = 3
+)
+
+# 3. Visualiser
+visualiser_distances_vent(dist_amont_aval, type = "comparaison")
+
+# 4. Simuler la vitesse
+vitesse <- simuler_vitesse_vent(
+  result = dist_amont_aval,
+  vitesse_ref = 5,
+  coef_amont = 0.5,
+  coef_aval = 0.3
+)
+
+# 5. Cartographier
+tracer_carte_vent(dist_amont_aval, type = "les_deux")
+```

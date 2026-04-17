@@ -19,7 +19,7 @@ visualiser_distances_bordures(
 - dist_result:
 
   Liste: Résultat de
-  [`calculer_distance_bordures_orientee`](https://votrenom.github.io/covariablechamps/reference/calculer_distance_bordures_orientee.md).
+  [`calculer_distance_bordures_orientee`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_distance_bordures_orientee.md).
   Doit contenir les rasters distance_long, distance_large et
   distance_min.
 
@@ -67,9 +67,9 @@ Pour combiner les trois graphiques de "comparaison", utilisez:
 
 ## See also
 
-[`calculer_distance_bordures_orientee`](https://votrenom.github.io/covariablechamps/reference/calculer_distance_bordures_orientee.md)
+[`calculer_distance_bordures_orientee`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_distance_bordures_orientee.md)
 pour calculer les distances,
-[`classifier_distances_bordures`](https://votrenom.github.io/covariablechamps/reference/classifier_distances_bordures.md)
+[`classifier_distances_bordures`](https://cedricbouffard.github.io/covariablechamps/reference/classifier_distances_bordures.md)
 pour classifier les distances
 
 ## Examples

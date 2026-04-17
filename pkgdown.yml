@@ -3,10 +3,11 @@ pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
   covariables-terrain: covariables-terrain.html
+  distances-arbres-vent: distances-arbres-vent.html
   distances-bordures: distances-bordures.html
   haies-brise-vent: haies-brise-vent.html
   ombrage: ombrage.html
-last_built: 2026-04-17T17:02Z
+last_built: 2026-04-17T17:10Z
 urls:
-  reference: https://votrenom.github.io/covariablechamps/reference
-  article: https://votrenom.github.io/covariablechamps/articles
+  reference: https://cedricbouffard.github.io/covariablechamps/reference
+  article: https://cedricbouffard.github.io/covariablechamps/articles

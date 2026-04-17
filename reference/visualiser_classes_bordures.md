@@ -19,7 +19,7 @@ visualiser_classes_bordures(
 - classes_result:
 
   Liste: Résultat de
-  [`classifier_distances_bordures`](https://votrenom.github.io/covariablechamps/reference/classifier_distances_bordures.md).
+  [`classifier_distances_bordures`](https://cedricbouffard.github.io/covariablechamps/reference/classifier_distances_bordures.md).
 
 - type:
 
@@ -47,7 +47,7 @@ Un objet ggplot2
 
 ## See also
 
-[`classifier_distances_bordures`](https://votrenom.github.io/covariablechamps/reference/classifier_distances_bordures.md)
+[`classifier_distances_bordures`](https://cedricbouffard.github.io/covariablechamps/reference/classifier_distances_bordures.md)
 
 ## Examples
 

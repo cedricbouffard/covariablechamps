@@ -6,21 +6,21 @@
 
 #### Module Terrain
 
-- [`telecharger_lidar()`](https://votrenom.github.io/covariablechamps/reference/telecharger_lidar.md):
+- [`telecharger_lidar()`](https://cedricbouffard.github.io/covariablechamps/reference/telecharger_lidar.md):
   Télécharge les données LiDAR (MNT ou MNE) depuis le DataCube du Canada
   pour une zone d’intérêt donnée.
-- [`verifier_disponibilite_lidar()`](https://votrenom.github.io/covariablechamps/reference/verifier_disponibilite_lidar.md):
+- [`verifier_disponibilite_lidar()`](https://cedricbouffard.github.io/covariablechamps/reference/verifier_disponibilite_lidar.md):
   Vérifie les années de couverture LiDAR disponibles pour une zone.
-- [`calculer_pente()`](https://votrenom.github.io/covariablechamps/reference/calculer_pente.md):
+- [`calculer_pente()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_pente.md):
   Calcule la pente en degrés à partir d’un MNT.
-- [`calculer_aspect()`](https://votrenom.github.io/covariablechamps/reference/calculer_aspect.md):
+- [`calculer_aspect()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_aspect.md):
   Calcule l’aspect (orientation) en degrés à partir d’un MNT.
-- [`calculer_geomorphons()`](https://votrenom.github.io/covariablechamps/reference/calculer_geomorphons.md):
+- [`calculer_geomorphons()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_geomorphons.md):
   Classifie les formes de terrain avec la méthode des géomorphons.
-- [`extraire_covariables_terrain()`](https://votrenom.github.io/covariablechamps/reference/extraire_covariables_terrain.md):
+- [`extraire_covariables_terrain()`](https://cedricbouffard.github.io/covariablechamps/reference/extraire_covariables_terrain.md):
   Fonction principale qui extrait toutes les covariables terrain en une
   seule commande.
-- [`labels_geomorphons()`](https://votrenom.github.io/covariablechamps/reference/labels_geomorphons.md):
+- [`labels_geomorphons()`](https://cedricbouffard.github.io/covariablechamps/reference/labels_geomorphons.md):
   Retourne les labels des 10 classes de géomorphons.
 
 ### Documentation

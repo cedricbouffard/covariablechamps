@@ -35,7 +35,7 @@ lidar <- telecharger_lidar(champ)
 ## Etape 2: Detection des haies
 
 La fonction
-[`extraire_classifier_haies_lidar()`](https://votrenom.github.io/covariablechamps/reference/extraire_classifier_haies_lidar.md)
+[`extraire_classifier_haies_lidar()`](https://cedricbouffard.github.io/covariablechamps/reference/extraire_classifier_haies_lidar.md)
 detecte les arbres et les classifie en haies, arbres isoles ou bosquets.
 
 ``` r

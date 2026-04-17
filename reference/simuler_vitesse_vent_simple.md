@@ -1,11 +1,11 @@
 # Simuler la vitesse du vent basée sur la distance simple aux arbres
 
 Cette fonction est utilisée avec le résultat de
-[`calculer_distance_arbres()`](https://votrenom.github.io/covariablechamps/reference/calculer_distance_arbres.md).
+[`calculer_distance_arbres()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_distance_arbres.md).
 Pour les distances directionnelles (amont/aval), utilisez plutôt
-[`simuler_vitesse_vent()`](https://votrenom.github.io/covariablechamps/reference/simuler_vitesse_vent.md)
+[`simuler_vitesse_vent()`](https://cedricbouffard.github.io/covariablechamps/reference/simuler_vitesse_vent.md)
 qui prend le résultat de
-[`calculer_distances_amont_aval()`](https://votrenom.github.io/covariablechamps/reference/calculer_distances_amont_aval.md).
+[`calculer_distances_amont_aval()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_distances_amont_aval.md).
 
 ## Usage
 

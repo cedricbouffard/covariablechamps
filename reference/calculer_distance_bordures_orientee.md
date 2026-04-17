@@ -62,7 +62,7 @@ Une liste contenant:
 - orientation:
 
   Liste: Résultat de
-  [`calculer_orientation_champ`](https://votrenom.github.io/covariablechamps/reference/calculer_orientation_champ.md),
+  [`calculer_orientation_champ`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_orientation_champ.md),
   contenant l'angle principal, les dimensions et la géométrie du MBR.
 
 - champ_buffer:
@@ -104,11 +104,11 @@ permettent d'identifier la position relative dans le champ
 
 ## See also
 
-[`calculer_orientation_champ`](https://votrenom.github.io/covariablechamps/reference/calculer_orientation_champ.md)
+[`calculer_orientation_champ`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_orientation_champ.md)
 pour le calcul de l'orientation,
-[`classifier_distances_bordures`](https://votrenom.github.io/covariablechamps/reference/classifier_distances_bordures.md)
+[`classifier_distances_bordures`](https://cedricbouffard.github.io/covariablechamps/reference/classifier_distances_bordures.md)
 pour classifier les distances,
-[`visualiser_distances_bordures`](https://votrenom.github.io/covariablechamps/reference/visualiser_distances_bordures.md)
+[`visualiser_distances_bordures`](https://cedricbouffard.github.io/covariablechamps/reference/visualiser_distances_bordures.md)
 pour la visualisation
 
 ## Examples

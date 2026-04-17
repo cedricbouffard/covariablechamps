@@ -61,7 +61,7 @@ remotes::install_github("brownag/rgeomorphon")
 
 ``` r
 # Installer depuis GitHub
-remotes::install_github("votrenom/covariablechamps")
+remotes::install_github("cedricbouffard/covariablechamps")
 ```
 
 ## Utilisation rapide
@@ -158,9 +158,9 @@ resultats_total <- calculer_ombrage_periode(
 ## Documentation
 
 Consultez la [documentation
-complète](https://votrenom.github.io/covariablechamps/) pour plus de
-détails sur: - L’extraction des covariables terrain - Les paramètres des
-géomorphons - La gestion des données LiDAR
+complète](https://cedricbouffard.github.io/covariablechamps/) pour plus
+de détails sur: - L’extraction des covariables terrain - Les paramètres
+des géomorphons - La gestion des données LiDAR
 
 ## Données
 

@@ -35,7 +35,7 @@ remotes::install_github("brownag/rgeomorphon")
 
 ``` r
 # Installer depuis GitHub (une fois publié)
-# remotes::install_github("votrenom/covariablechamps")
+# remotes::install_github("cedricbouffard/covariablechamps")
 
 # Ou installer depuis la source
 devtools::install()
@@ -264,4 +264,5 @@ calculer_pente(rast("temp/mnt_2020.tif"), filename = "temp/pente.tif")
 ## Aide et support
 
 Pour signaler un bug ou demander une fonctionnalité, veuillez ouvrir une
-issue sur GitHub: <https://github.com/votrenom/covariablechamps/issues>
+issue sur GitHub:
+<https://github.com/cedricbouffard/covariablechamps/issues>
