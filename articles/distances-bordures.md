@@ -1,0 +1,287 @@
+# Analyse des Distances aux Bordures selon l'Orientation du Champ
+
+## Introduction
+
+Dans l’analyse des parcelles agricoles, il est souvent important de
+distinguer les effets de bordure selon leur orientation par rapport à
+l’axe principal du champ. Par exemple:
+
+- Les **haies brise-vent** ont un impact différent selon qu’elles sont
+  placées sur les côtés longs ou courts du champ
+- L’**ombrage** des arbres affecte principalement les bordures orientées
+  nord-sud
+- Les **gradients de rendement** peuvent varier selon la direction
+
+Ce package fournit des outils pour calculer et classifier les distances
+aux bordures en distinguant:
+
+- **Distance sens long**: composante de la distance dans le sens de la
+  longueur du champ
+- **Distance sens large**: composante de la distance dans le sens de la
+  largeur du champ
+
+## Installation et chargement
+
+``` r
+library(covariablechamps)
+library(sf)
+library(terra)
+library(ggplot2)
+```
+
+## Exemple de base
+
+### Créer ou charger un champ
+
+``` r
+# Charger un champ depuis un fichier
+champ <- st_read("chemin/vers/champ.shp")
+
+# Ou créer un champ d'exemple (rectangle 300m x 100m orienté à 30°)
+angle_rad <- 30 * pi / 180
+L <- 300  # Longueur
+W <- 100  # Largeur
+cx <- 500
+cy <- 500
+
+corners <- matrix(c(
+  -L/2, -W/2,
+   L/2, -W/2,
+   L/2,  W/2,
+  -L/2,  W/2,
+  -L/2, -W/2
+), ncol = 2, byrow = TRUE)
+
+R <- matrix(c(cos(angle_rad), -sin(angle_rad),
+              sin(angle_rad),  cos(angle_rad)), nrow = 2)
+corners_rot <- corners %*% t(R)
+corners_rot[, 1] <- corners_rot[, 1] + cx
+corners_rot[, 2] <- corners_rot[, 2] + cy
+
+poly <- st_polygon(list(corners_rot))
+champ <- st_sf(
+  id = 1,
+  geometry = st_sfc(poly, crs = 32618)  # UTM zone 18N
+)
+```
+
+### Calculer l’orientation
+
+Avant de calculer les distances, voyons l’orientation détectée:
+
+``` r
+orientation <- calculer_orientation_champ(champ, methode = "mbr")
+
+cat("Angle principal:", round(orientation$angle, 1), "degrés\n")
+cat("Angle perpendiculaire:", round(orientation$angle_perpendiculaire, 1), "degrés\n")
+cat("Longueur:", round(orientation$longueur, 1), "m\n")
+cat("Largeur:", round(orientation$largeur, 1), "m\n")
+cat("Rapport d'aspect:", round(orientation$rapport_aspect, 2), "\n")
+
+# Visualiser l'orientation avec le MBR (Minimum Bounding Rectangle)
+visualiser_orientation(champ, orientation)
+```
+
+### Calculer les distances aux bordures
+
+``` r
+# Calculer les distances avec une résolution de 2m
+dist_bordures <- calculer_distance_bordures_orientee(
+  champ_poly = champ,
+  resolution = 2,  # 2 mètres par pixel
+  buffer = 50      # Zone tampon de 50m pour les calculs
+)
+
+# Afficher un résumé
+cat("Rasters créés:\n")
+cat("- distance_long:", terra::ncell(dist_bordures$distance_long), "cellules\n")
+cat("- distance_large:", terra::ncell(dist_bordures$distance_large), "cellules\n")
+cat("- distance_min:", terra::ncell(dist_bordures$distance_min), "cellules\n")
+```
+
+### Visualiser les distances
+
+``` r
+# Visualiser les trois distances
+plots <- visualiser_distances_bordures(dist_bordures, type = "comparaison")
+
+# Avec patchwork pour arranger les plots
+library(patchwork)
+plots$long + plots$large + plots$min + 
+  plot_layout(ncol = 3) +
+  plot_annotation(title = "Distances aux bordures selon l'orientation")
+```
+
+Chaque visualisation montre:
+
+- **Distance sens long**: La composante de la distance projetée sur
+  l’axe principal (longueur). Les valeurs faibles (bleu) sont proches
+  des bordures perpendiculaires à l’axe long.
+
+- **Distance sens large**: La composante projetée sur l’axe
+  perpendiculaire (largeur). Les valeurs faibles sont proches des côtés
+  longs du champ.
+
+- **Distance minimum**: La distance euclidienne classique à la bordure
+  la plus proche.
+
+## Classification des distances
+
+### Définir des classes
+
+Pour faciliter l’analyse, vous pouvez classifier les distances en
+catégories:
+
+``` r
+# Classification avec les seuils par défaut
+classes <- classifier_distances_bordures(dist_bordures)
+
+# Afficher la table de correspondance
+head(classes$table_classes)
+```
+
+### Seuils personnalisés
+
+Adaptez les seuils à votre contexte:
+
+``` r
+# Pour un petit champ avec haies brise-vent
+classes_haie <- classifier_distances_bordures(
+  dist_bordures,
+  seuils_long = c(5, 15, 30, 60),      # Effet haie ~15m
+  seuils_large = c(3, 10, 20, 40),     # Effet ombrage ~10m
+  labels_long = c("zone_haie", "influence_haie", "transition", "intermediaire", "centre"),
+  labels_large = c("ombre_directe", "ombre_diffuse", "transition", "plein_soleil", "centre")
+)
+
+# Visualiser
+visualiser_classes_bordures(classes_haie, type = "long")
+visualiser_classes_bordures(classes_haie, type = "large")
+```
+
+### Interprétation des classes combinées
+
+La classe combinée encode les deux dimensions:
+
+``` r
+# La classe combinée = (classe_long × 10) + classe_large
+# Exemple: code 23 = classe 2 en long, classe 3 en large
+
+# Visualiser
+visualiser_classes_bordures(classes, type = "combinee")
+
+# Extraire les statistiques par classe
+table(terra::values(classes$classe_combinee))
+```
+
+## Cas d’usage: Points spécifiques
+
+Vous pouvez aussi calculer les distances pour des points spécifiques
+plutôt que pour tout le raster:
+
+``` r
+# Créer des points d'échantillonnage
+points_echantillon <- st_sample(champ, size = 50, type = "regular")
+points_echantillon <- st_as_sf(points_echantillon)
+points_echantillon$id <- 1:nrow(points_echantillon)
+
+# Calculer les distances
+dist_points <- calculer_distance_bordures_orientee(
+  points_sf = points_echantillon,
+  champ_poly = champ
+)
+
+# Les distances sont dans le sf retourné
+head(dist_points$points[, c("id", "distance_long", "distance_large", "distance_min")])
+```
+
+## Intégration avec d’autres analyses
+
+### Avec les données de haies
+
+``` r
+# Si vous avez extrait les haies avec extraire_classifier_haies_lidar()
+# Vous pouvez combiner les analyses
+
+# 1. Calculer les zones de vent des haies
+# zones_vent <- calculer_zones_vent_spline(haies_rectangles, direction_vent = 225)
+
+# 2. Calculer les distances aux bordures
+dist_bordures <- calculer_distance_bordures_orientee(champ_poly = champ)
+
+# 3. Combiner les informations
+# - Zones près des haies (distance_large faible) ET sous le vent
+# - Zones au centre du champ
+```
+
+### Export des résultats
+
+``` r
+# Sauvegarder les rasters
+terra::writeRaster(dist_bordures$distance_long, "output/distance_long.tif", overwrite = TRUE)
+terra::writeRaster(dist_bordures$distance_large, "output/distance_large.tif", overwrite = TRUE)
+terra::writeRaster(dist_bordures$distance_min, "output/distance_min.tif", overwrite = TRUE)
+
+# Sauvegarder les classes
+terra::writeRaster(classes$classe_long, "output/classe_long.tif", overwrite = TRUE)
+terra::writeRaster(classes$classe_combinee, "output/classe_combinee.tif", overwrite = TRUE)
+
+# Exporter la table de correspondance
+write.csv(classes$table_classes, "output/table_classes.csv", row.names = FALSE)
+```
+
+## Considérations techniques
+
+### Performance
+
+Le temps de calcul dépend de:
+
+- La **résolution**: Une résolution de 1m génère 4× plus de cellules
+  qu’une résolution de 2m
+- La **taille du champ**: Linéaire avec la superficie
+- Le **nombre de points**: Si vous utilisez des points plutôt qu’un
+  raster
+
+Pour les grands champs, commencez avec une résolution grossière (5-10m)
+pour tester, puis affinez.
+
+### Choix des seuils de classification
+
+Les seuils par défaut sont:
+
+| Direction | Seuils (m)      | Signification                                          |
+|-----------|-----------------|--------------------------------------------------------|
+| Long      | 10, 25, 50, 100 | Zone de bordure, proche, intermédiaire, éloigné        |
+| Large     | 5, 15, 30, 50   | Zone de bordure, influence directe, transition, centre |
+
+Adaptez selon:
+
+- **Haies brise-vent**: L’effet s’étend typiquement à 10-20× la hauteur
+  de la haie
+- **Ombrage**: Dépend de la hauteur des arbres et de la latitude
+- **Rendement**: Souvent 15-30m d’effet de bordure mesuré
+
+### Système de coordonnées
+
+Utilisez toujours un CRS **projeté** (en mètres) pour des calculs de
+distance précis. Les CRS géographiques (lat/lon) donneront des résultats
+incorrects.
+
+``` r
+# Vérifier le CRS
+st_crs(champ)
+
+# Transformer si nécessaire (exemple: vers UTM zone 18N)
+champ_proj <- st_transform(champ, 32618)
+```
+
+## Références
+
+- Jasiewicz, J., & Stepinski, T. F. (2013). Geomorphons—A pattern
+  recognition approach to classification and mapping of landforms.
+  *Geomorphology*, 182, 147-156.
+
+## Aide
+
+Pour signaler un bug ou demander une fonctionnalité:
+<https://github.com/votrenom/covariablechamps/issues>

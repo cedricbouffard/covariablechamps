@@ -1,0 +1,144 @@
+# Calculer l'ombrage d'une parcelle à partir du LiDAR et de la position du soleil
+
+Cette fonction calcule l'ombrage projeté (cast shadows) d'une parcelle
+agricole en utilisant le MNE (Modèle Numérique de Surface) issu du LiDAR
+et les positions du soleil calculées avec le package suncalc. Elle
+utilise le package rayshader pour calculer de vraies ombres projetées
+par les éléments de surface (arbres, bâtiments).
+
+## Usage
+
+``` r
+calculer_ombrage(
+  polygone,
+  date = Sys.Date(),
+  intervalle_heures = 1,
+  dossier = NULL,
+  mne = NULL,
+  tz = "America/Toronto",
+  zscale = 1,
+  max_distance = 1000,
+  lambert = TRUE,
+  seuil_ensoleillement = 0.1
+)
+```
+
+## Arguments
+
+- polygone:
+
+  Un objet \`sf\` représentant la zone d'intérêt ou un chemin vers un
+  fichier vectoriel
+
+- date:
+
+  Date pour laquelle calculer l'ombrage (format Date ou chaîne
+  "YYYY-MM-DD"). Par défaut, la date du jour.
+
+- intervalle_heures:
+
+  Intervalle en heures entre chaque calcul (défaut: 1 heure)
+
+- dossier:
+
+  Dossier de sortie pour sauvegarder les résultats (optionnel)
+
+- mne:
+
+  Objet SpatRaster optionnel contenant le MNE déjà chargé. Si NULL,
+  télécharge automatiquement.
+
+- tz:
+
+  Fuseau horaire (défaut: "America/Toronto")
+
+- zscale:
+
+  Facteur d'échelle pour la hauteur (défaut: 1). Utilisez une valeur
+  plus élevée (ex: 10) si les ombres semblent trop courtes, ou plus
+  faible (ex: 0.5) si elles semblent trop longues.
+
+- max_distance:
+
+  Distance maximale de projection des ombres en mètres (défaut: 1000)
+
+- lambert:
+
+  Si TRUE, applique l'ombrage de Lambert (défaut: TRUE)
+
+- seuil_ensoleillement:
+
+  Seuil pour considérer un pixel comme ensoleillé (défaut: 0.1). Les
+  valeurs d'ombrage \> seuil sont comptées comme ensoleillées. Valeur
+  plus basse = plus permissif (compte plus d'heures). Valeur plus haute
+  = plus strict (compte moins d'heures).
+
+## Value
+
+Une liste contenant :
+
+- ombrage_par_heure:
+
+  SpatRaster avec une couche par heure calculée (0-1, où 0 = ombre
+  complète, 1 = plein soleil)
+
+- ombrage_moyen:
+
+  SpatRaster avec l'ombrage moyen sur la journée (0-1)
+
+- heures_ensoleillement:
+
+  SpatRaster avec le nombre d'heures d'ensoleillement par pixel
+
+- info_soleil:
+
+  Data.frame avec les informations sur les positions du soleil par heure
+
+- mne:
+
+  Le MNE utilisé pour les calculs
+
+- zscale:
+
+  Le facteur d'échelle utilisé
+
+- max_distance:
+
+  La distance maximale de projection utilisée
+
+- seuil_ensoleillement:
+
+  Le seuil d'ensoleillement utilisé
+
+## Details
+
+L'ombrage est calculé en utilisant la fonction
+\`rayshader::ray_shade()\` qui effectue un lancer de rayons (raytracing)
+pour déterminer quels pixels sont en ombre. Contrairement au hillshade
+classique, cette méthode calcule les ombres projetées par les éléments
+élevés (arbres, bâtiments) sur les zones avoisinantes.
+
+Le paramètre \`zscale\` permet d'ajuster l'échelle verticale : - zscale
+\> 1 : ombres plus longues (exagère la hauteur) - zscale \< 1 : ombres
+plus courtes (minimise la hauteur) - zscale = 1 : échelle réelle
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# Calculer l'ombrage pour aujourd'hui
+champ <- sf::st_read("champ.shp")
+resultats <- calculer_ombrage(champ)
+
+# Calculer pour une date spécifique avec ajustement de l'échelle
+resultats <- calculer_ombrage(champ, date = "2024-06-21", zscale = 2)
+
+# Augmenter la distance de projection des ombres
+resultats <- calculer_ombrage(champ, date = "2024-06-21", 
+                              zscale = 1.5, max_distance = 1000)
+
+# Visualiser les résultats
+terra::plot(resultats$ombrage_moyen, main = "Ombrage moyen")
+terra::plot(resultats$heures_ensoleillement, main = "Heures d'ensoleillement")
+} # }
+```

@@ -1,0 +1,331 @@
+# covariablechamps
+
+## Overview
+
+Le package `covariablechamps` permet d’extraire et de calculer des
+covariables pour des champs agricoles au Québec, à partir de diverses
+sources de données (LiDAR, pédologiques, etc.).
+
+## Fonctionnalités
+
+### Module Terrain (disponible)
+
+- Téléchargement automatique des données LiDAR depuis le DataCube du
+  Canada
+- Calcul de la pente (degrés)
+- Calcul de l’aspect (orientation)
+- Classification des formes de terrain avec les géomorphons
+
+### Module Ombrage (disponible)
+
+- Calcul des **ombres projetées** (cast shadows) d’une parcelle à partir
+  du MNE (Modèle Numérique de Surface) LiDAR
+- Calcul de la position du soleil avec le package `suncalc`
+- Lancer de rayons (raytracing) avec le package `rayshader` pour des
+  ombres réalistes
+- **Calcul sur une période** : moyenne, min, max ou somme des heures
+  d’ensoleillement sur plusieurs jours/mois
+- Paramètres ajustables :
+  - `zscale` : facteur d’échelle vertical (ajuste la longueur des
+    ombres)
+  - `max_distance` : distance maximale de projection des ombres (défaut:
+    1000m)
+  - `seuil_ensoleillement` : seuil pour compter les heures
+    d’ensoleillement (défaut: 0.1)
+- Production de cartes :
+  - Ombrage par heure (0 = ombre complète, 1 = plein soleil)
+  - Ombrage moyen sur la journée ou sur une période
+  - Nombre d’heures d’ensoleillement par pixel (journalier ou moyenne
+    sur période)
+
+### Modules à venir
+
+- Texture et classe de drainage des sols
+- Orientation des champs
+- Localisation et hauteur des arbres bordant les parcelles
+
+## Installation
+
+### Prérequis
+
+Installez d’abord le package `rgeomorphon` depuis GitHub:
+
+``` r
+if (!requireNamespace("remotes", quietly = TRUE)) {
+  install.packages("remotes")
+}
+remotes::install_github("brownag/rgeomorphon")
+```
+
+### Installation
+
+``` r
+# Installer depuis GitHub
+remotes::install_github("votrenom/covariablechamps")
+```
+
+## Utilisation rapide
+
+``` r
+library(covariablechamps)
+
+# Charger votre champ
+champ <- sf::st_read("chemin/vers/champ.shp")
+
+# Extraire toutes les covariables terrain
+covariables <- extraire_covariables_terrain(champ)
+
+# Visualiser
+plot(covariables$pente, main = "Pente")
+plot(covariables$aspect, main = "Aspect")
+plot(covariables$geomorphons, main = "Géomorphons")
+```
+
+### Calculer l’ombrage d’une parcelle
+
+``` r
+library(covariablechamps)
+
+# Charger votre champ
+champ <- sf::st_read("chemin/vers/champ.shp")
+
+# Calculer l'ombrage pour une date spécifique
+resultats <- calculer_ombrage(
+  polygone = champ,
+  date = "2024-06-21",  # Solstice d'été
+  intervalle_heures = 1,
+  dossier = "output/ombrage"
+)
+
+# Ajuster la longueur des ombres avec zscale
+# zscale > 1 : ombres plus longues (exagère la hauteur)
+# zscale < 1 : ombres plus courtes (minimise la hauteur)
+resultats_ajuste <- calculer_ombrage(
+  polygone = champ,
+  date = "2024-06-21",
+  zscale = 1.5,           # Ombres 50% plus longues
+  max_distance = 1000,    # Projection jusqu'à 1000m
+  dossier = "output/ombrage"
+)
+
+# Si vous obtenez trop peu d'heures d'ensoleillement dans les zones ouvertes,
+# baissez le seuil d'ensoleillement (défaut: 0.1)
+resultats <- calculer_ombrage(
+  polygone = champ,
+  date = "2024-06-21",
+  seuil_ensoleillement = 0.05,  # Plus permissif - compte plus d'heures
+  max_distance = 1000
+)
+
+# Visualiser les résultats
+plot(resultats$ombrage_moyen, main = "Ombrage moyen")
+plot(resultats$heures_ensoleillement, main = "Heures d'ensoleillement")
+
+# Ou utiliser la fonction de visualisation complète
+calculer_ombrage_visualisation(resultats, titre = "Ombrage du 21 juin 2024")
+```
+
+### Calculer l’ombrage sur une période
+
+``` r
+# Calculer sur un mois complet (moyenne des heures d'ensoleillement)
+resultats_mois <- calculer_ombrage_periode(
+  polygone = champ,
+  date_debut = "2024-06-01",
+  date_fin = "2024-06-30",
+  intervalle_jours = 3  # Calcul tous les 3 jours pour accélérer
+)
+
+# Visualiser les statistiques sur la période
+plot(resultats_mois$heures_ensoleillement_moyen, 
+     main = "Heures moyennes d'ensoleillement/jour")
+plot(resultats_mois$heures_ensoleillement_min, 
+     main = "Heures minimales (pire cas)")
+plot(resultats_mois$heures_ensoleillement_max, 
+     main = "Heures maximales (meilleur cas)")
+plot(resultats_mois$ombrage_moyen_periode, 
+     main = "Ombrage moyen sur la période")
+
+# Obtenir le total des heures sur toute la période
+resultats_total <- calculer_ombrage_periode(
+  polygone = champ,
+  date_debut = "2024-06-01",
+  date_fin = "2024-06-30",
+  resume_type = "somme"  # Somme totale au lieu de moyenne
+)
+```
+
+## Documentation
+
+Consultez la [documentation
+complète](https://votrenom.github.io/covariablechamps/) pour plus de
+détails sur: - L’extraction des covariables terrain - Les paramètres des
+géomorphons - La gestion des données LiDAR
+
+## Données
+
+Les données LiDAR proviennent du [DataCube du gouvernement du
+Canada](https://datacube.services.geo.ca/) via l’API STAC de Ressources
+naturelles Canada.
+
+## Licence
+
+Ce package est sous licence MIT.
+
+## Contribution
+
+Les contributions sont les bienvenues ! Veuillez ouvrir une issue ou une
+pull request sur GitHub.
+
+# Package index
+
+## Telechargement LiDAR
+
+Fonctions pour telecharger les donnees LiDAR depuis les services
+gouvernementaux
+
+- [`telecharger_lidar()`](https://votrenom.github.io/covariablechamps/reference/telecharger_lidar.md)
+  : Télécharger les données LiDAR pour une zone donnée
+- [`telecharger_lidar_ponctuel()`](https://votrenom.github.io/covariablechamps/reference/telecharger_lidar_ponctuel.md)
+  : Télécharger les données LiDAR ponctuelles (COPC) pour une zone
+- [`verifier_disponibilite_lidar()`](https://votrenom.github.io/covariablechamps/reference/verifier_disponibilite_lidar.md)
+  : Vérifier la disponibilité des données LiDAR
+- [`vider_cache_lidar()`](https://votrenom.github.io/covariablechamps/reference/vider_cache_lidar.md)
+  : Vider le cache LiDAR
+
+## Analyse du terrain
+
+Fonctions pour calculer les covariables terrain a partir du MNT
+
+- [`calculer_pente()`](https://votrenom.github.io/covariablechamps/reference/calculer_pente.md)
+  : Calculer la pente à partir d'un MNT
+- [`calculer_aspect()`](https://votrenom.github.io/covariablechamps/reference/calculer_aspect.md)
+  : Calculer l'aspect (orientation) à partir d'un MNT
+- [`calculer_geomorphons()`](https://votrenom.github.io/covariablechamps/reference/calculer_geomorphons.md)
+  : Calculer les géomorphons à partir d'un MNT
+- [`extraire_covariables_terrain()`](https://votrenom.github.io/covariablechamps/reference/extraire_covariables_terrain.md)
+  : Extraire les covariables terrain complètes
+- [`labels_geomorphons()`](https://votrenom.github.io/covariablechamps/reference/labels_geomorphons.md)
+  : Obtenir les labels des géomorphons
+
+## Orientation et distances aux bordures
+
+Fonctions pour analyser l’orientation des champs et calculer les
+distances aux bordures
+
+- [`calculer_orientation_champ()`](https://votrenom.github.io/covariablechamps/reference/calculer_orientation_champ.md)
+  : Calculer l'orientation principale d'un champ
+- [`visualiser_orientation()`](https://votrenom.github.io/covariablechamps/reference/visualiser_orientation.md)
+  : Visualiser l'orientation d'un champ
+- [`calculer_distance_bordures_orientee()`](https://votrenom.github.io/covariablechamps/reference/calculer_distance_bordures_orientee.md)
+  : Calculer la distance aux bordures selon l'orientation du champ
+- [`classifier_distances_bordures()`](https://votrenom.github.io/covariablechamps/reference/classifier_distances_bordures.md)
+  : Classifier les distances aux bordures
+- [`visualiser_distances_bordures()`](https://votrenom.github.io/covariablechamps/reference/visualiser_distances_bordures.md)
+  : Visualiser les distances aux bordures orientées
+- [`visualiser_classes_bordures()`](https://votrenom.github.io/covariablechamps/reference/visualiser_classes_bordures.md)
+  : Visualiser les classes de distance aux bordures
+
+## Detection des arbres et haies
+
+Fonctions pour detecter, classifier et analyser les arbres et haies
+brise-vent
+
+- [`extraire_classifier_haies_lidar()`](https://votrenom.github.io/covariablechamps/reference/extraire_classifier_haies_lidar.md)
+  : Extraire et classifier les arbres LiDAR autour d'un champ
+- [`extraire_ligne_centrale_haies()`](https://votrenom.github.io/covariablechamps/reference/extraire_ligne_centrale_haies.md)
+  : Extraire la ligne centrale d'un rectangle de haie
+- [`calculer_zones_vent_spline()`](https://votrenom.github.io/covariablechamps/reference/calculer_zones_vent_spline.md)
+  : Calculer les zones d'influence du vent sur les haies avec une forme
+  de demi-lune
+- [`rasteriser_zones_gradient()`](https://votrenom.github.io/covariablechamps/reference/rasteriser_zones_gradient.md)
+  : Rasteriser les zones de vent avec le facteur H minimum par pixel
+- [`rasteriser_zones_gradient_v2()`](https://votrenom.github.io/covariablechamps/reference/rasteriser_zones_gradient_v2.md)
+  : Rasteriser les zones de vent avec le facteur H minimum par pixel
+  (version corrigée)
+
+## Distance aux arbres
+
+Fonctions pour calculer les distances aux arbres et l’effet du vent
+
+- [`calculer_distance_arbres()`](https://votrenom.github.io/covariablechamps/reference/calculer_distance_arbres.md)
+  : Calculer la distance aux arbres avec buffer
+- [`calculer_distances_amont_aval()`](https://votrenom.github.io/covariablechamps/reference/calculer_distances_amont_aval.md)
+  : Calculer les distances amont/aval avec buffer et lissage
+- [`visualiser_distance_arbres()`](https://votrenom.github.io/covariablechamps/reference/visualiser_distance_arbres.md)
+  : Visualiser la distance aux arbres
+- [`visualiser_distances_vent()`](https://votrenom.github.io/covariablechamps/reference/visualiser_distances_vent.md)
+  : Visualiser les distances amont/aval
+- [`simuler_vitesse_vent_simple()`](https://votrenom.github.io/covariablechamps/reference/simuler_vitesse_vent_simple.md)
+  : Simuler la vitesse du vent basée sur la distance simple aux arbres
+- [`simuler_vitesse_vent()`](https://votrenom.github.io/covariablechamps/reference/simuler_vitesse_vent.md)
+  : Simuler la vitesse du vent
+- [`calculer_distances_vent()`](https://votrenom.github.io/covariablechamps/reference/calculer_distances_vent.md)
+  : Calculer les distances aux arbres selon la direction du vent
+- [`calculer_fetch_vent()`](https://votrenom.github.io/covariablechamps/reference/calculer_fetch_vent.md)
+  : Créer une carte de fetch de vent avec effet directionnel
+  (elliptique)
+- [`visualiser_fetch()`](https://votrenom.github.io/covariablechamps/reference/visualiser_fetch.md)
+  : Visualiser le fetch de vent
+- [`distance_arbres-package`](https://votrenom.github.io/covariablechamps/reference/distance_arbres-package.md)
+  : Récapitulatif des fonctions distance_arbres
+
+## Visualisation du vent
+
+Fonctions pour visualiser les cartes de vent
+
+- [`tracer_carte_vent()`](https://votrenom.github.io/covariablechamps/reference/tracer_carte_vent.md)
+  : Visualiser les distances amont/aval avec les flèches de vent
+
+## Calcul de l’ombrage
+
+Fonctions pour calculer l’ombrage des parcelles selon la position du
+soleil
+
+- [`calculer_ombrage()`](https://votrenom.github.io/covariablechamps/reference/calculer_ombrage.md)
+  : Calculer l'ombrage d'une parcelle à partir du LiDAR et de la
+  position du soleil
+- [`calculer_ombrage_periode()`](https://votrenom.github.io/covariablechamps/reference/calculer_ombrage_periode.md)
+  : Calculer l'ombrage sur une periode de dates
+- [`calculer_ombrage_visualisation()`](https://votrenom.github.io/covariablechamps/reference/calculer_ombrage_visualisation.md)
+  : Visualiser l'ombrage d'une parcelle
+
+## Donnees meteorologiques
+
+Fonctions pour obtenir et visualiser les donnees de vent
+
+- [`obtenir_rose_vents()`](https://votrenom.github.io/covariablechamps/reference/obtenir_rose_vents.md)
+  : Obtenir la rose des vents depuis NASA POWER
+- [`tracer_rose_vents()`](https://votrenom.github.io/covariablechamps/reference/tracer_rose_vents.md)
+  : Créer un graphique radar de la rose des vents
+- [`tracer_rose_vents_stacked()`](https://votrenom.github.io/covariablechamps/reference/tracer_rose_vents_stacked.md)
+  : Créer une rose des vents complète avec barres empilées
+
+## Pedologie et sols
+
+Fonctions pour l’extraction et la desagregation des donnees pedologiques
+
+- [`proba_et_classement_serie_quota_ilr()`](https://votrenom.github.io/covariablechamps/reference/proba_et_classement_serie_quota_ilr.md)
+  : Calculer les probabilités et le classement des séries avec quota ILR
+
+## Extraction complete
+
+Fonctions d’orchestration pour extraire toutes les covariables
+
+- [`extraire_covariables_complet()`](https://votrenom.github.io/covariablechamps/reference/extraire_covariables_complet.md)
+  : Extraire l'ensemble des covariables pour un champ
+- [`visualiser_covariables()`](https://votrenom.github.io/covariablechamps/reference/visualiser_covariables.md)
+  : Créer une visualisation synthétique des covariables extraites
+
+# Articles
+
+### Guides d’utilisation
+
+- [Extraction des Covariables Terrain avec
+  covariablechamps](https://votrenom.github.io/covariablechamps/articles/covariables-terrain.md):
+- [Analyse des Distances aux Bordures selon l'Orientation du
+  Champ](https://votrenom.github.io/covariablechamps/articles/distances-bordures.md):
+- [Detection et analyse des haies
+  brise-vent](https://votrenom.github.io/covariablechamps/articles/haies-brise-vent.md):
+- [Calcul de l'ombrage des
+  parcelles](https://votrenom.github.io/covariablechamps/articles/ombrage.md):
