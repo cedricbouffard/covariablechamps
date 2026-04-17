@@ -11,6 +11,7 @@ navbar:
   components:
     home:
       icon: fa-home
+      aria-label: Accueil
       href: index.html
     reference:
       text: Reference
@@ -74,10 +75,20 @@ reference:
     desc: "Fonctions pour calculer les distances aux arbres et l'effet du vent"
     contents:
       - calculer_distance_arbres
+      - calculer_distances_amont_aval
       - visualiser_distance_arbres
+      - visualiser_distances_vent
       - simuler_vitesse_vent_simple
       - simuler_vitesse_vent
       - calculer_distances_vent
+      - calculer_fetch_vent
+      - visualiser_fetch
+      - distance_arbres-package
+
+  - title: "Visualisation du vent"
+    desc: "Fonctions pour visualiser les cartes de vent"
+    contents:
+      - tracer_carte_vent
 
   - title: "Calcul de l'ombrage"
     desc: "Fonctions pour calculer l'ombrage des parcelles selon la position du soleil"
