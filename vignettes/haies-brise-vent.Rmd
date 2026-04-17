@@ -251,11 +251,11 @@ distances_haies_vent <- calculer_distances_vent(
 par(mfrow = c(2, 2), mar = c(3, 3, 3, 3))
 
 plot(distances_haies$distance_buffer, main = "Distance simple",
-     col = terrain.colors(100))
+     col = hcl.colors(100, "Terrain"))
 plot(distances_haies_vent$distance_amont, main = "Amont",
-     col = blues9)
+     col = hcl.colors(100, "Blues"))
 plot(distances_haies_vent$distance_aval, main = "Aval",
-     col = reds9)
+     col = hcl.colors(100, "Reds"))
 plot(distances_haies_vent$distance_totale, main = "Totale",
      col = hcl.colors(100, "viridis"))
 ```
