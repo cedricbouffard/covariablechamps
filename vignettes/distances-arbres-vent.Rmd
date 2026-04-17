@@ -201,25 +201,15 @@ ggplot(df_vitesse, aes(x = x, y = y, fill = vitesse)) +
 
 ### Simulation avec distances amont/aval
 
+Pour le résultat de `calculer_distances_amont_aval`, la simulation directe n'est pas disponible. À la place, vous pouvez utiliser le résultat pour analyses ultérieures ou créer une carte de vent :
+
 ```{r vitesse-amont-aval}
-vitesse_dir <- simuler_vitesse_vent_simple(
-  dist_result = dist_dir,
-  vitesse_ref = 5,
-  coef_protection = 0.5
-)
-
-df_vitesse_dir <- as.data.frame(vitesse_dir$vitesse, xy = TRUE)
-names(df_vitesse_dir)[3] <- "vitesse"
-
-ggplot(df_vitesse_dir, aes(x = x, y = y, fill = vitesse)) +
-  geom_raster() +
-  scale_fill_gradientn(colors = c("darkblue", "lightblue", "white", "orange", "red"),
-                        name = "Vitesse (m/s)") +
-  coord_fixed() +
-  theme_minimal() +
-  labs(title = "Vitesse du vent (amont/aval)",
-       subtitle = "Effet différentiel amont vs aval",
-       x = "X (m)", y = "Y (m)")
+# Le résultat dist_dir contient les rasters amont, aval et totale
+# Ces rasters peuvent être utilisés directement pour l'analyse
+par(mfrow = c(1, 3), mar = c(3, 3, 3, 3))
+plot(dist_dir$amont, main = "Distance amont (m)")
+plot(dist_dir$aval, main = "Distance aval (m)")
+plot(dist_dir$totale, main = "Distance totale (m)")
 ```
 
 ## Étape 6: Cartographie avec flèches de vent
