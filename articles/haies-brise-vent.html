@@ -67,207 +67,228 @@
 
     
     
-<div class="section level2">
-<h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
-</h2>
-<p>Les haies brise-vent jouent un role important dans la protection des
-cultures contre le vent. Ce guide presente les fonctions du package
-<code>covariablechamps</code> pour detecter, classifier et analyser les
-haies a partir des donnees LiDAR.</p>
-</div>
-<div class="section level2">
-<h2 id="workflow-complet">Workflow complet<a class="anchor" aria-label="anchor" href="#workflow-complet"></a>
-</h2>
-<p>Le processus typique comprend les etapes suivantes:</p>
-<ol style="list-style-type: decimal">
-<li>
-<strong>Telecharger les donnees LiDAR</strong> pour la zone
-d’etude</li>
-<li>
-<strong>Detecter et classifier les haies</strong> a partir du
-MNE</li>
-<li>
-<strong>Extraire les lignes centrales</strong> des haies</li>
-<li>
-<strong>Calculer les zones de protection</strong> contre le
-vent</li>
-</ol>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://cedricbouffard.github.io/covariablechamps">covariablechamps</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span></code></pre></div>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span></code></pre></div>
+<div class="section level2">
+<h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
+</h2>
+<p>Les haies brise-vent jouent un rôle important dans la protection des
+cultures contre le vent. Ce guide présente les fonctions du package
+<code>covariablechamps</code> pour détecter, classifier et analyser les
+haies à partir des données LiDAR.</p>
 </div>
 <div class="section level2">
-<h2 id="etape-1-preparation-des-donnees">Etape 1: Preparation des donnees<a class="anchor" aria-label="anchor" href="#etape-1-preparation-des-donnees"></a>
+<h2 id="données-dexemple">Données d’exemple<a class="anchor" aria-label="anchor" href="#donn%C3%A9es-dexemple"></a>
 </h2>
+<p>Pour cet article, nous créons des données synthétiques représentant
+un champ avec des haies.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Definir le polygone du champ</span></span>
-<span><span class="va">champ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"mon_champ.gpkg"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Créer un champ</span></span>
+<span><span class="va">coords_champ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">300</span>, <span class="fl">0</span>, <span class="fl">300</span>, <span class="fl">200</span>, <span class="fl">0</span>, <span class="fl">200</span>, <span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">2</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">champ</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st.html" class="external-link">st_polygon</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">coords_champ</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">champ</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/sfc.html" class="external-link">st_sfc</a></span><span class="op">(</span><span class="va">champ</span>, crs <span class="op">=</span> <span class="fl">32618</span><span class="op">)</span></span>
+<span><span class="va">champ</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/sf.html" class="external-link">st_sf</a></span><span class="op">(</span>geometry <span class="op">=</span> <span class="va">champ</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Telecharger les donnees LiDAR</span></span>
-<span><span class="va">lidar</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/telecharger_lidar.html">telecharger_lidar</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="etape-2-detection-des-haies">Etape 2: Detection des haies<a class="anchor" aria-label="anchor" href="#etape-2-detection-des-haies"></a>
-</h2>
-<p>La fonction <code><a href="../reference/extraire_classifier_haies_lidar.html">extraire_classifier_haies_lidar()</a></code> detecte
-les arbres et les classifie en haies, arbres isoles ou bosquets.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Detecter et classifier les haies</span></span>
-<span><span class="va">haies</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/extraire_classifier_haies_lidar.html">extraire_classifier_haies_lidar</a></span><span class="op">(</span></span>
-<span>  mne <span class="op">=</span> <span class="va">lidar</span><span class="op">$</span><span class="va">mne</span>,</span>
-<span>  mnt <span class="op">=</span> <span class="va">lidar</span><span class="op">$</span><span class="va">mnt</span>,</span>
-<span>  polygone_champ <span class="op">=</span> <span class="va">champ</span>,</span>
-<span>  seuil_hauteur <span class="op">=</span> <span class="fl">2</span>,      <span class="co"># Hauteur minimale (m)</span></span>
-<span>  buffer_detection <span class="op">=</span> <span class="fl">100</span>,  <span class="co"># Buffer autour du champ (m)</span></span>
-<span>  buffer_sortie <span class="op">=</span> <span class="fl">50</span>       <span class="co"># Buffer pour la sortie (m)</span></span>
+<span><span class="co"># Créer des haies comme lignes droites</span></span>
+<span><span class="va">haie_ouest</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/sfc.html" class="external-link">st_sfc</a></span><span class="op">(</span></span>
+<span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st.html" class="external-link">st_linestring</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">5</span>, <span class="fl">30</span>, <span class="op">-</span><span class="fl">5</span>, <span class="fl">170</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">2</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  crs <span class="op">=</span> <span class="fl">32618</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">haie_interieure</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/sfc.html" class="external-link">st_sfc</a></span><span class="op">(</span></span>
+<span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st.html" class="external-link">st_linestring</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">100</span>, <span class="fl">150</span>, <span class="fl">100</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">2</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  crs <span class="op">=</span> <span class="fl">32618</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Examiner les resultats</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">haies</span><span class="op">)</span></span></code></pre></div>
-<div class="section level3">
-<h3 id="parametres-importants">Parametres importants<a class="anchor" aria-label="anchor" href="#parametres-importants"></a>
-</h3>
-<ul>
-<li>
-<code>seuil_hauteur</code>: Hauteur minimale pour considerer un
-element comme vegetation haute</li>
-<li>
-<code>buffer_detection</code>: Zone tampon pour la detection des
-arbres</li>
-<li>
-<code>buffer_sortie</code>: Zone tampon pour la sortie finale</li>
-<li>
-<code>critere_haie</code>: Criteres pour classifier une vegetation
-comme haie</li>
-</ul>
-</div>
-</div>
-<div class="section level2">
-<h2 id="etape-3-extraction-des-lignes-centrales">Etape 3: Extraction des lignes centrales<a class="anchor" aria-label="anchor" href="#etape-3-extraction-des-lignes-centrales"></a>
-</h2>
-<p>Pour les analyses de protection contre le vent, il est utile
-d’extraire la ligne centrale des haies.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Extraire les lignes centrales</span></span>
-<span><span class="va">lignes</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/extraire_ligne_centrale_haies.html">extraire_ligne_centrale_haies</a></span><span class="op">(</span><span class="va">haies</span><span class="op">)</span></span>
+<span><span class="co"># Créer un sf avec deux géométries</span></span>
+<span><span class="va">haies</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/sf.html" class="external-link">st_sf</a></span><span class="op">(</span></span>
+<span>  id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">2</span>,</span>
+<span>  geometry <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">haie_ouest</span>, <span class="va">haie_interieure</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Visualiser</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span>, col <span class="op">=</span> <span class="st">"lightgreen"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">lignes</span><span class="op">)</span>, col <span class="op">=</span> <span class="st">"darkgreen"</span>, lwd <span class="op">=</span> <span class="fl">2</span>, add <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># Convertir les haies en POINTS pour les fonctions de distance</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
+<span><span class="va">points_haie</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">2</span>, <span class="kw">function</span><span class="op">(</span><span class="va">i</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">g</span> <span class="op">&lt;-</span> <span class="va">haies</span><span class="op">$</span><span class="va">geometry</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span></span>
+<span>  <span class="va">coords</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_coordinates.html" class="external-link">st_coordinates</a></span><span class="op">(</span><span class="va">g</span><span class="op">)</span></span>
+<span>  <span class="va">n</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">floor</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/geos_measures.html" class="external-link">st_length</a></span><span class="op">(</span><span class="va">g</span><span class="op">)</span> <span class="op">/</span> <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="kw">if</span> <span class="op">(</span><span class="va">n</span> <span class="op">&gt;</span> <span class="fl">1</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">seq_idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">coords</span><span class="op">)</span>, length.out <span class="op">=</span> <span class="va">n</span><span class="op">)</span></span>
+<span>  <span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
+<span>    <span class="va">seq_idx</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
+<span>  <span class="op">}</span></span>
+<span>  <span class="va">pts</span> <span class="op">&lt;-</span> <span class="va">coords</span><span class="op">[</span><span class="va">seq_idx</span>, , drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>    id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="va">i</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">pts</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    x <span class="op">=</span> <span class="va">pts</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">pts</span><span class="op">)</span>, <span class="fl">0</span>, <span class="fl">0.5</span><span class="op">)</span>,</span>
+<span>    y <span class="op">=</span> <span class="va">pts</span><span class="op">[</span>, <span class="fl">2</span><span class="op">]</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">pts</span><span class="op">)</span>, <span class="fl">0</span>, <span class="fl">0.5</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span>
+<span><span class="va">points_haie</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="va">points_haie</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">arbres_haies</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/sf.html" class="external-link">st_sf</a></span><span class="op">(</span></span>
+<span>  id <span class="op">=</span> <span class="va">points_haie</span><span class="op">$</span><span class="va">id</span>,</span>
+<span>  geometry <span class="op">=</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/sfc.html" class="external-link">st_sfc</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">points_haie</span><span class="op">)</span>, <span class="kw">function</span><span class="op">(</span><span class="va">i</span><span class="op">)</span> <span class="op">{</span></span>
+<span>      <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st.html" class="external-link">st_point</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">points_haie</span><span class="op">$</span><span class="va">x</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>, <span class="va">points_haie</span><span class="op">$</span><span class="va">y</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
+<span>    <span class="op">}</span><span class="op">)</span>,</span>
+<span>    crs <span class="op">=</span> <span class="fl">32618</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">champ</span>, fill <span class="op">=</span> <span class="st">"lightgreen"</span>, alpha <span class="op">=</span> <span class="fl">0.3</span>, col <span class="op">=</span> <span class="st">"darkgreen"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">haies</span>, col <span class="op">=</span> <span class="st">"darkgreen"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">arbres_haies</span>, col <span class="op">=</span> <span class="st">"forestgreen"</span>, size <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"Champ avec haies brise-vent"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><img src="haies-brise-vent_files/figure-html/donnees-exemple-1.png" class="r-plt" alt="" width="768"></p>
 </div>
 <div class="section level2">
-<h2 id="etape-4-calcul-des-zones-de-protection">Etape 4: Calcul des zones de protection<a class="anchor" aria-label="anchor" href="#etape-4-calcul-des-zones-de-protection"></a>
+<h2 id="étape-1-calculer-les-zones-de-protection">Étape 1: Calculer les zones de protection<a class="anchor" aria-label="anchor" href="#%C3%A9tape-1-calculer-les-zones-de-protection"></a>
 </h2>
-<p>Les haies brise-vent creent des zones de protection dont l’etendue
-depend de la hauteur de la haie.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Direction du vent dominante (en degres)</span></span>
+<p>Les haies brise-vent créent des zones de protection dont l’étendue
+dépend de la hauteur de la haie.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Direction du vent dominante (en degrés)</span></span>
 <span><span class="va">direction_vent</span> <span class="op">&lt;-</span> <span class="fl">270</span>  <span class="co"># Vent d'ouest</span></span>
 <span></span>
-<span><span class="co"># Calculer les zones de protection</span></span>
-<span><span class="co"># Les zones sont exprimees en multiples de la hauteur (H)</span></span>
-<span><span class="va">zones</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_zones_vent_spline.html">calculer_zones_vent_spline</a></span><span class="op">(</span></span>
-<span>  haies <span class="op">=</span> <span class="va">lignes</span>,</span>
-<span>  direction_vent <span class="op">=</span> <span class="va">direction_vent</span>,</span>
-<span>  facteurs_h <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span>, <span class="fl">5</span>, <span class="fl">10</span><span class="op">)</span>,  <span class="co"># Zones de 1H a 10H</span></span>
-<span>  hauteur_haie <span class="op">=</span> <span class="cn">NULL</span>  <span class="co"># Utilise la hauteur des haies si disponible</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Visualiser</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span>, col <span class="op">=</span> <span class="st">"lightyellow"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">zones</span><span class="op">[</span><span class="st">"facteur_h"</span><span class="op">]</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, alpha <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></code></pre></div>
-<div class="section level3">
-<h3 id="comprendre-les-zones-de-protection">Comprendre les zones de protection<a class="anchor" aria-label="anchor" href="#comprendre-les-zones-de-protection"></a>
-</h3>
-<p>La protection offerte par une haie diminue avec la distance: -
-<strong>Zone 1-2H</strong>: Protection maximale (reduction du vent &gt;
-50%) - <strong>Zone 2-5H</strong>: Protection moderee (reduction 20-50%)
-- <strong>Zone 5-10H</strong>: Protection faible (reduction &lt;
-20%)</p>
-</div>
-</div>
-<div class="section level2">
-<h2 id="etape-5-rasterisation-pour-analyse">Etape 5: Rasterisation pour analyse<a class="anchor" aria-label="anchor" href="#etape-5-rasterisation-pour-analyse"></a>
-</h2>
-<p>Pour des analyses spatiales, les zones peuvent etre rasterisees.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Creer un raster de reference</span></span>
-<span><span class="va">template</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="va">champ</span>, resolution <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Rasteriser les zones</span></span>
-<span><span class="va">raster_zones</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rasteriser_zones_gradient.html">rasteriser_zones_gradient</a></span><span class="op">(</span></span>
-<span>  zones <span class="op">=</span> <span class="va">zones</span>,</span>
-<span>  template <span class="op">=</span> <span class="va">template</span>,</span>
-<span>  champ <span class="op">=</span> <span class="va">champ</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Ou avec la version 2 (gradient continu)</span></span>
-<span><span class="va">raster_gradient</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rasteriser_zones_gradient_v2.html">rasteriser_zones_gradient_v2</a></span><span class="op">(</span></span>
-<span>  zones <span class="op">=</span> <span class="va">zones</span>,</span>
-<span>  template <span class="op">=</span> <span class="va">template</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">raster_zones</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="distance-aux-arbres">Distance aux arbres<a class="anchor" aria-label="anchor" href="#distance-aux-arbres"></a>
-</h2>
-<p>Pour une analyse plus detaillee de l’effet du vent, utilisez les
-fonctions de distance.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Calculer la distance euclidienne aux arbres</span></span>
-<span><span class="va">dist</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_distance_arbres.html">calculer_distance_arbres</a></span><span class="op">(</span></span>
-<span>  arbres_sf <span class="op">=</span> <span class="va">haies</span>,</span>
+<span><span class="co"># Créer un raster de zones de vent à partir des distances</span></span>
+<span><span class="va">distances_haies</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_distance_arbres.html">calculer_distance_arbres</a></span><span class="op">(</span></span>
+<span>  arbres_sf <span class="op">=</span> <span class="va">arbres_haies</span>,</span>
 <span>  champ_bbox <span class="op">=</span> <span class="va">champ</span>,</span>
 <span>  resolution <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  buffer_arbre <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  buffer_arbre <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  max_distance <span class="op">=</span> <span class="fl">100</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Visualiser</span></span>
-<span><span class="fu"><a href="../reference/visualiser_distance_arbres.html">visualiser_distance_arbres</a></span><span class="op">(</span><span class="va">dist</span>, type <span class="op">=</span> <span class="st">"buffer"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Calculer la distance directionnelle (amont/aval)</span></span>
-<span><span class="va">dist_vent</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_distances_vent.html">calculer_distances_vent</a></span><span class="op">(</span></span>
-<span>  arbres <span class="op">=</span> <span class="va">haies</span>,</span>
-<span>  angle_vent <span class="op">=</span> <span class="va">direction_vent</span>,</span>
-<span>  champ <span class="op">=</span> <span class="va">champ</span>,</span>
-<span>  resolution <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  buffer_arbre <span class="op">=</span> <span class="fl">2</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Comparer amont et aval</span></span>
-<span><span class="fu"><a href="../reference/visualiser_distances_vent.html">visualiser_distances_vent</a></span><span class="op">(</span><span class="va">dist_vent</span>, type <span class="op">=</span> <span class="st">"comparaison"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># Visualiser les zones de protection</span></span>
+<span><span class="fu"><a href="../reference/visualiser_distance_arbres.html">visualiser_distance_arbres</a></span><span class="op">(</span><span class="va">distances_haies</span>, type <span class="op">=</span> <span class="st">"buffer"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"Zones de protection contre le vent"</span>,</span>
+<span>          subtitle <span class="op">=</span> <span class="st">"Distance aux haies (plus sombre = plus protégé)"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="haies-brise-vent_files/figure-html/zones-protection-1.png" class="r-plt" alt="" width="768"></p>
+<div class="section level3">
+<h3 id="comprendre-les-zones-de-protection">Comprendre les zones de protection<a class="anchor" aria-label="anchor" href="#comprendre-les-zones-de-protection"></a>
+</h3>
+<p>La protection offerte par une haie diminue avec la distance:</p>
+<ul>
+<li>
+<strong>Zone 1-2H</strong>: Protection maximale (réduction du vent
+&gt; 50%)</li>
+<li>
+<strong>Zone 2-5H</strong>: Protection modérée (réduction
+20-50%)</li>
+<li>
+<strong>Zone 5-10H</strong>: Protection faible (réduction &lt;
+20%)</li>
+</ul>
+<p>où H est la hauteur de la haie.</p>
+</div>
 </div>
 <div class="section level2">
-<h2 id="simulation-de-la-vitesse-du-vent">Simulation de la vitesse du vent<a class="anchor" aria-label="anchor" href="#simulation-de-la-vitesse-du-vent"></a>
+<h2 id="étape-2-distance-directionnelle-amontaval">Étape 2: Distance directionnelle (amont/aval)<a class="anchor" aria-label="anchor" href="#%C3%A9tape-2-distance-directionnelle-amontaval"></a>
 </h2>
-<p>Estimez la reduction de vitesse du vent.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dist_dir_haies</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_distances_amont_aval.html">calculer_distances_amont_aval</a></span><span class="op">(</span></span>
+<span>  arbres_sf <span class="op">=</span> <span class="va">arbres_haies</span>,</span>
+<span>  angle_vent <span class="op">=</span> <span class="va">direction_vent</span>,</span>
+<span>  champ_bbox <span class="op">=</span> <span class="va">champ</span>,</span>
+<span>  resolution <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  buffer_arbre <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  angle_focal <span class="op">=</span> <span class="fl">30</span>,</span>
+<span>  max_distance <span class="op">=</span> <span class="fl">100</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">viz</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/visualiser_distances_vent.html">visualiser_distances_vent</a></span><span class="op">(</span><span class="va">dist_dir_haies</span>, type <span class="op">=</span> <span class="st">"comparaison"</span><span class="op">)</span></span>
+<span><span class="va">viz</span><span class="op">$</span><span class="va">amont</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"Zone AMONT (face au vent)"</span>,</span>
+<span>          subtitle <span class="op">=</span> <span class="st">"Vent vient de la haie vers le champ"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><img src="haies-brise-vent_files/figure-html/distances-amont-aval-1.png" class="r-plt" alt="" width="768"></p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span></span>
+<span><span class="va">viz</span><span class="op">$</span><span class="va">aval</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"Zone AVAL (sous le vent)"</span>,</span>
+<span>          subtitle <span class="op">=</span> <span class="st">"Vent va de l'autre côté de la haie"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><img src="haies-brise-vent_files/figure-html/distances-amont-aval-2.png" class="r-plt" alt="" width="768"></p>
+</div>
+<div class="section level2">
+<h2 id="étape-3-fetch-de-vent">Étape 3: Fetch de vent<a class="anchor" aria-label="anchor" href="#%C3%A9tape-3-fetch-de-vent"></a>
+</h2>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fetch_haies</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_fetch_vent.html">calculer_fetch_vent</a></span><span class="op">(</span></span>
+<span>  arbres_sf <span class="op">=</span> <span class="va">arbres_haies</span>,</span>
+<span>  angle_vent <span class="op">=</span> <span class="va">direction_vent</span>,</span>
+<span>  champ_bbox <span class="op">=</span> <span class="va">champ</span>,</span>
+<span>  resolution <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  max_fetch <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  coef_ellipse <span class="op">=</span> <span class="fl">3</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">viz_fetch</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/visualiser_fetch.html">visualiser_fetch</a></span><span class="op">(</span><span class="va">fetch_haies</span>, type <span class="op">=</span> <span class="st">"comparaison"</span><span class="op">)</span></span>
+<span><span class="va">viz_fetch</span><span class="op">$</span><span class="va">simple</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"Fetch simple (cercle)"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><img src="haies-brise-vent_files/figure-html/fetch-haies-1.png" class="r-plt" alt="" width="768"></p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span></span>
+<span><span class="va">viz_fetch</span><span class="op">$</span><span class="va">elliptique</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"Fetch elliptique (aligné vent)"</span>,</span>
+<span>          subtitle <span class="op">=</span> <span class="st">"Effet de voile plus important dans la direction du vent"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><img src="haies-brise-vent_files/figure-html/fetch-haies-2.png" class="r-plt" alt="" width="768"></p>
+</div>
+<div class="section level2">
+<h2 id="étape-4-rasterisation-pour-analyse">Étape 4: Rasterisation pour analyse<a class="anchor" aria-label="anchor" href="#%C3%A9tape-4-rasterisation-pour-analyse"></a>
+</h2>
+<p>Pour des analyses spatiales plus poussées, les zones peuvent être
+rasterisées.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># La rasterisation utilise le résultat des distances</span></span>
+<span><span class="va">raster_dist</span> <span class="op">&lt;-</span> <span class="va">distances_haies</span><span class="op">$</span><span class="va">distance_buffer</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">raster_dist</span>, main <span class="op">=</span> <span class="st">"Raster des distances aux haies"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="haies-brise-vent_files/figure-html/rasteriser-1.png" class="r-plt" alt="" width="768"></p>
+<div class="section level3">
+<h3 id="gradient-continu">Gradient continu<a class="anchor" aria-label="anchor" href="#gradient-continu"></a>
+</h3>
+<p>Le gradient montre la diminution progressive de la protection:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Créer un gradient de protection (1 = protection max, 0 = pas de protection)</span></span>
+<span><span class="va">raster_protection</span> <span class="op">&lt;-</span> <span class="va">distances_haies</span><span class="op">$</span><span class="va">distance_buffer</span> <span class="op">/</span> <span class="va">distances_haies</span><span class="op">$</span><span class="va">max_distance</span></span>
+<span><span class="va">raster_protection</span> <span class="op">&lt;-</span> <span class="fl">1</span> <span class="op">-</span> <span class="va">raster_protection</span></span>
+<span></span>
+<span><span class="co"># Visualiser</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">raster_protection</span>, main <span class="op">=</span> <span class="st">"Gradient de protection"</span>,</span>
+<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"Blues"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><img src="haies-brise-vent_files/figure-html/gradient-1.png" class="r-plt" alt="" width="768"></p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="étape-5-simulation-de-la-vitesse-du-vent">Étape 5: Simulation de la vitesse du vent<a class="anchor" aria-label="anchor" href="#%C3%A9tape-5-simulation-de-la-vitesse-du-vent"></a>
+</h2>
+<p>Estimez la réduction de vitesse du vent due aux haies.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Avec les distances simples</span></span>
 <span><span class="va">vitesse_simple</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/simuler_vitesse_vent_simple.html">simuler_vitesse_vent_simple</a></span><span class="op">(</span></span>
-<span>  dist_result <span class="op">=</span> <span class="va">dist</span>,</span>
-<span>  vitesse_ref <span class="op">=</span> <span class="fl">5</span>,       <span class="co"># Vitesse de reference (m/s)</span></span>
-<span>  coef_protection <span class="op">=</span> <span class="fl">0.5</span>  <span class="co"># Coefficient de protection</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Avec les distances directionnelles</span></span>
-<span><span class="va">vitesse_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/simuler_vitesse_vent.html">simuler_vitesse_vent</a></span><span class="op">(</span></span>
-<span>  result <span class="op">=</span> <span class="va">dist_vent</span>,</span>
+<span>  dist_result <span class="op">=</span> <span class="va">distances_haies</span>,</span>
 <span>  vitesse_ref <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  coef_amont <span class="op">=</span> <span class="fl">0.5</span>,  <span class="co"># Effet ralentissement amont</span></span>
-<span>  coef_aval <span class="op">=</span> <span class="fl">0.3</span>    <span class="co"># Effet acceleration aval</span></span>
+<span>  coef_protection <span class="op">=</span> <span class="fl">0.6</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vitesse_dir</span><span class="op">$</span><span class="va">vitesse</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># Visualiser directement avec terra</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vitesse_simple</span><span class="op">$</span><span class="va">vitesse</span>, main <span class="op">=</span> <span class="st">"Vitesse du vent (m/s)"</span>,</span>
+<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"RdBu"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><img src="haies-brise-vent_files/figure-html/simulation-vent-1.png" class="r-plt" alt="" width="768"></p>
 </div>
 <div class="section level2">
-<h2 id="integration-avec-les-donnees-meteo">Integration avec les donnees meteo<a class="anchor" aria-label="anchor" href="#integration-avec-les-donnees-meteo"></a>
+<h2 id="étape-6-intégration-avec-les-données-météo">Étape 6: Intégration avec les données météo<a class="anchor" aria-label="anchor" href="#%C3%A9tape-6-int%C3%A9gration-avec-les-donn%C3%A9es-m%C3%A9t%C3%A9o"></a>
 </h2>
-<p>Combinez avec les roses des vents pour une analyse complete.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Obtenir la rose des vents</span></span>
+<p>Combinez avec les roses des vents pour une analyse complète.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Obtenir la rose des vents (requiert connexion internet)</span></span>
 <span><span class="va">rose</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/obtenir_rose_vents.html">obtenir_rose_vents</a></span><span class="op">(</span></span>
 <span>  lat <span class="op">=</span> <span class="fl">46.8</span>,</span>
 <span>  lon <span class="op">=</span> <span class="op">-</span><span class="fl">71.2</span>,</span>
@@ -276,73 +297,100 @@ fonctions de distance.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Visualiser</span></span>
-<span><span class="fu"><a href="../reference/tracer_rose_vents.html">tracer_rose_vents</a></span><span class="op">(</span><span class="va">rose</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Identifier la direction dominante</span></span>
-<span><span class="va">direction_dominante</span> <span class="op">&lt;-</span> <span class="va">rose</span><span class="op">$</span><span class="va">direction</span><span class="op">[</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summarize-generics.html" class="external-link">which.max</a></span><span class="op">(</span><span class="va">rose</span><span class="op">$</span><span class="va">frequence</span><span class="op">)</span><span class="op">]</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/tracer_rose_vents.html">tracer_rose_vents</a></span><span class="op">(</span><span class="va">rose</span><span class="op">)</span></span></code></pre></div>
+<p><strong>Note</strong>: La fonction <code><a href="../reference/obtenir_rose_vents.html">obtenir_rose_vents()</a></code>
+nécessite une connexion internet pour accéder aux données NASA
+POWER.</p>
 </div>
 <div class="section level2">
-<h2 id="exemple-complet">Exemple complet<a class="anchor" aria-label="anchor" href="#exemple-complet"></a>
+<h2 id="comparaison-des-méthodes-de-protection">Comparaison des méthodes de protection<a class="anchor" aria-label="anchor" href="#comparaison-des-m%C3%A9thodes-de-protection"></a>
 </h2>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://cedricbouffard.github.io/covariablechamps">covariablechamps</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 1. Charger le champ</span></span>
-<span><span class="va">champ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"champ.gpkg"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 2. Telecharger LiDAR</span></span>
-<span><span class="va">lidar</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/telecharger_lidar.html">telecharger_lidar</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 3. Detecter les haies</span></span>
-<span><span class="va">haies</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/extraire_classifier_haies_lidar.html">extraire_classifier_haies_lidar</a></span><span class="op">(</span></span>
-<span>  mne <span class="op">=</span> <span class="va">lidar</span><span class="op">$</span><span class="va">mne</span>,</span>
-<span>  mnt <span class="op">=</span> <span class="va">lidar</span><span class="op">$</span><span class="va">mnt</span>,</span>
-<span>  polygone_champ <span class="op">=</span> <span class="va">champ</span></span>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Préparer les données</span></span>
+<span><span class="va">distances_haies_vent</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_distances_vent.html">calculer_distances_vent</a></span><span class="op">(</span></span>
+<span>  arbres_sf <span class="op">=</span> <span class="va">arbres_haies</span>,</span>
+<span>  angle_vent <span class="op">=</span> <span class="va">direction_vent</span>,</span>
+<span>  champ_bbox <span class="op">=</span> <span class="va">champ</span>,</span>
+<span>  resolution <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  max_distance <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  ouverture_angulaire <span class="op">=</span> <span class="fl">45</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 4. Extraire les lignes centrales</span></span>
-<span><span class="va">lignes</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/extraire_ligne_centrale_haies.html">extraire_ligne_centrale_haies</a></span><span class="op">(</span><span class="va">haies</span><span class="op">)</span></span>
+<span><span class="co"># Visualiser les différentes couches</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">2</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">3</span>, <span class="fl">3</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 5. Rose des vents</span></span>
-<span><span class="va">rose</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/obtenir_rose_vents.html">obtenir_rose_vents</a></span><span class="op">(</span><span class="fl">46.8</span>, <span class="op">-</span><span class="fl">71.2</span>, <span class="st">"2023-01-01"</span>, <span class="st">"2023-12-31"</span><span class="op">)</span></span>
-<span><span class="va">dir_vent</span> <span class="op">&lt;-</span> <span class="va">rose</span><span class="op">$</span><span class="va">direction</span><span class="op">[</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/summarize-generics.html" class="external-link">which.max</a></span><span class="op">(</span><span class="va">rose</span><span class="op">$</span><span class="va">frequence</span><span class="op">)</span><span class="op">]</span></span>
-<span></span>
-<span><span class="co"># 6. Calculer les zones de protection</span></span>
-<span><span class="va">zones</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_zones_vent_spline.html">calculer_zones_vent_spline</a></span><span class="op">(</span></span>
-<span>  haies <span class="op">=</span> <span class="va">lignes</span>,</span>
-<span>  direction_vent <span class="op">=</span> <span class="va">dir_vent</span>,</span>
-<span>  facteurs_h <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">5</span>, <span class="fl">10</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 7. Rasteriser</span></span>
-<span><span class="va">template</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="va">champ</span>, resolution <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
-<span><span class="va">raster_protection</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rasteriser_zones_gradient_v2.html">rasteriser_zones_gradient_v2</a></span><span class="op">(</span><span class="va">zones</span>, <span class="va">template</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 8. Visualiser</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">raster_protection</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">lignes</span><span class="op">)</span>, col <span class="op">=</span> <span class="st">"darkgreen"</span>, lwd <span class="op">=</span> <span class="fl">2</span>, add <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span>, border <span class="op">=</span> <span class="st">"black"</span>, lwd <span class="op">=</span> <span class="fl">2</span>, add <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">distances_haies</span><span class="op">$</span><span class="va">distance_buffer</span>, main <span class="op">=</span> <span class="st">"Distance simple"</span>,</span>
+<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"Terrain"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">distances_haies_vent</span><span class="op">$</span><span class="va">distance_amont</span>, main <span class="op">=</span> <span class="st">"Amont"</span>,</span>
+<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"Blues"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">distances_haies_vent</span><span class="op">$</span><span class="va">distance_aval</span>, main <span class="op">=</span> <span class="st">"Aval"</span>,</span>
+<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"Reds"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">distances_haies_vent</span><span class="op">$</span><span class="va">distance_totale</span>, main <span class="op">=</span> <span class="st">"Totale"</span>,</span>
+<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"viridis"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><img src="haies-brise-vent_files/figure-html/comparaison-1.png" class="r-plt" alt="" width="768"></p>
 </div>
 <div class="section level2">
 <h2 id="bonnes-pratiques">Bonnes pratiques<a class="anchor" aria-label="anchor" href="#bonnes-pratiques"></a>
 </h2>
 <ol style="list-style-type: decimal">
 <li>
-<strong>Validation terrain</strong>: Validez toujours les detections
+<strong>Validation terrain</strong>: Validez toujours les détections
 avec des observations terrain</li>
 <li>
-<strong>Resolution</strong>: Choisissez une resolution adaptee a vos
+<strong>Résolution</strong>: Choisissez une résolution adaptée à vos
 objectifs (1-5m pour les haies)</li>
 <li>
 <strong>Buffer</strong>: Utilisez un buffer suffisant pour capturer
 les haies autour du champ</li>
 <li>
-<strong>Saison</strong>: Les donnees LiDAR de saison vegetative
-donnent de meilleurs resultats</li>
+<strong>Saison</strong>: Les données LiDAR de saison végétative
+donnent de meilleurs résultats</li>
+<li>
+<strong>Angle focal</strong>: Ajustez selon la perméabilité de la
+haie (plus serrée = angle plus faible)</li>
 </ol>
 </div>
 <div class="section level2">
-<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+<h2 id="workflow-complet">Workflow complet<a class="anchor" aria-label="anchor" href="#workflow-complet"></a>
+</h2>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://cedricbouffard.github.io/covariablechamps">covariablechamps</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 1. Charger le champ</span></span>
+<span><span class="va">champ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"champ.gpkg"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 2. Charger ou détecter les haies</span></span>
+<span><span class="va">haies</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"haies.shp"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 3. Définir la direction du vent (270 = ouest)</span></span>
+<span><span class="va">direction_vent</span> <span class="op">&lt;-</span> <span class="fl">270</span></span>
+<span></span>
+<span><span class="co"># 4. Calculer les distances</span></span>
+<span><span class="va">dist</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_distances_amont_aval.html">calculer_distances_amont_aval</a></span><span class="op">(</span></span>
+<span>  arbres_sf <span class="op">=</span> <span class="va">haies</span>,</span>
+<span>  angle_vent <span class="op">=</span> <span class="va">direction_vent</span>,</span>
+<span>  champ_bbox <span class="op">=</span> <span class="va">champ</span>,</span>
+<span>  buffer_arbre <span class="op">=</span> <span class="fl">3</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 5. Visualiser</span></span>
+<span><span class="fu"><a href="../reference/visualiser_distances_vent.html">visualiser_distances_vent</a></span><span class="op">(</span><span class="va">dist</span>, type <span class="op">=</span> <span class="st">"comparaison"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 6. Simuler la vitesse</span></span>
+<span><span class="va">vitesse</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/simuler_vitesse_vent.html">simuler_vitesse_vent</a></span><span class="op">(</span></span>
+<span>  result <span class="op">=</span> <span class="va">dist</span>,</span>
+<span>  vitesse_ref <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  coef_amont <span class="op">=</span> <span class="fl">0.5</span>,</span>
+<span>  coef_aval <span class="op">=</span> <span class="fl">0.3</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 7. Cartographier</span></span>
+<span><span class="fu"><a href="../reference/tracer_carte_vent.html">tracer_carte_vent</a></span><span class="op">(</span>distances <span class="op">=</span> <span class="va">dist</span>, type <span class="op">=</span> <span class="st">"les_deux"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="références">Références<a class="anchor" aria-label="anchor" href="#r%C3%A9f%C3%A9rences"></a>
 </h2>
 <ul>
 <li>Heisler, G.M., Dewalle, D.R. (1988). Effects of windbreak structure
