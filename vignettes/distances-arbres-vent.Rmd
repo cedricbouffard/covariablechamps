@@ -185,8 +185,9 @@ vitesse_simple <- simuler_vitesse_vent_simple(
 )
 
 # Visualiser
-df_vitesse <- as.data.frame(vitesse_simple$vitesse, xy = TRUE)
-names(df_vitesse)[3] <- "vitesse"
+xy <- terra::xyFromCell(vitesse_simple$vitesse, 1:terra::ncell(vitesse_simple$vitesse))
+vals <- terra::values(vitesse_simple$vitesse)
+df_vitesse <- data.frame(x = xy[, 1], y = xy[, 2], vitesse = vals)
 
 ggplot(df_vitesse, aes(x = x, y = y, fill = vitesse)) +
   geom_raster() +
