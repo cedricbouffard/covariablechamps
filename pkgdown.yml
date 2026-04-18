@@ -7,7 +7,10 @@ articles:
   distances-bordures: distances-bordures.html
   haies-brise-vent: haies-brise-vent.html
   ombrage: ombrage.html
-last_built: 2026-04-18T08:26Z
+  pedologie: pedologie.html
+  topographie: topographie.html
+  vent-meteo: vent-meteo.html
+last_built: 2026-04-18T09:28Z
 urls:
   reference: https://cedricbouffard.github.io/covariablechamps/reference
   article: https://cedricbouffard.github.io/covariablechamps/articles

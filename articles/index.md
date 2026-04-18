@@ -12,3 +12,9 @@
   parcelles](https://cedricbouffard.github.io/covariablechamps/articles/ombrage.md):
 - [Distances aux Arbres et Effet du
   Vent](https://cedricbouffard.github.io/covariablechamps/articles/distances-arbres-vent.md):
+- [Analyse Topographique des Champs
+  Agricoles](https://cedricbouffard.github.io/covariablechamps/articles/topographie.md):
+- [Analyse du Vent et Données
+  Météorologiques](https://cedricbouffard.github.io/covariablechamps/articles/vent-meteo.md):
+- [Analyse Pédologique et Séries de
+  Sols](https://cedricbouffard.github.io/covariablechamps/articles/pedologie.md):

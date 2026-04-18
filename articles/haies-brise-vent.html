@@ -39,6 +39,9 @@
     <li><a class="dropdown-item" href="../articles/haies-brise-vent.html">Detection des haies</a></li>
     <li><a class="dropdown-item" href="../articles/ombrage.html">Calcul de l'ombrage</a></li>
     <li><a class="dropdown-item" href="../articles/distances-arbres-vent.html">Distances aux arbres et vent</a></li>
+    <li><a class="dropdown-item" href="../articles/topographie.html">Analyse topographique</a></li>
+    <li><a class="dropdown-item" href="../articles/vent-meteo.html">Vent et meteorologie</a></li>
+    <li><a class="dropdown-item" href="../articles/pedologie.html">Pedologie et sols</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Nouvelles</a></li>
@@ -81,836 +84,177 @@ cultures contre le vent. Ce guide présente les fonctions du package
 haies à partir des données LiDAR.</p>
 </div>
 <div class="section level2">
-<h2 id="données-dexemple">Données d’exemple<a class="anchor" aria-label="anchor" href="#donn%C3%A9es-dexemple"></a>
+<h2 id="chargement-du-champ-m2">Chargement du champ M2<a class="anchor" aria-label="anchor" href="#chargement-du-champ-m2"></a>
 </h2>
-<p>Pour cet article, nous créons des données synthétiques représentant
-un champ avec des haies.</p>
+<p>Le package inclut un champ d’exemple (<code>M2</code>) situé au
+Québec.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Créer un champ</span></span>
-<span><span class="va">coords_champ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">300</span>, <span class="fl">0</span>, <span class="fl">300</span>, <span class="fl">200</span>, <span class="fl">0</span>, <span class="fl">200</span>, <span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">2</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="va">champ</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st.html" class="external-link">st_polygon</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">coords_champ</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">champ</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/sfc.html" class="external-link">st_sfc</a></span><span class="op">(</span><span class="va">champ</span>, crs <span class="op">=</span> <span class="fl">32618</span><span class="op">)</span></span>
-<span><span class="va">champ</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/sf.html" class="external-link">st_sf</a></span><span class="op">(</span>geometry <span class="op">=</span> <span class="va">champ</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Créer des haies comme lignes droites</span></span>
-<span><span class="va">haie_ouest</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/sfc.html" class="external-link">st_sfc</a></span><span class="op">(</span></span>
-<span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st.html" class="external-link">st_linestring</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">5</span>, <span class="fl">30</span>, <span class="op">-</span><span class="fl">5</span>, <span class="fl">170</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">2</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  crs <span class="op">=</span> <span class="fl">32618</span></span>
-<span><span class="op">)</span></span>
-<span><span class="va">haie_interieure</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/sfc.html" class="external-link">st_sfc</a></span><span class="op">(</span></span>
-<span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st.html" class="external-link">st_linestring</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">100</span>, <span class="fl">150</span>, <span class="fl">100</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">2</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  crs <span class="op">=</span> <span class="fl">32618</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Créer un sf avec deux géométries</span></span>
-<span><span class="va">haies</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/sf.html" class="external-link">st_sf</a></span><span class="op">(</span></span>
-<span>  id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">2</span>,</span>
-<span>  geometry <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">haie_ouest</span>, <span class="va">haie_interieure</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Convertir les haies en POINTS pour les fonctions de distance</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
-<span><span class="va">points_haie</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">2</span>, <span class="kw">function</span><span class="op">(</span><span class="va">i</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">g</span> <span class="op">&lt;-</span> <span class="va">haies</span><span class="op">$</span><span class="va">geometry</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span></span>
-<span>  <span class="va">coords</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_coordinates.html" class="external-link">st_coordinates</a></span><span class="op">(</span><span class="va">g</span><span class="op">)</span></span>
-<span>  <span class="va">n</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">floor</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/geos_measures.html" class="external-link">st_length</a></span><span class="op">(</span><span class="va">g</span><span class="op">)</span> <span class="op">/</span> <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
-<span>  <span class="kw">if</span> <span class="op">(</span><span class="va">n</span> <span class="op">&gt;</span> <span class="fl">1</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="va">seq_idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">coords</span><span class="op">)</span>, length.out <span class="op">=</span> <span class="va">n</span><span class="op">)</span></span>
-<span>  <span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
-<span>    <span class="va">seq_idx</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
-<span>  <span class="op">}</span></span>
-<span>  <span class="va">pts</span> <span class="op">&lt;-</span> <span class="va">coords</span><span class="op">[</span><span class="va">seq_idx</span>, , drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>    id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="va">i</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">pts</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    x <span class="op">=</span> <span class="va">pts</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">pts</span><span class="op">)</span>, <span class="fl">0</span>, <span class="fl">0.5</span><span class="op">)</span>,</span>
-<span>    y <span class="op">=</span> <span class="va">pts</span><span class="op">[</span>, <span class="fl">2</span><span class="op">]</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">pts</span><span class="op">)</span>, <span class="fl">0</span>, <span class="fl">0.5</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="op">}</span><span class="op">)</span></span>
-<span><span class="va">points_haie</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="va">points_haie</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">arbres_haies</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/sf.html" class="external-link">st_sf</a></span><span class="op">(</span></span>
-<span>  id <span class="op">=</span> <span class="va">points_haie</span><span class="op">$</span><span class="va">id</span>,</span>
-<span>  geometry <span class="op">=</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/sfc.html" class="external-link">st_sfc</a></span><span class="op">(</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">points_haie</span><span class="op">)</span>, <span class="kw">function</span><span class="op">(</span><span class="va">i</span><span class="op">)</span> <span class="op">{</span></span>
-<span>      <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st.html" class="external-link">st_point</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">points_haie</span><span class="op">$</span><span class="va">x</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>, <span class="va">points_haie</span><span class="op">$</span><span class="va">y</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
-<span>    <span class="op">}</span><span class="op">)</span>,</span>
-<span>    crs <span class="op">=</span> <span class="fl">32618</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">champ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"M2.shp"</span>, package <span class="op">=</span> <span class="st">"covariablechamps"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Reading layer `M2' from data source </span></span>
+<span><span class="co">#&gt;   `/home/runner/work/_temp/Library/covariablechamps/extdata/M2.shp' </span></span>
+<span><span class="co">#&gt;   using driver `ESRI Shapefile'</span></span>
+<span><span class="co">#&gt; Simple feature collection with 1 feature and 65 fields</span></span>
+<span><span class="co">#&gt; Geometry type: POLYGON</span></span>
+<span><span class="co">#&gt; Dimension:     XY</span></span>
+<span><span class="co">#&gt; Bounding box:  xmin: -71.06012 ymin: 46.64605 xmax: -71.05268 ymax: 46.65118</span></span>
+<span><span class="co">#&gt; Geodetic CRS:  WGS 84</span></span>
 <span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">champ</span>, fill <span class="op">=</span> <span class="st">"lightgreen"</span>, alpha <span class="op">=</span> <span class="fl">0.3</span>, col <span class="op">=</span> <span class="st">"darkgreen"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">haies</span>, col <span class="op">=</span> <span class="st">"darkgreen"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">arbres_haies</span>, col <span class="op">=</span> <span class="st">"forestgreen"</span>, size <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"Champ avec haies brise-vent"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p><img src="haies-brise-vent_files/figure-html/donnees-exemple-1.png" class="r-plt" alt="" width="768"></p>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">champ</span>, fill <span class="op">=</span> <span class="st">"lightgreen"</span>, alpha <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Champ M2"</span>,</span>
+<span>       subtitle <span class="op">=</span> <span class="st">"Exemples de données inclus dans le package"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="haies-brise-vent_files/figure-html/charger-champ-1.png" class="r-plt" alt="" width="768"></p>
 </div>
 <div class="section level2">
-<h2 id="étape-1-calculer-les-zones-de-protection">Étape 1: Calculer les zones de protection<a class="anchor" aria-label="anchor" href="#%C3%A9tape-1-calculer-les-zones-de-protection"></a>
+<h2 id="détection-des-arbres-et-haies-depuis-lidar">Détection des arbres et haies depuis LiDAR<a class="anchor" aria-label="anchor" href="#d%C3%A9tection-des-arbres-et-haies-depuis-lidar"></a>
 </h2>
-<p>Les haies brise-vent créent des zones de protection dont l’étendue
-dépend de la hauteur de la haie.</p>
+<p>La fonction <code><a href="../reference/extraire_classifier_haies_lidar.html">extraire_classifier_haies_lidar()</a></code> détecte et
+classifie automatiquement les arbres et haies à partir d’un nuage de
+points LiDAR.</p>
+<p><strong>Note</strong>: Cette fonction nécessite des données LiDAR
+réelles qui doivent être téléchargées. Elle n’est pas exécutée dans cet
+article.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Direction du vent dominante (en degrés)</span></span>
-<span><span class="va">direction_vent</span> <span class="op">&lt;-</span> <span class="fl">270</span>  <span class="co"># Vent d'ouest</span></span>
+<code class="sourceCode R"><span><span class="co"># 1. Télécharger les données LiDAR ponctuelles</span></span>
+<span><span class="va">lidar</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/telecharger_lidar_ponctuel.html">telecharger_lidar_ponctuel</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Créer un raster de zones de vent à partir des distances</span></span>
-<span><span class="va">distances_haies</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_distance_arbres.html">calculer_distance_arbres</a></span><span class="op">(</span></span>
-<span>  arbres_sf <span class="op">=</span> <span class="va">arbres_haies</span>,</span>
-<span>  champ_bbox <span class="op">=</span> <span class="va">champ</span>,</span>
-<span>  resolution <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  buffer_arbre <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  max_distance <span class="op">=</span> <span class="fl">100</span></span>
+<span><span class="co"># 2. Détecter et classifier les haies</span></span>
+<span><span class="va">resultat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/extraire_classifier_haies_lidar.html">extraire_classifier_haies_lidar</a></span><span class="op">(</span></span>
+<span>  nuage_points <span class="op">=</span> <span class="va">lidar</span><span class="op">$</span><span class="va">nuage_points</span>,</span>
+<span>  res_dtm <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  res_chm <span class="op">=</span> <span class="fl">0.25</span>,</span>
+<span>  hmin <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  eps_dbscan <span class="op">=</span> <span class="fl">6</span>,</span>
+<span>  minPts_dbscan <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  seuil_aspect <span class="op">=</span> <span class="fl">6</span>,</span>
+<span>  seuil_largeur_max <span class="op">=</span> <span class="fl">12</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Visualiser les zones de protection</span></span>
-<span><span class="fu"><a href="../reference/visualiser_distance_arbres.html">visualiser_distance_arbres</a></span><span class="op">(</span><span class="va">distances_haies</span>, type <span class="op">=</span> <span class="st">"buffer"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="haies-brise-vent_files/figure-html/zones-protection-1.png" class="r-plt" alt="" width="768"></p>
+<span><span class="co"># 3. Récupérer les arbres classifiés</span></span>
+<span><span class="va">arbres</span> <span class="op">&lt;-</span> <span class="va">resultat</span><span class="op">$</span><span class="va">trees_sf</span></span>
+<span><span class="va">haies</span> <span class="op">&lt;-</span> <span class="va">resultat</span><span class="op">$</span><span class="va">haies_rectangles</span></span>
+<span></span>
+<span><span class="co"># 4. Visualiser les résultats</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span>, col <span class="op">=</span> <span class="st">"lightgreen"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">arbres</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, col <span class="op">=</span> <span class="st">"darkgreen"</span>, pch <span class="op">=</span> <span class="fl">19</span>, cex <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></code></pre></div>
 <div class="section level3">
-<h3 id="comprendre-les-zones-de-protection">Comprendre les zones de protection<a class="anchor" aria-label="anchor" href="#comprendre-les-zones-de-protection"></a>
+<h3 id="paramètres-de-détection">Paramètres de détection<a class="anchor" aria-label="anchor" href="#param%C3%A8tres-de-d%C3%A9tection"></a>
 </h3>
-<p>La protection offerte par une haie diminue avec la distance:</p>
+<table class="table">
+<thead><tr class="header">
+<th>Paramètre</th>
+<th>Description</th>
+<th>Valeur par défaut</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>res_dtm</code></td>
+<td>Résolution du MNT (m)</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td><code>res_chm</code></td>
+<td>Résolution du MCH (m)</td>
+<td>0.25</td>
+</tr>
+<tr class="odd">
+<td><code>hmin</code></td>
+<td>Hauteur minimale des arbres (m)</td>
+<td>2</td>
+</tr>
+<tr class="even">
+<td><code>eps_dbscan</code></td>
+<td>Distance pour clustering DBSCAN</td>
+<td>6</td>
+</tr>
+<tr class="odd">
+<td><code>minPts_dbscan</code></td>
+<td>Points minimum pour cluster</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td><code>seuil_aspect</code></td>
+<td>Ratio L/W minimal pour haie</td>
+<td>6</td>
+</tr>
+<tr class="odd">
+<td><code>seuil_largeur_max</code></td>
+<td>Largeur max d’une haie (m)</td>
+<td>12</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="classification-des-arbres">Classification des arbres<a class="anchor" aria-label="anchor" href="#classification-des-arbres"></a>
+</h3>
+<p>La fonction classifie les éléments en trois catégories:</p>
 <ul>
 <li>
-<strong>Zone 1-2H</strong>: Protection maximale (réduction du vent
-&gt; 50%)</li>
+<strong>foret</strong>: Groupe d’arbres (&gt; 30 arbres, largeur
+&gt; 20m)</li>
 <li>
-<strong>Zone 2-5H</strong>: Protection modérée (réduction
-20-50%)</li>
+<strong>haie_brise_vent</strong>: Linéaire d’arbres (L/W &gt; 6,
+largeur &lt; 12m)</li>
 <li>
-<strong>Zone 5-10H</strong>: Protection faible (réduction &lt;
-20%)</li>
+<strong>individuel</strong>: Arbre isolé</li>
 </ul>
-<p>où H est la hauteur de la haie.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="étape-2-distance-directionnelle-amontaval">Étape 2: Distance directionnelle (amont/aval)<a class="anchor" aria-label="anchor" href="#%C3%A9tape-2-distance-directionnelle-amontaval"></a>
+<h2 id="extraction-des-lignes-centrales">Extraction des lignes centrales<a class="anchor" aria-label="anchor" href="#extraction-des-lignes-centrales"></a>
 </h2>
+<p>Pour les analyses de distance au vent, vous pouvez extraire les
+lignes centrales des haies:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dist_dir_haies</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_distances_amont_aval.html">calculer_distances_amont_aval</a></span><span class="op">(</span></span>
-<span>  arbres_sf <span class="op">=</span> <span class="va">arbres_haies</span>,</span>
-<span>  angle_vent <span class="op">=</span> <span class="va">direction_vent</span>,</span>
+<code class="sourceCode R"><span><span class="co"># Extraire les lignes centrales des haies</span></span>
+<span><span class="va">lignes_haies</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/extraire_ligne_centrale_haies.html">extraire_ligne_centrale_haies</a></span><span class="op">(</span><span class="va">resultat</span><span class="op">$</span><span class="va">haies_rectangles</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Visualiser</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span>, col <span class="op">=</span> <span class="st">"lightgreen"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">lignes_haies</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, col <span class="op">=</span> <span class="st">"darkgreen"</span>, lwd <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="calcul-des-zones-de-protection">Calcul des zones de protection<a class="anchor" aria-label="anchor" href="#calcul-des-zones-de-protection"></a>
+</h2>
+<p>Une fois les haies détectées, vous pouvez calculer les zones de
+protection:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Définir la direction du vent (degrés, 0 = Nord, 90 = Est)</span></span>
+<span><span class="va">direction_vent</span> <span class="op">&lt;-</span> <span class="fl">270</span>  <span class="co"># Vent d'ouest</span></span>
+<span></span>
+<span><span class="co"># Calculer les zones de vent avec spline</span></span>
+<span><span class="va">zones</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_zones_vent_spline.html">calculer_zones_vent_spline</a></span><span class="op">(</span></span>
+<span>  haies <span class="op">=</span> <span class="va">lignes_haies</span>,</span>
+<span>  direction_vent <span class="op">=</span> <span class="va">direction_vent</span>,</span>
+<span>  facteurs_h <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span>, <span class="fl">5</span>, <span class="fl">10</span><span class="op">)</span>,</span>
+<span>  hauteur_haie <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Rasteriser les zones</span></span>
+<span><span class="va">template</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="va">champ</span>, resolution <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="va">zones_raster</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rasteriser_zones_gradient_v2.html">rasteriser_zones_gradient_v2</a></span><span class="op">(</span><span class="va">zones</span>, <span class="va">template</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Visualiser</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">zones_raster</span>, main <span class="op">=</span> <span class="st">"Zones de protection (multiples de H)"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">lignes_haies</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, col <span class="op">=</span> <span class="st">"black"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="distances-aux-arbres">Distances aux arbres<a class="anchor" aria-label="anchor" href="#distances-aux-arbres"></a>
+</h2>
+<p>Pour une analyse plus fine de l’effet du vent:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Distance simple aux arbres</span></span>
+<span><span class="va">dist_arbres</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_distance_arbres.html">calculer_distance_arbres</a></span><span class="op">(</span></span>
+<span>  arbres_sf <span class="op">=</span> <span class="va">arbres</span>,</span>
 <span>  champ_bbox <span class="op">=</span> <span class="va">champ</span>,</span>
-<span>  resolution <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  buffer_arbre <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  angle_focal <span class="op">=</span> <span class="fl">30</span>,</span>
+<span>  resolution <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  buffer_arbre <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>  max_distance <span class="op">=</span> <span class="fl">100</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">viz</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/visualiser_distances_vent.html">visualiser_distances_vent</a></span><span class="op">(</span><span class="va">dist_dir_haies</span>, type <span class="op">=</span> <span class="st">"comparaison"</span><span class="op">)</span></span>
-<span><span class="va">viz</span><span class="op">$</span><span class="va">amont</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"Zone AMONT (face au vent)"</span>,</span>
-<span>          subtitle <span class="op">=</span> <span class="st">"Vent vient de la haie vers le champ"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p><img src="haies-brise-vent_files/figure-html/distances-amont-aval-1.png" class="r-plt" alt="" width="768"></p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="va">viz</span><span class="op">$</span><span class="va">aval</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"Zone AVAL (sous le vent)"</span>,</span>
-<span>          subtitle <span class="op">=</span> <span class="st">"Vent va de l'autre côté de la haie"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p><img src="haies-brise-vent_files/figure-html/distances-amont-aval-2.png" class="r-plt" alt="" width="768"></p>
-</div>
-<div class="section level2">
-<h2 id="étape-3-fetch-de-vent">Étape 3: Fetch de vent<a class="anchor" aria-label="anchor" href="#%C3%A9tape-3-fetch-de-vent"></a>
-</h2>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fetch_haies</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_fetch_vent.html">calculer_fetch_vent</a></span><span class="op">(</span></span>
-<span>  arbres_sf <span class="op">=</span> <span class="va">arbres_haies</span>,</span>
-<span>  angle_vent <span class="op">=</span> <span class="va">direction_vent</span>,</span>
-<span>  champ_bbox <span class="op">=</span> <span class="va">champ</span>,</span>
-<span>  resolution <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  max_fetch <span class="op">=</span> <span class="fl">100</span>,</span>
-<span>  coef_ellipse <span class="op">=</span> <span class="fl">3</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">viz_fetch</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/visualiser_fetch.html">visualiser_fetch</a></span><span class="op">(</span><span class="va">fetch_haies</span>, type <span class="op">=</span> <span class="st">"comparaison"</span><span class="op">)</span></span>
-<span><span class="va">viz_fetch</span><span class="op">$</span><span class="va">simple</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"Fetch simple (cercle)"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p><img src="haies-brise-vent_files/figure-html/fetch-haies-1.png" class="r-plt" alt="" width="768"></p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="va">viz_fetch</span><span class="op">$</span><span class="va">elliptique</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"Fetch elliptique (aligné vent)"</span>,</span>
-<span>          subtitle <span class="op">=</span> <span class="st">"Effet de voile plus important dans la direction du vent"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p><img src="haies-brise-vent_files/figure-html/fetch-haies-2.png" class="r-plt" alt="" width="768"></p>
-</div>
-<div class="section level2">
-<h2 id="étape-4-rasterisation-pour-analyse">Étape 4: Rasterisation pour analyse<a class="anchor" aria-label="anchor" href="#%C3%A9tape-4-rasterisation-pour-analyse"></a>
-</h2>
-<p>Pour des analyses spatiales plus poussées, les zones peuvent être
-rasterisées.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># La rasterisation utilise le résultat des distances</span></span>
-<span><span class="va">raster_dist</span> <span class="op">&lt;-</span> <span class="va">distances_haies</span><span class="op">$</span><span class="va">distance_buffer</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">raster_dist</span>, main <span class="op">=</span> <span class="st">"Raster des distances aux haies"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="haies-brise-vent_files/figure-html/rasteriser-1.png" class="r-plt" alt="" width="768"></p>
-<div class="section level3">
-<h3 id="gradient-continu">Gradient continu<a class="anchor" aria-label="anchor" href="#gradient-continu"></a>
-</h3>
-<p>Le gradient montre la diminution progressive de la protection:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Créer un gradient de protection (1 = protection max, 0 = pas de protection)</span></span>
-<span><span class="va">raster_protection</span> <span class="op">&lt;-</span> <span class="va">distances_haies</span><span class="op">$</span><span class="va">distance_buffer</span> <span class="op">/</span> <span class="va">distances_haies</span><span class="op">$</span><span class="va">max_distance</span></span>
-<span><span class="va">raster_protection</span> <span class="op">&lt;-</span> <span class="fl">1</span> <span class="op">-</span> <span class="va">raster_protection</span></span>
-<span></span>
-<span><span class="co"># Visualiser</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">raster_protection</span>, main <span class="op">=</span> <span class="st">"Gradient de protection"</span>,</span>
-<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"Blues"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="haies-brise-vent_files/figure-html/gradient-1.png" class="r-plt" alt="" width="768"></p>
-</div>
-</div>
-<div class="section level2">
-<h2 id="étape-5-simulation-de-la-vitesse-du-vent">Étape 5: Simulation de la vitesse du vent<a class="anchor" aria-label="anchor" href="#%C3%A9tape-5-simulation-de-la-vitesse-du-vent"></a>
-</h2>
-<p>Estimez la réduction de vitesse du vent due aux haies.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Avec les distances simples</span></span>
-<span><span class="va">vitesse_simple</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/simuler_vitesse_vent_simple.html">simuler_vitesse_vent_simple</a></span><span class="op">(</span></span>
-<span>  dist_result <span class="op">=</span> <span class="va">distances_haies</span>,</span>
-<span>  vitesse_ref <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  coef_protection <span class="op">=</span> <span class="fl">0.6</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Visualiser directement avec terra</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">vitesse_simple</span><span class="op">$</span><span class="va">vitesse</span>, main <span class="op">=</span> <span class="st">"Vitesse du vent (m/s)"</span>,</span>
-<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"RdBu"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $ext</span></span>
-<span><span class="co">#&gt; xmin xmax ymin ymax </span></span>
-<span><span class="co">#&gt;    0  300    0  200 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $lim</span></span>
-<span><span class="co">#&gt; xmin xmax ymin ymax </span></span>
-<span><span class="co">#&gt;    0  300    0  200 </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $add</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $axs</span></span>
-<span><span class="co">#&gt; $axs$las</span></span>
-<span><span class="co">#&gt; [1] 0</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $axs$cex.lab</span></span>
-<span><span class="co">#&gt; [1] 0.8</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $axs$line.lab</span></span>
-<span><span class="co">#&gt; [1] 1.5</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $axs$cex.axis</span></span>
-<span><span class="co">#&gt; [1] 0.7</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $axs$mgp</span></span>
-<span><span class="co">#&gt; [1] 2.00 0.25 0.30</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $axs$tcl</span></span>
-<span><span class="co">#&gt; [1] -0.25</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $axs$side</span></span>
-<span><span class="co">#&gt; [1] 1 2</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $axs$tick</span></span>
-<span><span class="co">#&gt; [1] 1 2</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $axs$lab</span></span>
-<span><span class="co">#&gt; [1] 1 2</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $draw_grid</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $leg</span></span>
-<span><span class="co">#&gt; $leg$sort</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $leg$reverse</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $leg$digits</span></span>
-<span><span class="co">#&gt; [1] 1</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $leg$x</span></span>
-<span><span class="co">#&gt; [1] "right"</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $leg$horiz</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $leg$ext</span></span>
-<span><span class="co">#&gt;       xmin     xmax ymin ymax       dx  dy</span></span>
-<span><span class="co">#&gt; 1 306.8182 313.6364    0  200 6.818182 200</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $leg$user</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $leg$size</span></span>
-<span><span class="co">#&gt; [1] 1 1</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $all_levels</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $lonlat</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $asp</span></span>
-<span><span class="co">#&gt; [1] 1</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $cols</span></span>
-<span><span class="co">#&gt;   [1] "#611300" "#691600" "#701800" "#771A00" "#7E1D00" "#861F00" "#8D2200"</span></span>
-<span><span class="co">#&gt;   [8] "#952400" "#9C2700" "#A42900" "#AB2C00" "#B32F00" "#BA3100" "#C13500"</span></span>
-<span><span class="co">#&gt;  [15] "#C43D00" "#C74403" "#CA4B1D" "#CD522C" "#D05838" "#D35F42" "#D5654C"</span></span>
-<span><span class="co">#&gt;  [22] "#D76B54" "#DA715C" "#DC7864" "#DE7E6C" "#E08373" "#E1897A" "#E38F81"</span></span>
-<span><span class="co">#&gt;  [29] "#E59588" "#E69A8F" "#E7A095" "#E9A69C" "#EAABA2" "#EBB0A8" "#ECB6AE"</span></span>
-<span><span class="co">#&gt;  [36] "#EDBBB4" "#EEC0BA" "#EFC5C0" "#F0CAC6" "#F1CFCB" "#F1D4D1" "#F2D9D6"</span></span>
-<span><span class="co">#&gt;  [43] "#F3DDDB" "#F4E2E0" "#F4E6E5" "#F5EAE9" "#F6EEED" "#F7F2F1" "#F8F5F5"</span></span>
-<span><span class="co">#&gt;  [50] "#F9F8F8" "#F9F9F9" "#F7F8F9" "#F5F7F8" "#F3F5F7" "#EFF3F6" "#ECF1F5"</span></span>
-<span><span class="co">#&gt;  [57] "#E8EFF4" "#E4ECF3" "#E0EAF1" "#DBE7F0" "#D6E4EE" "#D1E1ED" "#CBDEEB"</span></span>
-<span><span class="co">#&gt;  [64] "#C6DBE9" "#C0D7E8" "#B9D4E6" "#B3D0E4" "#ACCDE2" "#A5C9E0" "#9DC5DD"</span></span>
-<span><span class="co">#&gt;  [71] "#96C1DB" "#8DBDD9" "#85B9D7" "#7CB5D4" "#72B1D2" "#67ACD0" "#5CA8CD"</span></span>
-<span><span class="co">#&gt;  [78] "#4FA4CB" "#3F9FC8" "#299BC6" "#0096C3" "#0092C1" "#008DBE" "#0089BB"</span></span>
-<span><span class="co">#&gt;  [85] "#0085B9" "#0080B7" "#007CB4" "#0077B2" "#0073B0" "#006EAA" "#0068A2"</span></span>
-<span><span class="co">#&gt;  [92] "#00629A" "#005C92" "#00568A" "#005082" "#004A7A" "#004573" "#003F6C"</span></span>
-<span><span class="co">#&gt;  [99] "#003A66" "#003560"</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $rgb</span></span>
-<span><span class="co">#&gt; $rgb$scale</span></span>
-<span><span class="co">#&gt; [1] 255</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $rgb$zcol</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $rgb$colNA</span></span>
-<span><span class="co">#&gt; [1] "white"</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $alpha</span></span>
-<span><span class="co">#&gt; [1] 255</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $clip</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $dots</span></span>
-<span><span class="co">#&gt; list()</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $reset</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $main</span></span>
-<span><span class="co">#&gt; [1] "Vitesse du vent (m/s)"</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $halo.main</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $halo.main.hc</span></span>
-<span><span class="co">#&gt; [1] "white"</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $halo.main.hw</span></span>
-<span><span class="co">#&gt; [1] 0.1</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $cex.main</span></span>
-<span><span class="co">#&gt; [1] 1.2</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $font.main</span></span>
-<span><span class="co">#&gt; [1] 2</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $col.main</span></span>
-<span><span class="co">#&gt; [1] "black"</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $line.main</span></span>
-<span><span class="co">#&gt; [1] 0.5</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $sub</span></span>
-<span><span class="co">#&gt; [1] ""</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $cex.sub</span></span>
-<span><span class="co">#&gt; [1] 0.96</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $font.sub</span></span>
-<span><span class="co">#&gt; [1] 1</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $col.sub</span></span>
-<span><span class="co">#&gt; [1] "black"</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $line.sub</span></span>
-<span><span class="co">#&gt; [1] 1.75</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $axes</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $xaxs</span></span>
-<span><span class="co">#&gt; [1] "i"</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $yaxs</span></span>
-<span><span class="co">#&gt; [1] "i"</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $xlab</span></span>
-<span><span class="co">#&gt; [1] ""</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $ylab</span></span>
-<span><span class="co">#&gt; [1] ""</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $breakby</span></span>
-<span><span class="co">#&gt; [1] "eqint"</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $interpolate</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $legend_draw</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $legend_only</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $box</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $zebra</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $zebra.cex</span></span>
-<span><span class="co">#&gt; [1] 1</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $zebra.col</span></span>
-<span><span class="co">#&gt; [1] "black" "white"</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $values</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $fill_range</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $range</span></span>
-<span><span class="co">#&gt; [1] 2.200577 5.000000</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $r</span></span>
-<span><span class="co">#&gt;       [,1]      [,2]      [,3]      [,4]      [,5]      [,6]      [,7]     </span></span>
-<span><span class="co">#&gt;  [1,] "#D76B54" "#DA715C" "#DE7E6C" "#E38F81" "#E9A69C" "#EDBBB4" "#F1CFCB"</span></span>
-<span><span class="co">#&gt;  [2,] "#CA4B1D" "#D05838" "#D5654C" "#DE7E6C" "#E38F81" "#EAABA2" "#EEC0BA"</span></span>
-<span><span class="co">#&gt;  [3,] "#B32F00" "#C13500" "#CA4B1D" "#D5654C" "#DE7E6C" "#E69A8F" "#ECB6AE"</span></span>
-<span><span class="co">#&gt;  [4,] "#8D2200" "#A42900" "#C13500" "#D05838" "#DA715C" "#E38F81" "#EAABA2"</span></span>
-<span><span class="co">#&gt;  [5,] "#771A00" "#8D2200" "#B32F00" "#CA4B1D" "#D76B54" "#E1897A" "#E9A69C"</span></span>
-<span><span class="co">#&gt;  [6,] "#691600" "#861F00" "#AB2C00" "#C74403" "#D5654C" "#E08373" "#E7A095"</span></span>
-<span><span class="co">#&gt;  [7,] "#691600" "#861F00" "#AB2C00" "#C74403" "#D5654C" "#E08373" "#E7A095"</span></span>
-<span><span class="co">#&gt;  [8,] "#771A00" "#8D2200" "#B32F00" "#CA4B1D" "#D76B54" "#E1897A" "#E9A69C"</span></span>
-<span><span class="co">#&gt;  [9,] "#8D2200" "#A42900" "#C13500" "#D05838" "#DA715C" "#E38F81" "#EAABA2"</span></span>
-<span><span class="co">#&gt; [10,] "#B32F00" "#C13500" "#CA4B1D" "#D5654C" "#DE7E6C" "#E69A8F" "#EBB0A8"</span></span>
-<span><span class="co">#&gt; [11,] "#CA4B1D" "#D05838" "#D5654C" "#DC7864" "#E38F81" "#E7A095" "#EBB0A8"</span></span>
-<span><span class="co">#&gt; [12,] "#D76B54" "#DA715C" "#DE7E6C" "#E38F81" "#E69A8F" "#E9A69C" "#EBB0A8"</span></span>
-<span><span class="co">#&gt; [13,] "#E1897A" "#E38F81" "#E59588" "#E7A095" "#E9A69C" "#E9A69C" "#E9A69C"</span></span>
-<span><span class="co">#&gt; [14,] "#E9A69C" "#E9A69C" "#E9A69C" "#E9A69C" "#E9A69C" "#E7A095" "#E59588"</span></span>
-<span><span class="co">#&gt; [15,] "#EDBBB4" "#ECB6AE" "#EBB0A8" "#E9A69C" "#E69A8F" "#E38F81" "#DE7E6C"</span></span>
-<span><span class="co">#&gt; [16,] "#F0CAC6" "#EEC0BA" "#EBB0A8" "#E7A095" "#E38F81" "#DC7864" "#D5654C"</span></span>
-<span><span class="co">#&gt; [17,] "#F1D4D1" "#EFC5C0" "#EBB0A8" "#E69A8F" "#DE7E6C" "#D5654C" "#CA4B1D"</span></span>
-<span><span class="co">#&gt; [18,] "#F2D9D6" "#EFC5C0" "#EAABA2" "#E38F81" "#DA715C" "#D05838" "#C13500"</span></span>
-<span><span class="co">#&gt; [19,] "#F2D9D6" "#EEC0BA" "#E9A69C" "#E1897A" "#D76B54" "#CA4B1D" "#B32F00"</span></span>
-<span><span class="co">#&gt; [20,] "#F2D9D6" "#EEC0BA" "#E7A095" "#E08373" "#D5654C" "#C74403" "#AB2C00"</span></span>
-<span><span class="co">#&gt; [21,] "#F2D9D6" "#EEC0BA" "#E7A095" "#E08373" "#D5654C" "#C74403" "#AB2C00"</span></span>
-<span><span class="co">#&gt; [22,] "#F2D9D6" "#EEC0BA" "#E9A69C" "#E1897A" "#D76B54" "#CA4B1D" "#B32F00"</span></span>
-<span><span class="co">#&gt; [23,] "#F2D9D6" "#EFC5C0" "#EAABA2" "#E38F81" "#DA715C" "#D05838" "#C13500"</span></span>
-<span><span class="co">#&gt; [24,] "#F1D4D1" "#EFC5C0" "#EBB0A8" "#E69A8F" "#DE7E6C" "#D5654C" "#CA4B1D"</span></span>
-<span><span class="co">#&gt; [25,] "#F0CAC6" "#EEC0BA" "#EBB0A8" "#E7A095" "#E38F81" "#DC7864" "#D5654C"</span></span>
-<span><span class="co">#&gt; [26,] "#EDBBB4" "#ECB6AE" "#EBB0A8" "#E9A69C" "#E69A8F" "#E38F81" "#DE7E6C"</span></span>
-<span><span class="co">#&gt; [27,] "#E9A69C" "#E9A69C" "#E9A69C" "#E9A69C" "#E9A69C" "#E7A095" "#E59588"</span></span>
-<span><span class="co">#&gt; [28,] "#E1897A" "#E38F81" "#E59588" "#E7A095" "#E9A69C" "#E9A69C" "#E9A69C"</span></span>
-<span><span class="co">#&gt; [29,] "#D76B54" "#DA715C" "#DE7E6C" "#E38F81" "#E69A8F" "#E9A69C" "#EBB0A8"</span></span>
-<span><span class="co">#&gt; [30,] "#CA4B1D" "#D05838" "#D5654C" "#DC7864" "#E38F81" "#E7A095" "#EBB0A8"</span></span>
-<span><span class="co">#&gt; [31,] "#B32F00" "#C13500" "#CA4B1D" "#D5654C" "#DE7E6C" "#E69A8F" "#EBB0A8"</span></span>
-<span><span class="co">#&gt; [32,] "#8D2200" "#A42900" "#C13500" "#D05838" "#DA715C" "#E38F81" "#EAABA2"</span></span>
-<span><span class="co">#&gt; [33,] "#771A00" "#8D2200" "#B32F00" "#CA4B1D" "#D76B54" "#E1897A" "#E9A69C"</span></span>
-<span><span class="co">#&gt; [34,] "#691600" "#861F00" "#AB2C00" "#C74403" "#D5654C" "#E08373" "#E7A095"</span></span>
-<span><span class="co">#&gt; [35,] "#691600" "#861F00" "#AB2C00" "#C74403" "#D5654C" "#E08373" "#E7A095"</span></span>
-<span><span class="co">#&gt; [36,] "#771A00" "#8D2200" "#B32F00" "#CA4B1D" "#D76B54" "#E1897A" "#E9A69C"</span></span>
-<span><span class="co">#&gt; [37,] "#8D2200" "#A42900" "#C13500" "#D05838" "#DA715C" "#E38F81" "#EAABA2"</span></span>
-<span><span class="co">#&gt; [38,] "#B32F00" "#C13500" "#CA4B1D" "#D5654C" "#DE7E6C" "#E69A8F" "#ECB6AE"</span></span>
-<span><span class="co">#&gt; [39,] "#CA4B1D" "#D05838" "#D5654C" "#DE7E6C" "#E38F81" "#EAABA2" "#EEC0BA"</span></span>
-<span><span class="co">#&gt; [40,] "#D76B54" "#DA715C" "#DE7E6C" "#E38F81" "#E9A69C" "#EDBBB4" "#F1CFCB"</span></span>
-<span><span class="co">#&gt;       [,8]      [,9]      [,10]     [,11]     [,12]     [,13]     [,14]    </span></span>
-<span><span class="co">#&gt;  [1,] "#F4E2E0" "#F8F5F5" "#F3F5F7" "#E0EAF1" "#CBDEEB" "#ACCDE2" "#85B9D7"</span></span>
-<span><span class="co">#&gt;  [2,] "#F2D9D6" "#F6EEED" "#F7F8F9" "#E8EFF4" "#D1E1ED" "#B3D0E4" "#8DBDD9"</span></span>
-<span><span class="co">#&gt;  [3,] "#F1CFCB" "#F4E6E5" "#F9F8F8" "#EFF3F6" "#DBE7F0" "#C0D7E8" "#9DC5DD"</span></span>
-<span><span class="co">#&gt;  [4,] "#EFC5C0" "#F3DDDB" "#F8F5F5" "#F3F5F7" "#E0EAF1" "#C6DBE9" "#A5C9E0"</span></span>
-<span><span class="co">#&gt;  [5,] "#EEC0BA" "#F2D9D6" "#F7F2F1" "#F5F7F8" "#E4ECF3" "#CBDEEB" "#ACCDE2"</span></span>
-<span><span class="co">#&gt;  [6,] "#EEC0BA" "#F2D9D6" "#F6EEED" "#F7F8F9" "#E8EFF4" "#D1E1ED" "#B9D4E6"</span></span>
-<span><span class="co">#&gt;  [7,] "#EEC0BA" "#F2D9D6" "#F6EEED" "#F7F8F9" "#ECF1F5" "#DBE7F0" "#CBDEEB"</span></span>
-<span><span class="co">#&gt;  [8,] "#EEC0BA" "#F2D9D6" "#F5EAE9" "#F9F9F9" "#F3F5F7" "#E8EFF4" "#E0EAF1"</span></span>
-<span><span class="co">#&gt;  [9,] "#EFC5C0" "#F2D9D6" "#F4E6E5" "#F7F2F1" "#F9F9F9" "#F5F7F8" "#EFF3F6"</span></span>
-<span><span class="co">#&gt; [10,] "#EFC5C0" "#F1D4D1" "#F3DDDB" "#F4E6E5" "#F6EEED" "#F7F2F1" "#F9F8F8"</span></span>
-<span><span class="co">#&gt; [11,] "#EEC0BA" "#F0CAC6" "#F1CFCB" "#F1D4D1" "#F2D9D6" "#F3DDDB" "#F4E6E5"</span></span>
-<span><span class="co">#&gt; [12,] "#ECB6AE" "#EDBBB4" "#EDBBB4" "#EDBBB4" "#EEC0BA" "#EFC5C0" "#F1CFCB"</span></span>
-<span><span class="co">#&gt; [13,] "#E9A69C" "#E9A69C" "#E7A095" "#E7A095" "#E9A69C" "#EAABA2" "#ECB6AE"</span></span>
-<span><span class="co">#&gt; [14,] "#E38F81" "#E1897A" "#E08373" "#E08373" "#E1897A" "#E38F81" "#E69A8F"</span></span>
-<span><span class="co">#&gt; [15,] "#DA715C" "#D76B54" "#D5654C" "#D5654C" "#D76B54" "#DA715C" "#DE7E6C"</span></span>
-<span><span class="co">#&gt; [16,] "#D05838" "#CA4B1D" "#C74403" "#C74403" "#CA4B1D" "#D05838" "#D5654C"</span></span>
-<span><span class="co">#&gt; [17,] "#C13500" "#B32F00" "#AB2C00" "#AB2C00" "#B32F00" "#C13500" "#CA4B1D"</span></span>
-<span><span class="co">#&gt; [18,] "#A42900" "#8D2200" "#861F00" "#861F00" "#8D2200" "#A42900" "#C13500"</span></span>
-<span><span class="co">#&gt; [19,] "#8D2200" "#771A00" "#691600" "#691600" "#771A00" "#8D2200" "#B32F00"</span></span>
-<span><span class="co">#&gt; [20,] "#861F00" "#691600" "#611300" "#611300" "#691600" "#861F00" "#AB2C00"</span></span>
-<span><span class="co">#&gt; [21,] "#861F00" "#691600" "#611300" "#611300" "#691600" "#861F00" "#AB2C00"</span></span>
-<span><span class="co">#&gt; [22,] "#8D2200" "#771A00" "#691600" "#691600" "#771A00" "#8D2200" "#B32F00"</span></span>
-<span><span class="co">#&gt; [23,] "#A42900" "#8D2200" "#861F00" "#861F00" "#8D2200" "#A42900" "#C13500"</span></span>
-<span><span class="co">#&gt; [24,] "#C13500" "#B32F00" "#AB2C00" "#AB2C00" "#B32F00" "#C13500" "#CA4B1D"</span></span>
-<span><span class="co">#&gt; [25,] "#D05838" "#CA4B1D" "#C74403" "#C74403" "#CA4B1D" "#D05838" "#D5654C"</span></span>
-<span><span class="co">#&gt; [26,] "#DA715C" "#D76B54" "#D5654C" "#D5654C" "#D76B54" "#DA715C" "#DE7E6C"</span></span>
-<span><span class="co">#&gt; [27,] "#E38F81" "#E1897A" "#E08373" "#E08373" "#E1897A" "#E38F81" "#E69A8F"</span></span>
-<span><span class="co">#&gt; [28,] "#E9A69C" "#E9A69C" "#E7A095" "#E7A095" "#E9A69C" "#EAABA2" "#ECB6AE"</span></span>
-<span><span class="co">#&gt; [29,] "#ECB6AE" "#EDBBB4" "#EDBBB4" "#EDBBB4" "#EEC0BA" "#EFC5C0" "#F1CFCB"</span></span>
-<span><span class="co">#&gt; [30,] "#EEC0BA" "#F0CAC6" "#F1CFCB" "#F1D4D1" "#F2D9D6" "#F3DDDB" "#F4E6E5"</span></span>
-<span><span class="co">#&gt; [31,] "#EFC5C0" "#F1D4D1" "#F3DDDB" "#F4E6E5" "#F6EEED" "#F7F2F1" "#F9F8F8"</span></span>
-<span><span class="co">#&gt; [32,] "#EFC5C0" "#F2D9D6" "#F4E6E5" "#F7F2F1" "#F9F9F9" "#F5F7F8" "#EFF3F6"</span></span>
-<span><span class="co">#&gt; [33,] "#EEC0BA" "#F2D9D6" "#F5EAE9" "#F9F9F9" "#F3F5F7" "#E8EFF4" "#E0EAF1"</span></span>
-<span><span class="co">#&gt; [34,] "#EEC0BA" "#F2D9D6" "#F6EEED" "#F7F8F9" "#ECF1F5" "#DBE7F0" "#CBDEEB"</span></span>
-<span><span class="co">#&gt; [35,] "#EEC0BA" "#F2D9D6" "#F6EEED" "#F7F8F9" "#E8EFF4" "#D1E1ED" "#B9D4E6"</span></span>
-<span><span class="co">#&gt; [36,] "#EEC0BA" "#F2D9D6" "#F7F2F1" "#F5F7F8" "#E4ECF3" "#CBDEEB" "#ACCDE2"</span></span>
-<span><span class="co">#&gt; [37,] "#EFC5C0" "#F3DDDB" "#F8F5F5" "#F3F5F7" "#E0EAF1" "#C6DBE9" "#A5C9E0"</span></span>
-<span><span class="co">#&gt; [38,] "#F1CFCB" "#F4E6E5" "#F9F8F8" "#EFF3F6" "#DBE7F0" "#C0D7E8" "#9DC5DD"</span></span>
-<span><span class="co">#&gt; [39,] "#F2D9D6" "#F6EEED" "#F7F8F9" "#E8EFF4" "#D1E1ED" "#B3D0E4" "#8DBDD9"</span></span>
-<span><span class="co">#&gt; [40,] "#F4E2E0" "#F8F5F5" "#F3F5F7" "#E0EAF1" "#CBDEEB" "#ACCDE2" "#85B9D7"</span></span>
-<span><span class="co">#&gt;       [,15]     [,16]     [,17]     [,18]     [,19]     [,20]     [,21]    </span></span>
-<span><span class="co">#&gt;  [1,] "#4FA4CB" "#008DBE" "#0077B2" "#005C92" "#003F6C" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [2,] "#5CA8CD" "#0092C1" "#007CB4" "#0068A2" "#005082" "#004573" "#003F6C"</span></span>
-<span><span class="co">#&gt;  [3,] "#72B1D2" "#299BC6" "#0085B9" "#0073B0" "#00629A" "#00568A" "#00568A"</span></span>
-<span><span class="co">#&gt;  [4,] "#7CB5D4" "#4FA4CB" "#0092C1" "#0080B7" "#0077B2" "#006EAA" "#006EAA"</span></span>
-<span><span class="co">#&gt;  [5,] "#8DBDD9" "#72B1D2" "#3F9FC8" "#0092C1" "#0089BB" "#0085B9" "#0085B9"</span></span>
-<span><span class="co">#&gt;  [6,] "#A5C9E0" "#8DBDD9" "#72B1D2" "#5CA8CD" "#3F9FC8" "#299BC6" "#299BC6"</span></span>
-<span><span class="co">#&gt;  [7,] "#C0D7E8" "#ACCDE2" "#9DC5DD" "#85B9D7" "#72B1D2" "#67ACD0" "#67ACD0"</span></span>
-<span><span class="co">#&gt;  [8,] "#D6E4EE" "#CBDEEB" "#B9D4E6" "#ACCDE2" "#9DC5DD" "#96C1DB" "#96C1DB"</span></span>
-<span><span class="co">#&gt;  [9,] "#ECF1F5" "#E0EAF1" "#D6E4EE" "#C6DBE9" "#B9D4E6" "#B3D0E4" "#B3D0E4"</span></span>
-<span><span class="co">#&gt; [10,] "#F7F8F9" "#F3F5F7" "#ECF1F5" "#E0EAF1" "#D1E1ED" "#CBDEEB" "#CBDEEB"</span></span>
-<span><span class="co">#&gt; [11,] "#F6EEED" "#F8F5F5" "#F7F8F9" "#EFF3F6" "#E4ECF3" "#E0EAF1" "#E0EAF1"</span></span>
-<span><span class="co">#&gt; [12,] "#F2D9D6" "#F4E2E0" "#F6EEED" "#F9F9F9" "#F3F5F7" "#EFF3F6" "#EFF3F6"</span></span>
-<span><span class="co">#&gt; [13,] "#EEC0BA" "#F1CFCB" "#F3DDDB" "#F6EEED" "#F9F8F8" "#F9F9F9" "#F9F9F9"</span></span>
-<span><span class="co">#&gt; [14,] "#EAABA2" "#EDBBB4" "#F0CAC6" "#F3DDDB" "#F6EEED" "#F7F2F1" "#F7F2F1"</span></span>
-<span><span class="co">#&gt; [15,] "#E38F81" "#E9A69C" "#EDBBB4" "#F1CFCB" "#F4E2E0" "#F4E6E5" "#F4E6E5"</span></span>
-<span><span class="co">#&gt; [16,] "#DE7E6C" "#E38F81" "#EAABA2" "#EEC0BA" "#F1D4D1" "#F3DDDB" "#F3DDDB"</span></span>
-<span><span class="co">#&gt; [17,] "#D5654C" "#DE7E6C" "#E69A8F" "#ECB6AE" "#F0CAC6" "#F1D4D1" "#F1D4D1"</span></span>
-<span><span class="co">#&gt; [18,] "#D05838" "#DA715C" "#E38F81" "#EAABA2" "#EEC0BA" "#F0CAC6" "#F0CAC6"</span></span>
-<span><span class="co">#&gt; [19,] "#CA4B1D" "#D76B54" "#E1897A" "#E9A69C" "#EDBBB4" "#EFC5C0" "#EFC5C0"</span></span>
-<span><span class="co">#&gt; [20,] "#C74403" "#D5654C" "#E08373" "#E7A095" "#EDBBB4" "#EFC5C0" "#EFC5C0"</span></span>
-<span><span class="co">#&gt; [21,] "#C74403" "#D5654C" "#E08373" "#E7A095" "#EDBBB4" "#EFC5C0" "#EFC5C0"</span></span>
-<span><span class="co">#&gt; [22,] "#CA4B1D" "#D76B54" "#E1897A" "#E9A69C" "#EDBBB4" "#EFC5C0" "#EFC5C0"</span></span>
-<span><span class="co">#&gt; [23,] "#D05838" "#DA715C" "#E38F81" "#EAABA2" "#EEC0BA" "#F0CAC6" "#F0CAC6"</span></span>
-<span><span class="co">#&gt; [24,] "#D5654C" "#DE7E6C" "#E69A8F" "#ECB6AE" "#F0CAC6" "#F1D4D1" "#F1D4D1"</span></span>
-<span><span class="co">#&gt; [25,] "#DE7E6C" "#E38F81" "#EAABA2" "#EEC0BA" "#F1D4D1" "#F3DDDB" "#F3DDDB"</span></span>
-<span><span class="co">#&gt; [26,] "#E38F81" "#E9A69C" "#EDBBB4" "#F1CFCB" "#F4E2E0" "#F4E6E5" "#F4E6E5"</span></span>
-<span><span class="co">#&gt; [27,] "#EAABA2" "#EDBBB4" "#F0CAC6" "#F3DDDB" "#F6EEED" "#F7F2F1" "#F7F2F1"</span></span>
-<span><span class="co">#&gt; [28,] "#EEC0BA" "#F1CFCB" "#F3DDDB" "#F6EEED" "#F9F8F8" "#F9F9F9" "#F9F9F9"</span></span>
-<span><span class="co">#&gt; [29,] "#F2D9D6" "#F4E2E0" "#F6EEED" "#F9F9F9" "#F3F5F7" "#EFF3F6" "#EFF3F6"</span></span>
-<span><span class="co">#&gt; [30,] "#F6EEED" "#F8F5F5" "#F7F8F9" "#EFF3F6" "#E4ECF3" "#E0EAF1" "#E0EAF1"</span></span>
-<span><span class="co">#&gt; [31,] "#F7F8F9" "#F3F5F7" "#ECF1F5" "#E0EAF1" "#D1E1ED" "#CBDEEB" "#CBDEEB"</span></span>
-<span><span class="co">#&gt; [32,] "#ECF1F5" "#E0EAF1" "#D6E4EE" "#C6DBE9" "#B9D4E6" "#B3D0E4" "#B3D0E4"</span></span>
-<span><span class="co">#&gt; [33,] "#D6E4EE" "#CBDEEB" "#B9D4E6" "#ACCDE2" "#9DC5DD" "#96C1DB" "#96C1DB"</span></span>
-<span><span class="co">#&gt; [34,] "#C0D7E8" "#ACCDE2" "#9DC5DD" "#85B9D7" "#72B1D2" "#67ACD0" "#67ACD0"</span></span>
-<span><span class="co">#&gt; [35,] "#A5C9E0" "#8DBDD9" "#72B1D2" "#5CA8CD" "#3F9FC8" "#299BC6" "#299BC6"</span></span>
-<span><span class="co">#&gt; [36,] "#8DBDD9" "#72B1D2" "#3F9FC8" "#0092C1" "#0089BB" "#0085B9" "#0085B9"</span></span>
-<span><span class="co">#&gt; [37,] "#7CB5D4" "#4FA4CB" "#0092C1" "#0080B7" "#0077B2" "#006EAA" "#006EAA"</span></span>
-<span><span class="co">#&gt; [38,] "#72B1D2" "#299BC6" "#0085B9" "#0073B0" "#00629A" "#00568A" "#00568A"</span></span>
-<span><span class="co">#&gt; [39,] "#5CA8CD" "#0092C1" "#007CB4" "#0068A2" "#005082" "#004573" "#003F6C"</span></span>
-<span><span class="co">#&gt; [40,] "#4FA4CB" "#008DBE" "#0077B2" "#005C92" "#003F6C" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;       [,22]     [,23]     [,24]     [,25]     [,26]     [,27]     [,28]    </span></span>
-<span><span class="co">#&gt;  [1,] "#003560" "#003560" "#003560" "#003A66" "#003F6C" "#004573" "#004A7A"</span></span>
-<span><span class="co">#&gt;  [2,] "#003F6C" "#004573" "#005082" "#00568A" "#00629A" "#0068A2" "#0068A2"</span></span>
-<span><span class="co">#&gt;  [3,] "#00568A" "#00629A" "#006EAA" "#0073B0" "#007CB4" "#0080B7" "#0085B9"</span></span>
-<span><span class="co">#&gt;  [4,] "#0073B0" "#007CB4" "#0085B9" "#008DBE" "#0092C1" "#0096C3" "#299BC6"</span></span>
-<span><span class="co">#&gt;  [5,] "#0089BB" "#0092C1" "#299BC6" "#4FA4CB" "#5CA8CD" "#67ACD0" "#72B1D2"</span></span>
-<span><span class="co">#&gt;  [6,] "#3F9FC8" "#4FA4CB" "#72B1D2" "#85B9D7" "#8DBDD9" "#9DC5DD" "#A5C9E0"</span></span>
-<span><span class="co">#&gt;  [7,] "#72B1D2" "#85B9D7" "#9DC5DD" "#ACCDE2" "#B3D0E4" "#C0D7E8" "#C6DBE9"</span></span>
-<span><span class="co">#&gt;  [8,] "#9DC5DD" "#ACCDE2" "#B9D4E6" "#CBDEEB" "#D1E1ED" "#DBE7F0" "#E0EAF1"</span></span>
-<span><span class="co">#&gt;  [9,] "#B9D4E6" "#C6DBE9" "#D6E4EE" "#E0EAF1" "#E8EFF4" "#EFF3F6" "#F3F5F7"</span></span>
-<span><span class="co">#&gt; [10,] "#D1E1ED" "#E0EAF1" "#ECF1F5" "#F3F5F7" "#F7F8F9" "#F9F8F8" "#F8F5F5"</span></span>
-<span><span class="co">#&gt; [11,] "#E4ECF3" "#EFF3F6" "#F7F8F9" "#F8F5F5" "#F6EEED" "#F4E6E5" "#F3DDDB"</span></span>
-<span><span class="co">#&gt; [12,] "#F3F5F7" "#F9F9F9" "#F6EEED" "#F4E2E0" "#F2D9D6" "#F1CFCB" "#EFC5C0"</span></span>
-<span><span class="co">#&gt; [13,] "#F9F8F8" "#F6EEED" "#F3DDDB" "#F1CFCB" "#EEC0BA" "#ECB6AE" "#EAABA2"</span></span>
-<span><span class="co">#&gt; [14,] "#F6EEED" "#F3DDDB" "#F0CAC6" "#EDBBB4" "#EAABA2" "#E69A8F" "#E38F81"</span></span>
-<span><span class="co">#&gt; [15,] "#F4E2E0" "#F1CFCB" "#EDBBB4" "#E9A69C" "#E38F81" "#DE7E6C" "#DA715C"</span></span>
-<span><span class="co">#&gt; [16,] "#F1D4D1" "#EEC0BA" "#EAABA2" "#E38F81" "#DE7E6C" "#D5654C" "#D05838"</span></span>
-<span><span class="co">#&gt; [17,] "#F0CAC6" "#ECB6AE" "#E69A8F" "#DE7E6C" "#D5654C" "#CA4B1D" "#C13500"</span></span>
-<span><span class="co">#&gt; [18,] "#EEC0BA" "#EAABA2" "#E38F81" "#DA715C" "#D05838" "#C13500" "#A42900"</span></span>
-<span><span class="co">#&gt; [19,] "#EDBBB4" "#E9A69C" "#E1897A" "#D76B54" "#CA4B1D" "#B32F00" "#8D2200"</span></span>
-<span><span class="co">#&gt; [20,] "#EDBBB4" "#E7A095" "#E08373" "#D5654C" "#C74403" "#AB2C00" "#861F00"</span></span>
-<span><span class="co">#&gt; [21,] "#EDBBB4" "#E7A095" "#E08373" "#D5654C" "#C74403" "#AB2C00" "#861F00"</span></span>
-<span><span class="co">#&gt; [22,] "#EDBBB4" "#E9A69C" "#E1897A" "#D76B54" "#CA4B1D" "#B32F00" "#8D2200"</span></span>
-<span><span class="co">#&gt; [23,] "#EEC0BA" "#EAABA2" "#E38F81" "#DA715C" "#D05838" "#C13500" "#A42900"</span></span>
-<span><span class="co">#&gt; [24,] "#F0CAC6" "#ECB6AE" "#E69A8F" "#DE7E6C" "#D5654C" "#CA4B1D" "#C13500"</span></span>
-<span><span class="co">#&gt; [25,] "#F1D4D1" "#EEC0BA" "#EAABA2" "#E38F81" "#DE7E6C" "#D5654C" "#D05838"</span></span>
-<span><span class="co">#&gt; [26,] "#F4E2E0" "#F1CFCB" "#EDBBB4" "#E9A69C" "#E38F81" "#DE7E6C" "#DA715C"</span></span>
-<span><span class="co">#&gt; [27,] "#F6EEED" "#F3DDDB" "#F0CAC6" "#EDBBB4" "#EAABA2" "#E69A8F" "#E38F81"</span></span>
-<span><span class="co">#&gt; [28,] "#F9F8F8" "#F6EEED" "#F3DDDB" "#F1CFCB" "#EEC0BA" "#ECB6AE" "#EAABA2"</span></span>
-<span><span class="co">#&gt; [29,] "#F3F5F7" "#F9F9F9" "#F6EEED" "#F4E2E0" "#F2D9D6" "#F1CFCB" "#EFC5C0"</span></span>
-<span><span class="co">#&gt; [30,] "#E4ECF3" "#EFF3F6" "#F7F8F9" "#F8F5F5" "#F6EEED" "#F4E6E5" "#F3DDDB"</span></span>
-<span><span class="co">#&gt; [31,] "#D1E1ED" "#E0EAF1" "#ECF1F5" "#F3F5F7" "#F7F8F9" "#F9F8F8" "#F8F5F5"</span></span>
-<span><span class="co">#&gt; [32,] "#B9D4E6" "#C6DBE9" "#D6E4EE" "#E0EAF1" "#E8EFF4" "#EFF3F6" "#F3F5F7"</span></span>
-<span><span class="co">#&gt; [33,] "#9DC5DD" "#ACCDE2" "#B9D4E6" "#CBDEEB" "#D1E1ED" "#DBE7F0" "#E0EAF1"</span></span>
-<span><span class="co">#&gt; [34,] "#72B1D2" "#85B9D7" "#9DC5DD" "#ACCDE2" "#B3D0E4" "#C0D7E8" "#C6DBE9"</span></span>
-<span><span class="co">#&gt; [35,] "#3F9FC8" "#4FA4CB" "#72B1D2" "#85B9D7" "#8DBDD9" "#9DC5DD" "#A5C9E0"</span></span>
-<span><span class="co">#&gt; [36,] "#0089BB" "#0092C1" "#299BC6" "#4FA4CB" "#5CA8CD" "#67ACD0" "#72B1D2"</span></span>
-<span><span class="co">#&gt; [37,] "#0073B0" "#007CB4" "#0085B9" "#008DBE" "#0092C1" "#0096C3" "#299BC6"</span></span>
-<span><span class="co">#&gt; [38,] "#00568A" "#00629A" "#006EAA" "#0073B0" "#007CB4" "#0080B7" "#0085B9"</span></span>
-<span><span class="co">#&gt; [39,] "#003F6C" "#004573" "#005082" "#00568A" "#00629A" "#0068A2" "#0068A2"</span></span>
-<span><span class="co">#&gt; [40,] "#003560" "#003560" "#003560" "#003A66" "#003F6C" "#004573" "#004A7A"</span></span>
-<span><span class="co">#&gt;       [,29]     [,30]     [,31]     [,32]     [,33]     [,34]     [,35]    </span></span>
-<span><span class="co">#&gt;  [1,] "#004A7A" "#005082" "#005082" "#004A7A" "#004A7A" "#004573" "#003F6C"</span></span>
-<span><span class="co">#&gt;  [2,] "#006EAA" "#006EAA" "#006EAA" "#006EAA" "#0068A2" "#0068A2" "#00629A"</span></span>
-<span><span class="co">#&gt;  [3,] "#0085B9" "#0085B9" "#0085B9" "#0085B9" "#0085B9" "#0080B7" "#007CB4"</span></span>
-<span><span class="co">#&gt;  [4,] "#299BC6" "#3F9FC8" "#3F9FC8" "#299BC6" "#299BC6" "#0096C3" "#0092C1"</span></span>
-<span><span class="co">#&gt;  [5,] "#7CB5D4" "#7CB5D4" "#7CB5D4" "#7CB5D4" "#72B1D2" "#67ACD0" "#5CA8CD"</span></span>
-<span><span class="co">#&gt;  [6,] "#A5C9E0" "#A5C9E0" "#A5C9E0" "#A5C9E0" "#A5C9E0" "#9DC5DD" "#8DBDD9"</span></span>
-<span><span class="co">#&gt;  [7,] "#C6DBE9" "#CBDEEB" "#CBDEEB" "#C6DBE9" "#C6DBE9" "#C0D7E8" "#B3D0E4"</span></span>
-<span><span class="co">#&gt;  [8,] "#E4ECF3" "#E4ECF3" "#E4ECF3" "#E4ECF3" "#E0EAF1" "#DBE7F0" "#D1E1ED"</span></span>
-<span><span class="co">#&gt;  [9,] "#F5F7F8" "#F5F7F8" "#F5F7F8" "#F5F7F8" "#F3F5F7" "#EFF3F6" "#E8EFF4"</span></span>
-<span><span class="co">#&gt; [10,] "#F7F2F1" "#F6EEED" "#F6EEED" "#F7F2F1" "#F8F5F5" "#F9F8F8" "#F7F8F9"</span></span>
-<span><span class="co">#&gt; [11,] "#F2D9D6" "#F2D9D6" "#F2D9D6" "#F2D9D6" "#F3DDDB" "#F4E6E5" "#F6EEED"</span></span>
-<span><span class="co">#&gt; [12,] "#EEC0BA" "#EEC0BA" "#EEC0BA" "#EEC0BA" "#EFC5C0" "#F1CFCB" "#F2D9D6"</span></span>
-<span><span class="co">#&gt; [13,] "#E9A69C" "#E7A095" "#E7A095" "#E9A69C" "#EAABA2" "#ECB6AE" "#EEC0BA"</span></span>
-<span><span class="co">#&gt; [14,] "#E1897A" "#E08373" "#E08373" "#E1897A" "#E38F81" "#E69A8F" "#EAABA2"</span></span>
-<span><span class="co">#&gt; [15,] "#D76B54" "#D5654C" "#D5654C" "#D76B54" "#DA715C" "#DE7E6C" "#E38F81"</span></span>
-<span><span class="co">#&gt; [16,] "#CA4B1D" "#C74403" "#C74403" "#CA4B1D" "#D05838" "#D5654C" "#DE7E6C"</span></span>
-<span><span class="co">#&gt; [17,] "#B32F00" "#AB2C00" "#AB2C00" "#B32F00" "#C13500" "#CA4B1D" "#D5654C"</span></span>
-<span><span class="co">#&gt; [18,] "#8D2200" "#861F00" "#861F00" "#8D2200" "#A42900" "#C13500" "#D05838"</span></span>
-<span><span class="co">#&gt; [19,] "#771A00" "#691600" "#691600" "#771A00" "#8D2200" "#B32F00" "#CA4B1D"</span></span>
-<span><span class="co">#&gt; [20,] "#691600" "#611300" "#611300" "#691600" "#861F00" "#AB2C00" "#C74403"</span></span>
-<span><span class="co">#&gt; [21,] "#691600" "#611300" "#611300" "#691600" "#861F00" "#AB2C00" "#C74403"</span></span>
-<span><span class="co">#&gt; [22,] "#771A00" "#691600" "#691600" "#771A00" "#8D2200" "#B32F00" "#CA4B1D"</span></span>
-<span><span class="co">#&gt; [23,] "#8D2200" "#861F00" "#861F00" "#8D2200" "#A42900" "#C13500" "#D05838"</span></span>
-<span><span class="co">#&gt; [24,] "#B32F00" "#AB2C00" "#AB2C00" "#B32F00" "#C13500" "#CA4B1D" "#D5654C"</span></span>
-<span><span class="co">#&gt; [25,] "#CA4B1D" "#C74403" "#C74403" "#CA4B1D" "#D05838" "#D5654C" "#DE7E6C"</span></span>
-<span><span class="co">#&gt; [26,] "#D76B54" "#D5654C" "#D5654C" "#D76B54" "#DA715C" "#DE7E6C" "#E38F81"</span></span>
-<span><span class="co">#&gt; [27,] "#E1897A" "#E08373" "#E08373" "#E1897A" "#E38F81" "#E69A8F" "#EAABA2"</span></span>
-<span><span class="co">#&gt; [28,] "#E9A69C" "#E7A095" "#E7A095" "#E9A69C" "#EAABA2" "#ECB6AE" "#EEC0BA"</span></span>
-<span><span class="co">#&gt; [29,] "#EEC0BA" "#EEC0BA" "#EEC0BA" "#EEC0BA" "#EFC5C0" "#F1CFCB" "#F2D9D6"</span></span>
-<span><span class="co">#&gt; [30,] "#F2D9D6" "#F2D9D6" "#F2D9D6" "#F2D9D6" "#F3DDDB" "#F4E6E5" "#F6EEED"</span></span>
-<span><span class="co">#&gt; [31,] "#F7F2F1" "#F6EEED" "#F6EEED" "#F7F2F1" "#F8F5F5" "#F9F8F8" "#F7F8F9"</span></span>
-<span><span class="co">#&gt; [32,] "#F5F7F8" "#F5F7F8" "#F5F7F8" "#F5F7F8" "#F3F5F7" "#EFF3F6" "#E8EFF4"</span></span>
-<span><span class="co">#&gt; [33,] "#E4ECF3" "#E4ECF3" "#E4ECF3" "#E4ECF3" "#E0EAF1" "#DBE7F0" "#D1E1ED"</span></span>
-<span><span class="co">#&gt; [34,] "#C6DBE9" "#CBDEEB" "#CBDEEB" "#C6DBE9" "#C6DBE9" "#C0D7E8" "#B3D0E4"</span></span>
-<span><span class="co">#&gt; [35,] "#A5C9E0" "#A5C9E0" "#A5C9E0" "#A5C9E0" "#A5C9E0" "#9DC5DD" "#8DBDD9"</span></span>
-<span><span class="co">#&gt; [36,] "#7CB5D4" "#7CB5D4" "#7CB5D4" "#7CB5D4" "#72B1D2" "#67ACD0" "#5CA8CD"</span></span>
-<span><span class="co">#&gt; [37,] "#299BC6" "#3F9FC8" "#3F9FC8" "#299BC6" "#299BC6" "#0096C3" "#0092C1"</span></span>
-<span><span class="co">#&gt; [38,] "#0085B9" "#0085B9" "#0085B9" "#0085B9" "#0085B9" "#0080B7" "#007CB4"</span></span>
-<span><span class="co">#&gt; [39,] "#006EAA" "#006EAA" "#006EAA" "#006EAA" "#0068A2" "#0068A2" "#00629A"</span></span>
-<span><span class="co">#&gt; [40,] "#004A7A" "#005082" "#005082" "#004A7A" "#004A7A" "#004573" "#003F6C"</span></span>
-<span><span class="co">#&gt;       [,36]     [,37]     [,38]     [,39]     [,40]     [,41]     [,42]    </span></span>
-<span><span class="co">#&gt;  [1,] "#003A66" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [2,] "#00568A" "#005082" "#004573" "#003A66" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [3,] "#0073B0" "#006EAA" "#00629A" "#00568A" "#004573" "#003A66" "#003560"</span></span>
-<span><span class="co">#&gt;  [4,] "#008DBE" "#0085B9" "#007CB4" "#0073B0" "#00629A" "#005082" "#003F6C"</span></span>
-<span><span class="co">#&gt;  [5,] "#4FA4CB" "#299BC6" "#0092C1" "#0085B9" "#007CB4" "#006EAA" "#005C92"</span></span>
-<span><span class="co">#&gt;  [6,] "#85B9D7" "#72B1D2" "#4FA4CB" "#299BC6" "#008DBE" "#0080B7" "#0073B0"</span></span>
-<span><span class="co">#&gt;  [7,] "#ACCDE2" "#9DC5DD" "#85B9D7" "#72B1D2" "#4FA4CB" "#0092C1" "#0085B9"</span></span>
-<span><span class="co">#&gt;  [8,] "#CBDEEB" "#B9D4E6" "#ACCDE2" "#96C1DB" "#7CB5D4" "#5CA8CD" "#0096C3"</span></span>
-<span><span class="co">#&gt;  [9,] "#E0EAF1" "#D6E4EE" "#C6DBE9" "#B3D0E4" "#9DC5DD" "#85B9D7" "#5CA8CD"</span></span>
-<span><span class="co">#&gt; [10,] "#F3F5F7" "#ECF1F5" "#E0EAF1" "#D1E1ED" "#B9D4E6" "#A5C9E0" "#85B9D7"</span></span>
-<span><span class="co">#&gt; [11,] "#F8F5F5" "#F7F8F9" "#EFF3F6" "#E4ECF3" "#D1E1ED" "#B9D4E6" "#9DC5DD"</span></span>
-<span><span class="co">#&gt; [12,] "#F4E2E0" "#F6EEED" "#F9F9F9" "#F3F5F7" "#E4ECF3" "#D1E1ED" "#B3D0E4"</span></span>
-<span><span class="co">#&gt; [13,] "#F1CFCB" "#F3DDDB" "#F6EEED" "#F9F9F9" "#EFF3F6" "#E0EAF1" "#C6DBE9"</span></span>
-<span><span class="co">#&gt; [14,] "#EDBBB4" "#F0CAC6" "#F3DDDB" "#F6EEED" "#F7F8F9" "#ECF1F5" "#D6E4EE"</span></span>
-<span><span class="co">#&gt; [15,] "#E9A69C" "#EDBBB4" "#F1CFCB" "#F4E2E0" "#F8F5F5" "#F3F5F7" "#E0EAF1"</span></span>
-<span><span class="co">#&gt; [16,] "#E38F81" "#EAABA2" "#EEC0BA" "#F2D9D6" "#F6EEED" "#F7F8F9" "#E8EFF4"</span></span>
-<span><span class="co">#&gt; [17,] "#DE7E6C" "#E69A8F" "#ECB6AE" "#F1CFCB" "#F4E6E5" "#F9F8F8" "#EFF3F6"</span></span>
-<span><span class="co">#&gt; [18,] "#DA715C" "#E38F81" "#EAABA2" "#EFC5C0" "#F3DDDB" "#F8F5F5" "#F3F5F7"</span></span>
-<span><span class="co">#&gt; [19,] "#D76B54" "#E1897A" "#E9A69C" "#EEC0BA" "#F2D9D6" "#F7F2F1" "#F5F7F8"</span></span>
-<span><span class="co">#&gt; [20,] "#D5654C" "#E08373" "#E7A095" "#EEC0BA" "#F2D9D6" "#F6EEED" "#F5F7F8"</span></span>
-<span><span class="co">#&gt; [21,] "#D5654C" "#E08373" "#E7A095" "#EEC0BA" "#F2D9D6" "#F6EEED" "#F5F7F8"</span></span>
-<span><span class="co">#&gt; [22,] "#D76B54" "#E1897A" "#E9A69C" "#EEC0BA" "#F2D9D6" "#F7F2F1" "#F5F7F8"</span></span>
-<span><span class="co">#&gt; [23,] "#DA715C" "#E38F81" "#EAABA2" "#EFC5C0" "#F3DDDB" "#F8F5F5" "#F3F5F7"</span></span>
-<span><span class="co">#&gt; [24,] "#DE7E6C" "#E69A8F" "#ECB6AE" "#F1CFCB" "#F4E6E5" "#F9F8F8" "#EFF3F6"</span></span>
-<span><span class="co">#&gt; [25,] "#E38F81" "#EAABA2" "#EEC0BA" "#F2D9D6" "#F6EEED" "#F7F8F9" "#E8EFF4"</span></span>
-<span><span class="co">#&gt; [26,] "#E9A69C" "#EDBBB4" "#F1CFCB" "#F4E2E0" "#F8F5F5" "#F3F5F7" "#E0EAF1"</span></span>
-<span><span class="co">#&gt; [27,] "#EDBBB4" "#F0CAC6" "#F3DDDB" "#F6EEED" "#F7F8F9" "#ECF1F5" "#D6E4EE"</span></span>
-<span><span class="co">#&gt; [28,] "#F1CFCB" "#F3DDDB" "#F6EEED" "#F9F9F9" "#EFF3F6" "#E0EAF1" "#C6DBE9"</span></span>
-<span><span class="co">#&gt; [29,] "#F4E2E0" "#F6EEED" "#F9F9F9" "#F3F5F7" "#E4ECF3" "#D1E1ED" "#B3D0E4"</span></span>
-<span><span class="co">#&gt; [30,] "#F8F5F5" "#F7F8F9" "#EFF3F6" "#E4ECF3" "#D1E1ED" "#B9D4E6" "#9DC5DD"</span></span>
-<span><span class="co">#&gt; [31,] "#F3F5F7" "#ECF1F5" "#E0EAF1" "#D1E1ED" "#B9D4E6" "#A5C9E0" "#85B9D7"</span></span>
-<span><span class="co">#&gt; [32,] "#E0EAF1" "#D6E4EE" "#C6DBE9" "#B3D0E4" "#9DC5DD" "#85B9D7" "#5CA8CD"</span></span>
-<span><span class="co">#&gt; [33,] "#CBDEEB" "#B9D4E6" "#ACCDE2" "#96C1DB" "#7CB5D4" "#5CA8CD" "#0096C3"</span></span>
-<span><span class="co">#&gt; [34,] "#ACCDE2" "#9DC5DD" "#85B9D7" "#72B1D2" "#4FA4CB" "#0092C1" "#0085B9"</span></span>
-<span><span class="co">#&gt; [35,] "#85B9D7" "#72B1D2" "#4FA4CB" "#299BC6" "#008DBE" "#0080B7" "#0073B0"</span></span>
-<span><span class="co">#&gt; [36,] "#4FA4CB" "#299BC6" "#0092C1" "#0085B9" "#007CB4" "#006EAA" "#005C92"</span></span>
-<span><span class="co">#&gt; [37,] "#008DBE" "#0085B9" "#007CB4" "#0073B0" "#00629A" "#005082" "#003F6C"</span></span>
-<span><span class="co">#&gt; [38,] "#0073B0" "#006EAA" "#00629A" "#00568A" "#004573" "#003A66" "#003560"</span></span>
-<span><span class="co">#&gt; [39,] "#00568A" "#005082" "#004573" "#003A66" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [40,] "#003A66" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;       [,43]     [,44]     [,45]     [,46]     [,47]     [,48]     [,49]    </span></span>
-<span><span class="co">#&gt;  [1,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [2,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [3,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [4,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [5,] "#004573" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [6,] "#00629A" "#004A7A" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [7,] "#0077B2" "#00629A" "#004A7A" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [8,] "#0085B9" "#0077B2" "#00629A" "#004573" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [9,] "#0096C3" "#0085B9" "#0073B0" "#005C92" "#003F6C" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [10,] "#5CA8CD" "#0092C1" "#0080B7" "#006EAA" "#005082" "#003A66" "#003560"</span></span>
-<span><span class="co">#&gt; [11,] "#7CB5D4" "#4FA4CB" "#008DBE" "#007CB4" "#00629A" "#004573" "#003560"</span></span>
-<span><span class="co">#&gt; [12,] "#96C1DB" "#72B1D2" "#299BC6" "#0085B9" "#0073B0" "#00568A" "#003A66"</span></span>
-<span><span class="co">#&gt; [13,] "#ACCDE2" "#85B9D7" "#4FA4CB" "#0092C1" "#007CB4" "#00629A" "#004573"</span></span>
-<span><span class="co">#&gt; [14,] "#B9D4E6" "#9DC5DD" "#72B1D2" "#299BC6" "#0085B9" "#006EAA" "#005082"</span></span>
-<span><span class="co">#&gt; [15,] "#CBDEEB" "#ACCDE2" "#85B9D7" "#4FA4CB" "#008DBE" "#0073B0" "#00568A"</span></span>
-<span><span class="co">#&gt; [16,] "#D1E1ED" "#B3D0E4" "#8DBDD9" "#5CA8CD" "#0092C1" "#007CB4" "#00629A"</span></span>
-<span><span class="co">#&gt; [17,] "#DBE7F0" "#C0D7E8" "#9DC5DD" "#67ACD0" "#0096C3" "#0080B7" "#0068A2"</span></span>
-<span><span class="co">#&gt; [18,] "#E0EAF1" "#C6DBE9" "#A5C9E0" "#72B1D2" "#299BC6" "#0085B9" "#0068A2"</span></span>
-<span><span class="co">#&gt; [19,] "#E4ECF3" "#C6DBE9" "#A5C9E0" "#7CB5D4" "#299BC6" "#0085B9" "#006EAA"</span></span>
-<span><span class="co">#&gt; [20,] "#E4ECF3" "#CBDEEB" "#A5C9E0" "#7CB5D4" "#3F9FC8" "#0085B9" "#006EAA"</span></span>
-<span><span class="co">#&gt; [21,] "#E4ECF3" "#CBDEEB" "#A5C9E0" "#7CB5D4" "#3F9FC8" "#0085B9" "#006EAA"</span></span>
-<span><span class="co">#&gt; [22,] "#E4ECF3" "#C6DBE9" "#A5C9E0" "#7CB5D4" "#299BC6" "#0085B9" "#006EAA"</span></span>
-<span><span class="co">#&gt; [23,] "#E0EAF1" "#C6DBE9" "#A5C9E0" "#72B1D2" "#299BC6" "#0085B9" "#0068A2"</span></span>
-<span><span class="co">#&gt; [24,] "#DBE7F0" "#C0D7E8" "#9DC5DD" "#67ACD0" "#0096C3" "#0080B7" "#0068A2"</span></span>
-<span><span class="co">#&gt; [25,] "#D1E1ED" "#B3D0E4" "#8DBDD9" "#5CA8CD" "#0092C1" "#007CB4" "#00629A"</span></span>
-<span><span class="co">#&gt; [26,] "#CBDEEB" "#ACCDE2" "#85B9D7" "#4FA4CB" "#008DBE" "#0073B0" "#00568A"</span></span>
-<span><span class="co">#&gt; [27,] "#B9D4E6" "#9DC5DD" "#72B1D2" "#299BC6" "#0085B9" "#006EAA" "#005082"</span></span>
-<span><span class="co">#&gt; [28,] "#ACCDE2" "#85B9D7" "#4FA4CB" "#0092C1" "#007CB4" "#00629A" "#004573"</span></span>
-<span><span class="co">#&gt; [29,] "#96C1DB" "#72B1D2" "#299BC6" "#0085B9" "#0073B0" "#00568A" "#003A66"</span></span>
-<span><span class="co">#&gt; [30,] "#7CB5D4" "#4FA4CB" "#008DBE" "#007CB4" "#00629A" "#004573" "#003560"</span></span>
-<span><span class="co">#&gt; [31,] "#5CA8CD" "#0092C1" "#0080B7" "#006EAA" "#005082" "#003A66" "#003560"</span></span>
-<span><span class="co">#&gt; [32,] "#0096C3" "#0085B9" "#0073B0" "#005C92" "#003F6C" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [33,] "#0085B9" "#0077B2" "#00629A" "#004573" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [34,] "#0077B2" "#00629A" "#004A7A" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [35,] "#00629A" "#004A7A" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [36,] "#004573" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [37,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [38,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [39,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [40,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;       [,50]     [,51]     [,52]     [,53]     [,54]     [,55]     [,56]    </span></span>
-<span><span class="co">#&gt;  [1,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [2,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [3,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [4,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [5,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [6,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [7,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [8,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [9,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [10,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [11,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [12,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [13,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [14,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [15,] "#003A66" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [16,] "#003F6C" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [17,] "#004573" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [18,] "#004A7A" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [19,] "#004A7A" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [20,] "#005082" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [21,] "#005082" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [22,] "#004A7A" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [23,] "#004A7A" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [24,] "#004573" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [25,] "#003F6C" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [26,] "#003A66" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [27,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [28,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [29,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [30,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [31,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [32,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [33,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [34,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [35,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [36,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [37,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [38,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [39,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [40,] "#003560" "#003560" "#003560" "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;       [,57]     [,58]     [,59]     [,60]    </span></span>
-<span><span class="co">#&gt;  [1,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [2,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [3,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [4,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [5,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [6,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [7,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [8,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt;  [9,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [10,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [11,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [12,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [13,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [14,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [15,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [16,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [17,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [18,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [19,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [20,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [21,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [22,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [23,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [24,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [25,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [26,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [27,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [28,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [29,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [30,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [31,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [32,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [33,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [34,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [35,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [36,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [37,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [38,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [39,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; [40,] "#003560" "#003560" "#003560" "#003560"</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $legend_type</span></span>
-<span><span class="co">#&gt; [1] "continuous"</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $levels</span></span>
-<span><span class="co">#&gt; [1] 5</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $mar</span></span>
-<span><span class="co">#&gt; [1] 2 2 2 5</span></span></code></pre></div>
-<p><img src="haies-brise-vent_files/figure-html/simulation-vent-1.png" class="r-plt" alt="" width="768"></p>
-</div>
-<div class="section level2">
-<h2 id="étape-6-intégration-avec-les-données-météo">Étape 6: Intégration avec les données météo<a class="anchor" aria-label="anchor" href="#%C3%A9tape-6-int%C3%A9gration-avec-les-donn%C3%A9es-m%C3%A9t%C3%A9o"></a>
-</h2>
-<p>Combinez avec les roses des vents pour une analyse complète.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Obtenir la rose des vents (requiert connexion internet)</span></span>
-<span><span class="va">rose</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/obtenir_rose_vents.html">obtenir_rose_vents</a></span><span class="op">(</span></span>
-<span>  lat <span class="op">=</span> <span class="fl">46.8</span>,</span>
-<span>  lon <span class="op">=</span> <span class="op">-</span><span class="fl">71.2</span>,</span>
-<span>  date_debut <span class="op">=</span> <span class="st">"2023-01-01"</span>,</span>
-<span>  date_fin <span class="op">=</span> <span class="st">"2023-12-31"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Visualiser</span></span>
-<span><span class="fu"><a href="../reference/tracer_rose_vents.html">tracer_rose_vents</a></span><span class="op">(</span><span class="va">rose</span><span class="op">)</span></span></code></pre></div>
-<p><strong>Note</strong>: La fonction <code><a href="../reference/obtenir_rose_vents.html">obtenir_rose_vents()</a></code>
-nécessite une connexion internet pour accéder aux données NASA
-POWER.</p>
-</div>
-<div class="section level2">
-<h2 id="comparaison-des-méthodes-de-protection">Comparaison des méthodes de protection<a class="anchor" aria-label="anchor" href="#comparaison-des-m%C3%A9thodes-de-protection"></a>
-</h2>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Préparer les données</span></span>
-<span><span class="va">distances_haies_vent</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_distances_vent.html">calculer_distances_vent</a></span><span class="op">(</span></span>
-<span>  arbres_sf <span class="op">=</span> <span class="va">arbres_haies</span>,</span>
-<span>  angle_vent <span class="op">=</span> <span class="va">direction_vent</span>,</span>
-<span>  champ_bbox <span class="op">=</span> <span class="va">champ</span>,</span>
-<span>  resolution <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  max_distance <span class="op">=</span> <span class="fl">100</span>,</span>
-<span>  ouverture_angulaire <span class="op">=</span> <span class="fl">45</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Visualiser les différentes couches</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">2</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">3</span>, <span class="fl">3</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">distances_haies</span><span class="op">$</span><span class="va">distance_buffer</span>, main <span class="op">=</span> <span class="st">"Distance simple"</span>,</span>
-<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"Terrain"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">distances_haies_vent</span><span class="op">$</span><span class="va">distance_amont</span>, main <span class="op">=</span> <span class="st">"Amont"</span>,</span>
-<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"Blues"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">distances_haies_vent</span><span class="op">$</span><span class="va">distance_aval</span>, main <span class="op">=</span> <span class="st">"Aval"</span>,</span>
-<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"Reds"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">distances_haies_vent</span><span class="op">$</span><span class="va">distance_totale</span>, main <span class="op">=</span> <span class="st">"Totale"</span>,</span>
-<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"viridis"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="haies-brise-vent_files/figure-html/comparaison-1.png" class="r-plt" alt="" width="768"></p>
+<span><span class="fu"><a href="../reference/visualiser_distance_arbres.html">visualiser_distance_arbres</a></span><span class="op">(</span><span class="va">dist_arbres</span>, type <span class="op">=</span> <span class="st">"buffer"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="bonnes-pratiques">Bonnes pratiques<a class="anchor" aria-label="anchor" href="#bonnes-pratiques"></a>
@@ -920,57 +264,52 @@ POWER.</p>
 <strong>Validation terrain</strong>: Validez toujours les détections
 avec des observations terrain</li>
 <li>
-<strong>Résolution</strong>: Choisissez une résolution adaptée à vos
-objectifs (1-5m pour les haies)</li>
-<li>
-<strong>Buffer</strong>: Utilisez un buffer suffisant pour capturer
-les haies autour du champ</li>
+<strong>Résolution</strong>: Utilisez une résolution fine (0.25-1m)
+pour capturer les haies étroites</li>
 <li>
 <strong>Saison</strong>: Les données LiDAR de saison végétative
-donnent de meilleurs résultats</li>
+(feuilles) donnent de meilleurs résultats</li>
 <li>
-<strong>Angle focal</strong>: Ajustez selon la perméabilité de la
-haie (plus serrée = angle plus faible)</li>
+<strong>Paramètres</strong>: Ajustez <code>eps_dbscan</code> et
+<code>seuil_aspect</code> selon la densité des arbres</li>
 </ol>
 </div>
 <div class="section level2">
 <h2 id="workflow-complet">Workflow complet<a class="anchor" aria-label="anchor" href="#workflow-complet"></a>
 </h2>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://cedricbouffard.github.io/covariablechamps">covariablechamps</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 1. Charger le champ</span></span>
-<span><span class="va">champ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"champ.gpkg"</span><span class="op">)</span></span>
+<span><span class="co"># 1. Charger le champ M2</span></span>
+<span><span class="va">champ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"M2.shp"</span>, package <span class="op">=</span> <span class="st">"covariablechamps"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 2. Charger ou détecter les haies</span></span>
-<span><span class="va">haies</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"haies.shp"</span><span class="op">)</span></span>
+<span><span class="co"># 2. Télécharger les données LiDAR</span></span>
+<span><span class="va">lidar</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/telecharger_lidar_ponctuel.html">telecharger_lidar_ponctuel</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 3. Définir la direction du vent (270 = ouest)</span></span>
-<span><span class="va">direction_vent</span> <span class="op">&lt;-</span> <span class="fl">270</span></span>
-<span></span>
-<span><span class="co"># 4. Calculer les distances</span></span>
-<span><span class="va">dist</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_distances_amont_aval.html">calculer_distances_amont_aval</a></span><span class="op">(</span></span>
-<span>  arbres_sf <span class="op">=</span> <span class="va">haies</span>,</span>
-<span>  angle_vent <span class="op">=</span> <span class="va">direction_vent</span>,</span>
-<span>  champ_bbox <span class="op">=</span> <span class="va">champ</span>,</span>
-<span>  buffer_arbre <span class="op">=</span> <span class="fl">3</span></span>
+<span><span class="co"># 3. Détecter et classifier les haies</span></span>
+<span><span class="va">resultat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/extraire_classifier_haies_lidar.html">extraire_classifier_haies_lidar</a></span><span class="op">(</span></span>
+<span>  nuage_points <span class="op">=</span> <span class="va">lidar</span><span class="op">$</span><span class="va">nuage_points</span>,</span>
+<span>  hmin <span class="op">=</span> <span class="fl">2</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 5. Visualiser</span></span>
-<span><span class="fu"><a href="../reference/visualiser_distances_vent.html">visualiser_distances_vent</a></span><span class="op">(</span><span class="va">dist</span>, type <span class="op">=</span> <span class="st">"comparaison"</span><span class="op">)</span></span>
+<span><span class="co"># 4. Extraire les lignes centrales</span></span>
+<span><span class="va">lignes_haies</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/extraire_ligne_centrale_haies.html">extraire_ligne_centrale_haies</a></span><span class="op">(</span><span class="va">resultat</span><span class="op">$</span><span class="va">haies_rectangles</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 6. Simuler la vitesse</span></span>
-<span><span class="va">vitesse</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/simuler_vitesse_vent.html">simuler_vitesse_vent</a></span><span class="op">(</span></span>
-<span>  result <span class="op">=</span> <span class="va">dist</span>,</span>
-<span>  vitesse_ref <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  coef_amont <span class="op">=</span> <span class="fl">0.5</span>,</span>
-<span>  coef_aval <span class="op">=</span> <span class="fl">0.3</span></span>
+<span><span class="co"># 5. Calculer les zones de protection</span></span>
+<span><span class="va">direction_vent</span> <span class="op">&lt;-</span> <span class="fl">270</span>  <span class="co"># Vent d'ouest</span></span>
+<span><span class="va">zones</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_zones_vent_spline.html">calculer_zones_vent_spline</a></span><span class="op">(</span></span>
+<span>  haies <span class="op">=</span> <span class="va">lignes_haies</span>,</span>
+<span>  direction_vent <span class="op">=</span> <span class="va">direction_vent</span>,</span>
+<span>  facteurs_h <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">5</span>, <span class="fl">10</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 7. Cartographier</span></span>
-<span><span class="fu"><a href="../reference/tracer_carte_vent.html">tracer_carte_vent</a></span><span class="op">(</span>distances <span class="op">=</span> <span class="va">dist</span>, type <span class="op">=</span> <span class="st">"les_deux"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># 6. Rasteriser et visualiser</span></span>
+<span><span class="va">template</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="va">champ</span>, resolution <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="va">zones_raster</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rasteriser_zones_gradient_v2.html">rasteriser_zones_gradient_v2</a></span><span class="op">(</span><span class="va">zones</span>, <span class="va">template</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">zones_raster</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">lignes_haies</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, col <span class="op">=</span> <span class="st">"black"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="références">Références<a class="anchor" aria-label="anchor" href="#r%C3%A9f%C3%A9rences"></a>
