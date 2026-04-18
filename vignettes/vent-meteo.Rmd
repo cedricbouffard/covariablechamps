@@ -1,0 +1,255 @@
+---
+title: "Analyse du Vent et Données Météorologiques"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Analyse du Vent}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.height = 6,
+  message = FALSE
+)
+```
+
+```{r libs}
+library(covariablechamps)
+library(sf)
+library(terra)
+library(ggplot2)
+library(dplyr)
+```
+
+## Introduction
+
+L'analyse du vent est cruciale pour:
+- Planifier l'implantation de haies brise-vent
+- Estimer l'ombrage des cultures
+- Optimiser le drainage et la circulation de l'air
+- Prévoir les risques de renversement des cultures
+
+Le package `covariablechamps` fournit des outils pour obtenir et visualiser les données de vent.
+
+## Données de vent synthétiques
+
+Pour cet article, nous créons des données de vent synthétiques représentant une année typique au Québec.
+
+```{r donnees-vent-synth}
+# Créer des données de vent synthétiques (direction et vitesse)
+set.seed(42)
+n_observations <- 365 * 4  # 4 observations par jour
+
+# Directions du vent (en degrés, 0 = Nord)
+# Distribution typique: vents d'ouest dominants
+angles <- c(
+  rnorm(n_observations * 0.4, mean = 270, sd = 45),   # Ouest
+  rnorm(n_observations * 0.2, mean = 180, sd = 30),   # Sud
+  rnorm(n_observations * 0.15, mean = 90, sd = 30),   # Est
+  rnorm(n_observations * 0.25, mean = 0, sd = 40)     # Nord
+)
+angles <- angles %% 360
+angles[angles < 0] <- angles[angles < 0] + 360
+
+# Vitesse du vent (m/s) - distribution log-normale typique
+vitesses <- rlnorm(n_observations, meanlog = 1.5, sdlog = 0.8)
+vitesses <- pmin(vitesses, 20)  # Limiter à 20 m/s
+
+# Créer un data.frame
+donnees_vent <- data.frame(
+  direction = angles,
+  vitesse = vitesses,
+  date = seq(as.Date("2023-01-01"), by = "6 hours", length.out = n_observations)
+)
+
+# Catégories de vitesse
+donnees_vent <- donnees_vent %>%
+  mutate(
+    categorie = case_when(
+      vitesse < 2 ~ "Calme",
+      vitesse < 5 ~ "Faible",
+      vitesse < 10 ~ "Modérée",
+      vitesse < 15 ~ "Forte",
+      TRUE ~ "Très forte"
+    )
+  )
+
+cat("Données de vent créées:\n")
+cat(sprintf("  Nombre d'observations: %d\n", nrow(donnees_vent)))
+cat(sprintf("  Vitesse moyenne: %.1f m/s\n", mean(donnees_vent$vitesse)))
+cat(sprintf("  Direction dominante: %.0f°\n", 
+            donnees_vent$direction[which.max(tabulate(cut(donnees_vent$direction, breaks = 16)))]))
+```
+
+## Visualisation: Distribution des directions
+
+```{r rose-directions}
+# Créer une rose des vents simplifiée
+par(mar = c(4, 4, 4, 4))
+
+# Définir les secteurs (16 directions de 22.5° chacune)
+donnees_vent <- donnees_vent %>%
+  mutate(
+    secteur = cut(direction, 
+                  breaks = seq(0, 360, by = 22.5),
+                  labels = 0:15,
+                  include.lowest = TRUE)
+  )
+
+# Compter par secteur
+compte_secteurs <- donnees_vent %>%
+  group_by(secteur) %>%
+  summarise(
+    frequence = n(),
+    vitesse_moy = mean(vitesse)
+  ) %>%
+  mutate(
+    direction_deg = as.numeric(as.character(secteur)) * 22.5,
+    direction_rad = direction_deg * pi / 180
+  )
+
+# Rose des vents (fréquence)
+ggplot(compte_secteurs, aes(x = direction_deg, y = frequence)) +
+  geom_col(width = 20, fill = "steelblue", alpha = 0.7) +
+  coord_polar(theta = "x", start = -11.25 * pi / 180, direction = 1) +
+  scale_x_continuous(breaks = seq(0, 337.5, by = 45),
+                     labels = c("N", "NE", "E", "SE", "S", "SW", "W", "NW")) +
+  theme_minimal() +
+  labs(title = "Rose des vents - Fréquence par direction",
+       x = "", y = "Fréquence") +
+  theme(axis.text.y = element_blank(),
+        axis.ticks = element_blank())
+```
+
+## Rose des vents par classe de vitesse
+
+```{r rose-vitesse}
+# Créer une matrice pour la rose stacked
+classes_vitesse <- c("Calme", "Faible", "Modérée", "Forte", "Très forte")
+donnees_vent$categorie <- factor(donnees_vent$categorie, levels = classes_vitesse)
+
+compte_complete <- donnees_vent %>%
+  group_by(secteur, categorie) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  mutate(direction_deg = as.numeric(as.character(secteur)) * 22.5)
+
+# Rose avec couleurs par classe
+ggplot(compte_complete, aes(x = direction_deg, y = n, fill = categorie)) +
+  geom_col(width = 20) +
+  coord_polar(theta = "x", start = -11.25 * pi / 180, direction = 1) +
+  scale_x_continuous(breaks = seq(0, 337.5, by = 45),
+                     labels = c("N", "NE", "E", "SE", "S", "SW", "W", "NW")) +
+  scale_fill_brewer(palette = "Blues", direction = -1) +
+  theme_minimal() +
+  labs(title = "Rose des vents - Distribution par classe de vitesse",
+       x = "", y = "Fréquence", fill = "Classe") +
+  theme(axis.text.y = element_blank(),
+        axis.ticks = element_blank())
+```
+
+## Distribution des vitesses
+
+```{r distribution-vitesse}
+# Histogramme des vitesses
+ggplot(donnees_vent, aes(x = vitesse)) +
+  geom_histogram(binwidth = 1, fill = "steelblue", color = "white", alpha = 0.8) +
+  geom_vline(xintercept = mean(donnees_vent$vitesse), color = "red", 
+             linetype = "dashed", linewidth = 1) +
+  annotate("text", x = mean(donnees_vent$vitesse) + 2, y = Inf, 
+           label = sprintf("Moyenne: %.1f m/s", mean(donnees_vent$vitesse)),
+           vjust = 1.5, color = "red") +
+  theme_minimal() +
+  labs(title = "Distribution des vitesses du vent",
+       x = "Vitesse (m/s)", y = "Fréquence")
+```
+
+## Direction dominante et extraction de covariables
+
+```{r direction-dominante}
+# Identifier la direction dominante
+compte_direction <- table(cut(donnees_vent$direction, breaks = seq(0, 360, by = 22.5)))
+direction_dominante <- as.numeric(names(which.max(compte_direction))) + 11.25
+
+cat(sprintf("Direction dominante: %.0f° (%.0f° cardinal)\n", 
+            direction_dominante,
+            ((direction_dominante + 45) %% 360) %/% 90 * 90))
+```
+
+## Intégration avec l'analyse des distances au vent
+
+Une fois la direction du vent connue, vous pouvez:
+
+1. **Calculer les distances amont/aval**
+2. **Estimer le fetch de vent**
+3. **Modéliser la vitesse du vent**
+
+```{r integration-vent, eval = FALSE}
+# Exemple d'intégration (requiert des données réelles)
+
+# 1. Obtenir les données de vent depuis NASA POWER
+rose <- obtenir_rose_vents(
+  lat = 46.8,
+  lon = -71.2,
+  date_debut = "20230101",
+  date_fin = "20231231"
+)
+
+# 2. Identifier la direction dominante
+direction_dominante <- rose$directions[which.max(rose$wd_pct)]
+
+# 3. Utiliser pour calculer les distances
+dist <- calculer_distances_amont_aval(
+  arbres_sf = arbres,
+  angle_vent = direction_dominante,
+  champ_bbox = champ,
+  buffer_arbre = 3
+)
+
+# 4. Visualiser
+visualiser_distances_vent(dist, type = "comparaison")
+```
+
+## Obtenir des données réelles
+
+Pour obtenir des données de vent réelles depuis NASA POWER:
+
+```{r obtenir-donnees-reelles, eval = FALSE}
+# La fonction obtenir_rose_vents() nécessite une connexion internet
+
+# Pour un champ
+champ <- st_read("chemin/vers/champ.shp")
+rose <- obtenir_rose_vents(champ)
+
+# Pour des coordonnées
+rose <- obtenir_rose_vents(c(-71.2, 46.8))
+
+# Visualiser
+tracer_rose_vents(rose)
+tracer_rose_vents_stacked(rose)
+```
+
+## Applications agricoles
+
+### Haies brise-vent
+
+- Planifier l'orientation des haies perpendiculairement au vent dominant
+- Estimer la zone de protection (1-10H où H = hauteur de la haie)
+
+### Ombrage
+
+- Tenir compte de l'ombre projetée par les obstacles selon la direction du soleil
+- Estimer l'impact sur les cultures sensibles
+
+### Érosion
+
+- Identifier les zones vulnérables au vent
+- Prévoir les dépôts de sable
+
+### Aviation/pulvérisation
+
+- Planifier les interventions selon les fenêtres de vent calme
+- Estimer la dérive des pulvérisations

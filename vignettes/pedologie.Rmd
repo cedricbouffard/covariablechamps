@@ -1,0 +1,234 @@
+---
+title: "Analyse Pédologique et Séries de Sols"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Analyse Pédologique}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.height = 6,
+  message = FALSE
+)
+```
+
+```{r libs}
+library(covariablechamps)
+library(sf)
+library(terra)
+library(ggplot2)
+library(dplyr)
+```
+
+## Introduction
+
+L'analyse pédologique concerne l'étude des sols et leur distribution spatiale. La connaissance des séries de sols est essentielle pour:
+
+- Évaluer le drainage et la fertilité
+- Planifier l'irrigation
+- Choisir les cultures adaptées
+- Gérer les risques d'érosion
+
+Le package `covariablechamps` fournit la fonction `proba_et_classement_serie_quota_ilr()` pour désagéger les données pédologiques.
+
+## Concepts clés
+
+### Séries de sols
+
+Une **série de sols** est une unité de classification basée sur:
+- La texture du sol (proportions sable, limon, argile)
+- Le drainage
+- La topographie
+- Le matériau parental
+
+### Données requises
+
+Pour utiliser `proba_et_classement_serie_quota_ilr()`, vous avez besoin de:
+
+1. **Polygones des champs** avec les séries de sols identifiées
+2. **Table des séries** avec les compositions granulométriques
+3. **MNT** pour intégrer l'effet topographique
+
+## Exemple de données synthétiques
+
+Pour cet article, nous créons des données synthétiques.
+
+```{r donnees-synth}
+# Créer un champ
+coords_champ <- matrix(c(0, 0, 300, 0, 300, 200, 0, 200, 0, 0), 
+                       ncol = 2, byrow = TRUE)
+champ <- sf::st_polygon(list(coords_champ))
+champ <- sf::st_sfc(champ, crs = 32618)
+champ <- sf::st_sf(geometry = champ)
+
+# Créer des polygones de sols (3 séries)
+set.seed(42)
+polygones_sols <- lapply(1:3, function(i) {
+  offset_x <- sample(0:200, 1)
+  offset_y <- sample(0:100, 1)
+  w <- sample(50:100, 1)
+  h <- sample(50:100, 1)
+  coords <- matrix(c(offset_x, offset_y,
+                     offset_x + w, offset_y,
+                     offset_x + w, offset_y + h,
+                     offset_x, offset_y + h,
+                     offset_x, offset_y), 
+                   ncol = 2, byrow = TRUE)
+  sf::st_polygon(list(coords))
+})
+polygones_sols <- sf::st_sfc(polygones_sols, crs = 32618)
+polygones_sols <- sf::st_sf(ID = 1:3, geometry = polygones_sols)
+
+# Table des séries de sols
+table_series <- data.frame(
+  Code.polygone = 1:3,
+  Composante = c("Soulange", "Kamouraska", "Saint-André"),
+  Pourcentage = c(60, 75, 45),
+  Sable = c(30, 45, 55),
+  Limon = c(45, 35, 30),
+  Argile = c(25, 20, 15)
+)
+
+cat("Séries de sols:\n")
+print(table_series)
+```
+
+## Visualisation des polygones de sols
+
+```{r visualisation-sols}
+# Créer un raster de référence
+r_template <- terra::rast(
+  ncols = 60,
+  nrows = 40,
+  xmin = 0, xmax = 300,
+  ymin = 0, ymax = 200,
+  crs = 32618
+)
+
+# Colour palette for soils
+soil_colors <- c("steelblue", "sienna", "forestgreen")
+names(soil_colors) <- table_series$Composante
+
+ggplot() +
+  geom_sf(data = polygones_sols, aes(fill = factor(ID)), alpha = 0.5) +
+  geom_sf(data = champ, fill = NA, color = "black", linewidth = 1.5) +
+  scale_fill_discrete(name = "Série", labels = table_series$Composante) +
+  theme_minimal() +
+  labs(title = "Polygones de séries de sols",
+       subtitle = "Exemple de distribution spatiale")
+```
+
+## Triangle textural
+
+Le triangle textural montre la classification des sols selon les proportions de sable, limon et argile.
+
+```{r triangle-textural}
+# Créer les points du triangle
+par(mar = c(4, 4, 4, 4))
+
+# Labels des coins
+text(0.5, 1.05, "ARGILE", adj = 0.5, font = 2)
+text(-0.05, -0.05, "SABLE", adj = 0.5, font = 2, srt = 60)
+text(1.05, -0.05, "LIMON", adj = 0.5, font = 2, srt = -60)
+
+# Ajouter les points pour chaque série
+for (i in 1:nrow(table_series)) {
+  # Conversion en coordonnées triangulaires
+  # (simplifié)
+  x <- table_series$Sable[i] / 100 * 0.5 + table_series$Limon[i] / 100
+  y <- table_series$Sable[i] / 100 * sqrt(3) / 2
+  
+  points(x, y, pch = 19, cex = 3, col = soil_colors[i])
+  text(x, y + 0.08, table_series$Composante[i], font = 2)
+}
+
+title("Triangle textural des séries de sols")
+```
+
+## Workflow complet
+
+La fonction `proba_et_classement_serie_quota_ilr()` effectue une désagrégation des polygones de sols:
+
+```{r workflow-complet, eval = FALSE}
+# 1. Charger les données
+champs_sf <- sf::st_read("champs.shp")
+table_sols <- read.csv("sols.csv")
+
+# 2. Charger le MNT
+mnt <- terra::rast("mnt.tif")
+
+# 3. Calculer les probabilités et classifications
+resultat <- proba_et_classement_serie_quota_ilr(
+  polygones_sf = champs_sf,
+  table_series = table_sols,
+  mnt = mnt,
+  id_col = "Code.polygone",
+  serie_col = "Composante",
+  poids_col = "Pourcentage",
+  sable_col = "Sable",
+  limon_col = "Limon",
+  argile_col = "Argile"
+)
+
+# 4. Visualiser
+plot(resultat$prob)  # Probabilités par série
+plot(resultat$closest_label)  # Classification finale
+```
+
+## Paramètres de la fonction
+
+### Résolution (`grid_m`)
+
+Contrôle la résolution de la grille de désagrégation:
+- Plus fin = plus détaillé mais plus lent
+- Recommandé: 10-50m selon la qualité des données
+
+### Voisinage (`sigma_voisin`)
+
+Lissage spatial pour éviter les地块 isolés:
+- Plus grand = plus de lissage
+- Recommandé: 30-100m
+
+### Effet MNT (`beta_mnt`)
+
+Influence de la topographie sur la texture:
+- Beta = 0:不考虑 MNT
+- Beta = 0.2: Effet modéré
+- Beta = 0.5: Effet fort
+
+## Interprétation des résultats
+
+### Raster de probabilités
+
+Chaque couche représente la probabilité d'appartenance à une série:
+- Valeurs près de 1 = forte probabilité
+- Valeurs près de 0 = faible probabilité
+
+### Classification finale
+
+Le raster `closest_label` assigne chaque pixel à la série la plus probable.
+
+## Applications agricoles
+
+### drainage
+
+| Série | drainage |
+|-------|----------|
+| Soulange | Bon |
+| Kamouraska | Modéré imparfait |
+| Saint-André | Bon à modéré |
+
+### Aptitudes culturales
+
+- Séries bien drainées: cultures sensibles au froid
+- Séries à drainage modéré: pacage, forêts
+
+### Gestion de l'eau
+
+- Identifier les zones à risque de saturation
+- Planifier les systèmes de drainage

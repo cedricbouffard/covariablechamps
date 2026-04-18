@@ -29,6 +29,12 @@ navbar:
           href: articles/ombrage.html
         - text: "Distances aux arbres et vent"
           href: articles/distances-arbres-vent.html
+        - text: "Analyse topographique"
+          href: articles/topographie.html
+        - text: "Vent et meteorologie"
+          href: articles/vent-meteo.html
+        - text: "Pedologie et sols"
+          href: articles/pedologie.html
     news:
       text: Nouvelles
       href: news/index.html
@@ -126,6 +132,9 @@ articles:
       - haies-brise-vent
       - ombrage
       - distances-arbres-vent
+      - topographie
+      - vent-meteo
+      - pedologie
 
 home:
   links:
