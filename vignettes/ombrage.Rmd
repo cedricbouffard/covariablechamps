@@ -45,33 +45,44 @@ Le package inclut un champ d'exemple (`M2`) situé au Québec.
 champ <- st_read(system.file("extdata", "M2.shp", package = "covariablechamps"))
 ```
 
-## Téléchargement des données LiDAR
+## Téléchargement du MNE (Modèle Numérique d'Élévation)
 
-Le MNE (Modèle Numérique d'Élévation) inclut les arbres et permet de calculer les ombres.
+Le MNE inclut les arbres et permet de calculer les ombres projetées.
 
 **Note**: Le téléchargement peut prendre quelques minutes.
 
-```{r telecharger-lidar, cache = TRUE}
-# Télécharger les données LiDAR
-lidar <- telecharger_lidar(
+```{r telecharger-mne, cache = TRUE}
+# Télécharger le MNE (avec arbres)
+mne <- telecharger_lidar(
   polygone = champ,
-  mne = TRUE  # MNE = inclut les arbres
+  mne = TRUE
 )
-
-mne <- lidar$mne
-mnt <- lidar$mnt
 
 plot(mne, main = "MNE (Modèle Numérique d'Élévation)",
      col = hcl.colors(100, "Terrain"))
 plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 ```
 
+## Téléchargement du MNT (Modèle Numérique de Terrain)
+
+Le MNT est le terrain sans les arbres (sol nu).
+
+```{r telecharger-mnt, cache = TRUE}
+mnt <- telecharger_lidar(
+  polygone = champ,
+  mne = FALSE
+)
+
+plot(mnt, main = "MNT (Modèle Numérique de Terrain)",
+     col = hcl.colors(100, "Terrain"))
+plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
+```
+
 ## Calcul de l'ombrage
 
-Pour calculer l'ombrage à un instant donné:
+Pour calculer l'ombrage à une date donnée:
 
 ```{r ombrage-simple, cache = TRUE}
-# Calculer l'ombrage pour le 21 juin 2024 à midi
 ombrage <- calculer_ombrage(
   polygone = champ,
   date = "2024-06-21",
@@ -97,30 +108,6 @@ Le nombre d'heures d'ensoleillement par pixel:
 plot(ombrage$heures_ensoleillement, 
      main = "Heures d'ensoleillement (21 juin 2024)",
      col = hcl.colors(100, "YlOrRd"))
-plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
-```
-
-## Variation journalière
-
-Comparons l'ombrage à différentes heures de la journée:
-
-```{r variation-horaire, cache = TRUE}
-# Calculer l'ombrage pour quelques heures
-heures <- c(6, 9, 12, 15, 18)
-
-par(mfrow = c(2, 3), mar = c(2, 2, 2, 2))
-
-for (h in heures) {
-  omb_h <- calculer_ombrage(
-    polygone = champ,
-    date = "2024-06-21",
-    intervalle_heures = 1
-  )
-  plot(omb_h$ombrage_moyen, main = paste0("Heure ", h),
-       col = grey(100:0 / 100), axes = FALSE)
-}
-
-# Ajouter le champ
 plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 ```
 
@@ -154,13 +141,11 @@ plot(ombrage_hiver$ombrage_moyen, main = "Ombrage hiver (21 décembre)",
 plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 ```
 
-## Workflow complet
+## Calcul sur une période
 
-```{r workflow, cache = TRUE}
-# Télécharger les données
-lidar <- telecharger_lidar(champ, mne = TRUE)
+La fonction `calculer_ombrage_periode()` calcule l'ombrage moyen sur une période:
 
-# Calculer l'ombrage pour une période
+```{r ombrage-periode, cache = TRUE}
 resultat <- calculer_ombrage_periode(
   polygone = champ,
   date_debut = "2024-06-01",
@@ -168,14 +153,15 @@ resultat <- calculer_ombrage_periode(
   intervalle_jours = 7
 )
 
-# Visualiser
+par(mfrow = c(1, 2), mar = c(3, 3, 3, 3))
+
 plot(resultat$ombrage_moyen_periode, 
      main = "Ombrage moyen (juin 2024)",
      col = grey(100:0 / 100))
 plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 
 plot(resultat$heures_ensoleillement_moyen,
-     main = "Heures d'ensoleillement moyennes (juin 2024)",
+     main = "Heures d'ensoleillement moy. (juin 2024)",
      col = hcl.colors(100, "YlOrRd"))
 plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 ```
