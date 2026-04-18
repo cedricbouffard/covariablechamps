@@ -108,7 +108,7 @@ La fonction `calculer_aspect()` calcule l'orientation du terrain.
 aspect <- calculer_aspect(mnt)
 
 plot(aspect, main = "Aspect (degrés - direction du Nord)",
-     col = hcl.colors(100, "Cyclical"))
+     col = hcl.colors(100, "Zissou"))
 plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 ```
 
@@ -133,7 +133,7 @@ plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 plot(pente, main = "Pente (degrés)", col = hcl.colors(100, "Reds"))
 plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 
-plot(aspect, main = "Aspect (degrés)", col = hcl.colors(100, "Cyclical"))
+plot(aspect, main = "Aspect (degrés)", col = hcl.colors(100, "Zissou"))
 plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 
 # Ombrage (hillshade)
