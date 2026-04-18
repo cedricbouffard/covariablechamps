@@ -45,48 +45,29 @@ Le package inclut un champ d'exemple (`M2`) situé au Québec.
 ```{r charger-champ}
 champ <- st_read(system.file("extdata", "M2.shp", package = "covariablechamps"))
 
-# Visualiser le champ
 ggplot() +
   geom_sf(data = champ, fill = "lightgreen", alpha = 0.5) +
   theme_minimal() +
   labs(title = "Champ M2",
-       subtitle = "Exemples de données inclus dans le package")
+       subtitle = "Champ d'exemple inclus dans le package")
 ```
 
-## Création d'un MNT synthétique
+## Téléchargement du MNT depuis LiDAR
 
-Pour cet article, nous créons un MNT (Modèle Numérique de Terrain) synthétique représentant un terrain vallonnant autour du champ M2.
+Le MNT (Modèle Numérique de Terrain) est téléchargé depuis les données LiDAR.
 
-```{r create-dem}
-# Obtenir l'étendue du champ avec un buffer
-bbox <- st_bbox(champ)
-buffer <- 50  # mètres
+**Note**: Cette opération nécessite des données LiDAR réelles.
 
-# Créer un raster de base
-r <- terra::rast(
-  ncols = 80,
-  nrows = 60,
-  xmin = bbox["xmin"] - buffer, xmax = bbox["xmax"] + buffer,
-  ymin = bbox["ymin"] - buffer, ymax = bbox["ymax"] + buffer,
-  crs = st_crs(champ)$input
+```{r telecharger-mnt, eval = FALSE}
+# Télécharger le MNT depuis LiDAR
+mnt <- telecharger_lidar(
+  polygone = champ,
+  dossier = "output/lidar",
+  mne = FALSE  # FALSE = MNT (sans arbres)
 )
 
-# Créer des coordonnées
-coords <- terra::xyFromCell(r, 1:terra::ncell(r))
-
-# Simuler un terrain vallonné
-elevation <- 100 + 
-  10 * sin(coords[, 1] / 50) * cos(coords[, 2] / 60) +
-  5 * sin(coords[, 1] / 30 + coords[, 2] / 40) +
-  2 * cos(coords[, 1] * coords[, 2] / 3000)
-
-# Ajouter le raster d'élévation
-mnt <- r
-terra::values(mnt) <- elevation
-
 # Visualiser le MNT
-plot(mnt, main = "Modèle Numérique de Terrain (MNT)",
-     col = hcl.colors(100, "Terrain"))
+plot(mnt, main = "Modèle Numérique de Terrain (MNT)")
 plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 ```
 
@@ -94,7 +75,7 @@ plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 
 La fonction `calculer_pente()` calcule l'inclinaison du terrain en degrés.
 
-```{r pente}
+```{r pente, eval = FALSE}
 pente <- calculer_pente(mnt)
 
 plot(pente, main = "Pente (degrés)",
@@ -104,7 +85,7 @@ plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 
 ### Distribution des pentes
 
-```{r distribution-pente}
+```{r distribution-pente, eval = FALSE}
 vals_pente <- terra::values(pente)
 vals_pente <- vals_pente[!is.na(vals_pente)]
 
@@ -123,7 +104,7 @@ cat(sprintf("  Médiane: %.1f°\n", median(vals_pente)))
 
 La fonction `calculer_aspect()` calcule l'orientation du terrain.
 
-```{r aspect}
+```{r aspect, eval = FALSE}
 aspect <- calculer_aspect(mnt)
 
 plot(aspect, main = "Aspect (degrés - direction du Nord)",
@@ -158,15 +139,13 @@ Les géomorphons classifient le terrain en 10 formes:
 | 9 | Vallée | Ligne de thalweg |
 | 10 | Fosse | Point bas |
 
-**Note**: Le calcul des géomorphons nécessite le package `rgeomorphon` et n'est pas exécuté dans cet article.
+**Note**: Le calcul des géomorphons nécessite le package `rgeomorphon`.
 
 ## Extraction complète des covariables terrain
 
 La fonction `extraire_covariables_terrain()` calcule toutes les covariables en une seule commande:
 
 ```{r extract-all, eval = FALSE}
-# Cette fonction requiert des données LiDAR réelles
-
 result <- extraire_covariables_terrain(
   polygone = champ,
   dossier = "output/terrain"
