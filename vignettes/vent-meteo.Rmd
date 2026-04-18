@@ -68,30 +68,55 @@ cat("Données obtenues pour:", rose$coordonnees[1], ",", rose$coordonnees[2], "\
 cat("Directions analysées:", length(rose$directions), "\n")
 ```
 
-## Visualisation: Rose des vents
+## Visualisation: Rose des vents (ggplot2)
 
-### Rose des vents simple
+Nous créons notre propre visualisation avec ggplot2:
 
-```{r rose-simple, cache = TRUE}
-tracer_rose_vents(rose)
-```
+```{r rose-ggplot}
+# Préparer les données
+df_rose <- data.frame(
+  direction = rose$directions,
+  frequence = rose$wd_pct,
+  vitesse = rose$wd_avg
+)
 
-### Rose des vents empilée
+# Ordonner par angle
+df_rose <- df_rose |>
+  arrange(direction) |>
+  mutate(idx = row_number())
 
-```{r rose-stackee, cache = TRUE}
-tracer_rose_vents_stacked(rose)
+# Coordonnées polaires
+n_dir <- nrow(df_rose)
+bin <- 2 * pi / n_dir
+df_rose <- df_rose |>
+  mutate(theta = (idx - 1) * bin)
+
+# Fermer le polygone
+df_closed <- bind_rows(df_rose, df_rose[1, ] |> mutate(theta = 2 * pi))
+
+# Directions cardinales
+dir_names <- c("N","NNE","NE","ENE","E","ESE","SE","SSE",
+               "S","SSW","SW","WSW","W","WNW","NW","NNW")
+
+# Tracer
+ggplot(df_closed, aes(x = theta, y = frequence, group = 1)) +
+  geom_polygon(fill = "steelblue", alpha = 0.35, color = "steelblue", linewidth = 1) +
+  geom_point(color = "steelblue", size = 1.8) +
+  coord_radial(start = 0, expand = FALSE, inner.radius = 0.10, r.axis.inside = 0, reverse = "none") +
+  scale_x_continuous(breaks = (0:(n_dir - 1)) * bin, labels = dir_names, limits = c(0, 2 * pi), expand = c(0, 0)) +
+  theme_minimal() +
+  labs(title = "Rose des vents - Fréquence des directions",
+       subtitle = paste("Hauteur:", rose$hauteur, "| Période:", rose$periode["debut"], "à", rose$periode["fin"]),
+       x = NULL, y = "Fréquence (%)",
+       caption = paste("Source: NASA POWER | Coordonnées:", 
+                       round(rose$coordonnees["longitude"], 4), ",",
+                       round(rose$coordonnees["latitude"], 4)))
 ```
 
 ## Distribution des directions
 
 ```{r distribution-directions}
-# Fréquence par direction
-df_rose <- data.frame(
-  direction = rose$directions,
-  frequence = rose$wd_pct
-)
-
-df_rose <- df_rose %>%
+df_rose <- df_rose |>
   mutate(
     direction_cardinale = case_when(
       direction >= 337.5 | direction < 22.5 ~ "N",
@@ -120,12 +145,11 @@ ggplot(df_rose, aes(x = direction, y = frequence, fill = direction_cardinale)) +
 
 ```{r direction-dominante}
 direction_dom <- rose$directions[which.max(rose$wd_pct)]
-freq_max <- max(rose$wd_pct)
+freq_max <- max(rose$wd_pct, na.rm = TRUE)
 
-cat(sprintf("Direction dominante: %.0f° (%.0f%% des vents)\n", 
+cat(sprintf("Direction dominante: %.0f° (%.1f%% des vents)\n", 
             direction_dom, freq_max))
 
-# Carte mentale des directions
 cat("\nOrientation:\n")
 cat("  0°   = Nord\n")
 cat("  90°  = Est\n")
@@ -133,24 +157,20 @@ cat("  180° = Sud\n")
 cat("  270° = Ouest\n")
 ```
 
-## Vitesse moyenne par direction
+## Rose des vents avec vitesse moyenne
 
-```{r vitesse-moyenne}
-df_vitesse <- data.frame(
-  direction = rose$directions,
-  frequence = rose$wd_pct,
-  vitesse_moy = rose$wd_avg
-)
-
-ggplot(df_vitesse, aes(x = direction, y = frequence, fill = vitesse_moy)) +
-  geom_col(width = 20) +
-  scale_fill_viridis_c(name = "Vitesse moy. (m/s)") +
-  coord_polar(theta = "x", start = -11.25 * pi / 180) +
-  scale_x_continuous(breaks = seq(0, 337.5, by = 45),
-                     labels = c("N", "NE", "E", "SE", "S", "SO", "O", "NO")) +
+```{r rose-vitesse}
+ggplot(df_closed, aes(x = theta, y = frequence, group = 1)) +
+  geom_polygon(aes(fill = c(vitesse, vitesse[1])), alpha = 0.7) +
+  geom_point(aes(color = c(vitesse, vitesse[1])), size = 2) +
+  scale_fill_gradientn(colors = hcl.colors(100, "YlOrRd"), name = "Vitesse (m/s)") +
+  scale_color_gradientn(colors = hcl.colors(100, "YlOrRd"), name = "Vitesse (m/s)") +
+  coord_radial(start = 0, expand = FALSE, inner.radius = 0.10, r.axis.inside = 0, reverse = "none") +
+  scale_x_continuous(breaks = (0:(n_dir - 1)) * bin, labels = dir_names, limits = c(0, 2 * pi), expand = c(0, 0)) +
   theme_minimal() +
   labs(title = "Rose des vents avec vitesse moyenne",
-       x = "", y = "Fréquence (%)")
+       subtitle = paste("Hauteur:", rose$hauteur),
+       x = NULL, y = "Fréquence (%)")
 ```
 
 ## Comparaison saisonnière
@@ -172,31 +192,37 @@ rose_ete <- obtenir_rose_vents(
   hauteur = "10m"
 )
 
-par(mfrow = c(1, 2), mar = c(3, 3, 3, 3))
+par(mfrow = c(1, 2), mar = c(4, 4, 4, 4))
 
-# Hiver
-plot(0, type = "n", axes = FALSE, xlim = c(-1, 1), ylim = c(-1, 1))
-title("Hiver (Jan-Mar)")
-for (i in 1:length(rose_hiver$directions)) {
-  if (!is.na(rose_hiver$wd_pct[i])) {
-    angle <- (90 - rose_hiver$directions[i]) * pi / 180
-    len <- rose_hiver$wd_pct[i] / 100
-    arrows(0, 0, len * cos(angle), len * sin(angle), 
-           length = 0.1, col = "blue", alpha = 0.5 + rose_hiver$wd_pct[i] / 200)
+# Fonction pour tracer une rose simple avec barplot polaire
+plot_rose_simple <- function(rose_data, main) {
+  freqs <- rose_data$wd_pct
+  angles <- (rose_data$directions - 90) * pi / 180  # Rotation pour avoir Nord en haut
+  freqs[is.na(freqs)] <- 0
+  
+  # Barplot polaire
+  barplot(freqs, axes = FALSE, axisnames = FALSE,
+          width = rep(1, length(freqs)), space = 0.1,
+          col = rgb(0.2, 0.4, 0.8, 0.6),
+          main = main)
+  
+  # Ajouter les axes
+  r_max <- max(freqs, na.rm = TRUE)
+  for (i in seq(0, r_max, length.out = 4)) {
+    angle_seq <- seq(0, 2 * pi, length.out = 100)
+    lines(i * cos(angle_seq), i * sin(angle_seq), col = "grey80")
   }
+  
+  # Labels des directions
+  dir_labels <- c("N", "NE", "E", "SE", "S", "SO", "O", "NO")
+  angles_labels <- seq(0, 7) * pi / 4
+  text(r_max * 1.1 * cos(angles_labels), 
+       r_max * 1.1 * sin(angles_labels), 
+       dir_labels, cex = 0.8)
 }
 
-# Été
-plot(0, type = "n", axes = FALSE, xlim = c(-1, 1), ylim = c(-1, 1))
-title("Été (Jun-Aug)")
-for (i in 1:length(rose_ete$directions)) {
-  if (!is.na(rose_ete$wd_pct[i])) {
-    angle <- (90 - rose_ete$directions[i]) * pi / 180
-    len <- rose_ete$wd_pct[i] / 100
-    arrows(0, 0, len * cos(angle), len * sin(angle), 
-           length = 0.1, col = "red", alpha = 0.5 + rose_ete$wd_pct[i] / 200)
-  }
-}
+plot_rose_simple(rose_hiver, "Hiver (Jan-Mar)")
+plot_rose_simple(rose_ete, "Été (Jun-Aug)")
 ```
 
 ## Applications agricoles
