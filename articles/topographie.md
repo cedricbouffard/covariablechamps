@@ -47,22 +47,24 @@ ggplot() +
 ## Téléchargement du MNT depuis LiDAR
 
 Le MNT (Modèle Numérique de Terrain) est téléchargé depuis les données
-LiDAR.
+LiDAR du DataCube du Canada.
 
-**Note**: Cette opération nécessite des données LiDAR réelles.
+**Note**: Le téléchargement peut prendre quelques minutes selon la
+taille de la zone.
 
 ``` r
 # Télécharger le MNT depuis LiDAR
 mnt <- telecharger_lidar(
   polygone = champ,
-  dossier = "output/lidar",
   mne = FALSE  # FALSE = MNT (sans arbres)
 )
 
-# Visualiser le MNT
-plot(mnt, main = "Modèle Numérique de Terrain (MNT)")
+plot(mnt, main = "Modèle Numérique de Terrain (MNT)",
+     col = hcl.colors(100, "Terrain"))
 plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 ```
+
+![](topographie_files/figure-html/telecharger-mnt-1.png)
 
 ## Calcul de la pente
 
@@ -78,6 +80,8 @@ plot(pente, main = "Pente (degrés)",
 plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 ```
 
+![](topographie_files/figure-html/pente-1.png)
+
 ### Distribution des pentes
 
 ``` r
@@ -87,12 +91,22 @@ vals_pente <- vals_pente[!is.na(vals_pente)]
 hist(vals_pente, breaks = 30, main = "Distribution des pentes",
      xlab = "Pente (degrés)", ylab = "Fréquence",
      col = "lightblue", border = "white")
+```
+
+![](topographie_files/figure-html/distribution-pente-1.png)
+
+``` r
 
 cat("Statistiques de la pente:\n")
+#> Statistiques de la pente:
 cat(sprintf("  Min: %.1f°\n", min(vals_pente)))
+#>   Min: 0.0°
 cat(sprintf("  Max: %.1f°\n", max(vals_pente)))
+#>   Max: 12.4°
 cat(sprintf("  Moyenne: %.1f°\n", mean(vals_pente)))
+#>   Moyenne: 2.3°
 cat(sprintf("  Médiane: %.1f°\n", median(vals_pente)))
+#>   Médiane: 2.0°
 ```
 
 ## Calcul de l’aspect (orientation)
@@ -105,9 +119,11 @@ calcule l’orientation du terrain.
 aspect <- calculer_aspect(mnt)
 
 plot(aspect, main = "Aspect (degrés - direction du Nord)",
-     col = hcl.colors(100, "Cyclical"))
+     col = hcl.colors(100, "Zissou"))
 plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 ```
+
+![](topographie_files/figure-html/aspect-1.png)
 
 ### Interprétation de l’aspect
 
@@ -116,24 +132,28 @@ Sud - 270° = Ouest
 
 Les valeurs manquantes (NA) indiquent les zones plates.
 
-## Classification en géomorphons
+## Visualisation combinée
 
-Les géomorphons classifient le terrain en 10 formes:
+``` r
+par(mfrow = c(2, 2), mar = c(3, 3, 3, 3))
 
-| Code | Nom        | Description                |
-|------|------------|----------------------------|
-| 1    | Plat       | Surface horizontale        |
-| 2    | Pic        | Point culminant            |
-| 3    | Crête      | Ligne de partage           |
-| 4    | Épaulement | Transition crête-pente     |
-| 5    | Éperon     | Protubérance sur une pente |
-| 6    | Pente      | Surface inclinée           |
-| 7    | Creux      | Dépression sur une pente   |
-| 8    | Pied       | Base d’une pente           |
-| 9    | Vallée     | Ligne de thalweg           |
-| 10   | Fosse      | Point bas                  |
+plot(mnt, main = "MNT (élévation)", col = hcl.colors(100, "Terrain"))
+plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 
-**Note**: Le calcul des géomorphons nécessite le package `rgeomorphon`.
+plot(pente, main = "Pente (degrés)", col = hcl.colors(100, "Reds"))
+plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
+
+plot(aspect, main = "Aspect (degrés)", col = hcl.colors(100, "Zissou"))
+plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
+
+# Ombrage (hillshade)
+hillshade <- terra::shade(slope = pente * pi / 180, 
+                          aspect = aspect * pi / 180)
+plot(hillshade, main = "Ombrage (hillshade)", col = grey(0:100 / 100))
+plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
+```
+
+![](topographie_files/figure-html/combine-1.png)
 
 ## Extraction complète des covariables terrain
 
@@ -144,39 +164,25 @@ calcule toutes les covariables en une seule commande:
 ``` r
 result <- extraire_covariables_terrain(
   polygone = champ,
-  dossier = "output/terrain"
+  dossier = NULL  # Sans sauvegarder
 )
 
 plot(result$mnt, main = "MNT")
+```
+
+![](topographie_files/figure-html/extract-all-1.png)
+
+``` r
 plot(result$pente, main = "Pente")
+```
+
+![](topographie_files/figure-html/extract-all-2.png)
+
+``` r
 plot(result$aspect, main = "Aspect")
 ```
 
-## Workflow complet
-
-``` r
-# 1. Charger le package
-library(covariablechamps)
-
-# 2. Charger le champ M2
-champ <- st_read(system.file("extdata", "M2.shp", package = "covariablechamps"))
-
-# 3. Télécharger le MNT depuis LiDAR
-mnt <- telecharger_lidar(champ)
-
-# 4. Calculer la pente
-pente <- calculer_pente(mnt)
-
-# 5. Calculer l'aspect
-aspect <- calculer_aspect(mnt)
-
-# 6. Statistiques
-cat("Pente moyenne:", mean(terra::values(pente), na.rm = TRUE), "degrés\n")
-
-# 7. Sauvegarder
-terra::writeRaster(pente, "pente.tif")
-terra::writeRaster(aspect, "aspect.tif")
-```
+![](topographie_files/figure-html/extract-all-3.png)
 
 ## Applications agricoles
 

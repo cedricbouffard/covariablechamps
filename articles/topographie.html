@@ -122,20 +122,20 @@ Québec.</p>
 <h2 id="téléchargement-du-mnt-depuis-lidar">Téléchargement du MNT depuis LiDAR<a class="anchor" aria-label="anchor" href="#t%C3%A9l%C3%A9chargement-du-mnt-depuis-lidar"></a>
 </h2>
 <p>Le MNT (Modèle Numérique de Terrain) est téléchargé depuis les
-données LiDAR.</p>
-<p><strong>Note</strong>: Cette opération nécessite des données LiDAR
-réelles.</p>
+données LiDAR du DataCube du Canada.</p>
+<p><strong>Note</strong>: Le téléchargement peut prendre quelques
+minutes selon la taille de la zone.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Télécharger le MNT depuis LiDAR</span></span>
 <span><span class="va">mnt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/telecharger_lidar.html">telecharger_lidar</a></span><span class="op">(</span></span>
 <span>  polygone <span class="op">=</span> <span class="va">champ</span>,</span>
-<span>  dossier <span class="op">=</span> <span class="st">"output/lidar"</span>,</span>
 <span>  mne <span class="op">=</span> <span class="cn">FALSE</span>  <span class="co"># FALSE = MNT (sans arbres)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Visualiser le MNT</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mnt</span>, main <span class="op">=</span> <span class="st">"Modèle Numérique de Terrain (MNT)"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mnt</span>, main <span class="op">=</span> <span class="st">"Modèle Numérique de Terrain (MNT)"</span>,</span>
+<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"Terrain"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, border <span class="op">=</span> <span class="st">"black"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
+<p><img src="topographie_files/figure-html/telecharger-mnt-1.png" class="r-plt" alt="" width="768"></p>
 </div>
 <div class="section level2">
 <h2 id="calcul-de-la-pente">Calcul de la pente<a class="anchor" aria-label="anchor" href="#calcul-de-la-pente"></a>
@@ -148,6 +148,7 @@ terrain en degrés.</p>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pente</span>, main <span class="op">=</span> <span class="st">"Pente (degrés)"</span>,</span>
 <span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"Reds"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, border <span class="op">=</span> <span class="st">"black"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
+<p><img src="topographie_files/figure-html/pente-1.png" class="r-plt" alt="" width="768"></p>
 <div class="section level3">
 <h3 id="distribution-des-pentes">Distribution des pentes<a class="anchor" aria-label="anchor" href="#distribution-des-pentes"></a>
 </h3>
@@ -157,13 +158,20 @@ terrain en degrés.</p>
 <span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/hist.html" class="external-link">hist</a></span><span class="op">(</span><span class="va">vals_pente</span>, breaks <span class="op">=</span> <span class="fl">30</span>, main <span class="op">=</span> <span class="st">"Distribution des pentes"</span>,</span>
 <span>     xlab <span class="op">=</span> <span class="st">"Pente (degrés)"</span>, ylab <span class="op">=</span> <span class="st">"Fréquence"</span>,</span>
-<span>     col <span class="op">=</span> <span class="st">"lightblue"</span>, border <span class="op">=</span> <span class="st">"white"</span><span class="op">)</span></span>
-<span></span>
+<span>     col <span class="op">=</span> <span class="st">"lightblue"</span>, border <span class="op">=</span> <span class="st">"white"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="topographie_files/figure-html/distribution-pente-1.png" class="r-plt" alt="" width="768"></p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Statistiques de la pente:\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Statistiques de la pente:</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"  Min: %.1f°\n"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">vals_pente</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   Min: 0.0°</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"  Max: %.1f°\n"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">vals_pente</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   Max: 12.4°</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"  Moyenne: %.1f°\n"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/summarize-generics.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">vals_pente</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"  Médiane: %.1f°\n"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/summarize-generics.html" class="external-link">median</a></span><span class="op">(</span><span class="va">vals_pente</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co">#&gt;   Moyenne: 2.3°</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"  Médiane: %.1f°\n"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/summarize-generics.html" class="external-link">median</a></span><span class="op">(</span><span class="va">vals_pente</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   Médiane: 2.0°</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -171,12 +179,13 @@ terrain en degrés.</p>
 </h2>
 <p>La fonction <code><a href="../reference/calculer_aspect.html">calculer_aspect()</a></code> calcule l’orientation du
 terrain.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">aspect</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_aspect.html">calculer_aspect</a></span><span class="op">(</span><span class="va">mnt</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aspect</span>, main <span class="op">=</span> <span class="st">"Aspect (degrés - direction du Nord)"</span>,</span>
-<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"Cyclical"</span><span class="op">)</span><span class="op">)</span></span>
+<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"Zissou"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, border <span class="op">=</span> <span class="st">"black"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
+<p><img src="topographie_files/figure-html/aspect-1.png" class="r-plt" alt="" width="768"></p>
 <div class="section level3">
 <h3 id="interprétation-de-laspect">Interprétation de l’aspect<a class="anchor" aria-label="anchor" href="#interpr%C3%A9tation-de-laspect"></a>
 </h3>
@@ -186,111 +195,46 @@ terrain.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="classification-en-géomorphons">Classification en géomorphons<a class="anchor" aria-label="anchor" href="#classification-en-g%C3%A9omorphons"></a>
+<h2 id="visualisation-combinée">Visualisation combinée<a class="anchor" aria-label="anchor" href="#visualisation-combin%C3%A9e"></a>
 </h2>
-<p>Les géomorphons classifient le terrain en 10 formes:</p>
-<table class="table">
-<thead><tr class="header">
-<th>Code</th>
-<th>Nom</th>
-<th>Description</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td>1</td>
-<td>Plat</td>
-<td>Surface horizontale</td>
-</tr>
-<tr class="even">
-<td>2</td>
-<td>Pic</td>
-<td>Point culminant</td>
-</tr>
-<tr class="odd">
-<td>3</td>
-<td>Crête</td>
-<td>Ligne de partage</td>
-</tr>
-<tr class="even">
-<td>4</td>
-<td>Épaulement</td>
-<td>Transition crête-pente</td>
-</tr>
-<tr class="odd">
-<td>5</td>
-<td>Éperon</td>
-<td>Protubérance sur une pente</td>
-</tr>
-<tr class="even">
-<td>6</td>
-<td>Pente</td>
-<td>Surface inclinée</td>
-</tr>
-<tr class="odd">
-<td>7</td>
-<td>Creux</td>
-<td>Dépression sur une pente</td>
-</tr>
-<tr class="even">
-<td>8</td>
-<td>Pied</td>
-<td>Base d’une pente</td>
-</tr>
-<tr class="odd">
-<td>9</td>
-<td>Vallée</td>
-<td>Ligne de thalweg</td>
-</tr>
-<tr class="even">
-<td>10</td>
-<td>Fosse</td>
-<td>Point bas</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Note</strong>: Le calcul des géomorphons nécessite le package
-<code>rgeomorphon</code>.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">2</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">3</span>, <span class="fl">3</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mnt</span>, main <span class="op">=</span> <span class="st">"MNT (élévation)"</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"Terrain"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, border <span class="op">=</span> <span class="st">"black"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pente</span>, main <span class="op">=</span> <span class="st">"Pente (degrés)"</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"Reds"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, border <span class="op">=</span> <span class="st">"black"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">aspect</span>, main <span class="op">=</span> <span class="st">"Aspect (degrés)"</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"Zissou"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, border <span class="op">=</span> <span class="st">"black"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Ombrage (hillshade)</span></span>
+<span><span class="va">hillshade</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/shade.html" class="external-link">shade</a></span><span class="op">(</span>slope <span class="op">=</span> <span class="va">pente</span> <span class="op">*</span> <span class="va">pi</span> <span class="op">/</span> <span class="fl">180</span>, </span>
+<span>                          aspect <span class="op">=</span> <span class="va">aspect</span> <span class="op">*</span> <span class="va">pi</span> <span class="op">/</span> <span class="fl">180</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">hillshade</span>, main <span class="op">=</span> <span class="st">"Ombrage (hillshade)"</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/gray.html" class="external-link">grey</a></span><span class="op">(</span><span class="fl">0</span><span class="op">:</span><span class="fl">100</span> <span class="op">/</span> <span class="fl">100</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, border <span class="op">=</span> <span class="st">"black"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
+<p><img src="topographie_files/figure-html/combine-1.png" class="r-plt" alt="" width="768"></p>
 </div>
 <div class="section level2">
 <h2 id="extraction-complète-des-covariables-terrain">Extraction complète des covariables terrain<a class="anchor" aria-label="anchor" href="#extraction-compl%C3%A8te-des-covariables-terrain"></a>
 </h2>
 <p>La fonction <code><a href="../reference/extraire_covariables_terrain.html">extraire_covariables_terrain()</a></code> calcule
 toutes les covariables en une seule commande:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/extraire_covariables_terrain.html">extraire_covariables_terrain</a></span><span class="op">(</span></span>
 <span>  polygone <span class="op">=</span> <span class="va">champ</span>,</span>
-<span>  dossier <span class="op">=</span> <span class="st">"output/terrain"</span></span>
+<span>  dossier <span class="op">=</span> <span class="cn">NULL</span>  <span class="co"># Sans sauvegarder</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">mnt</span>, main <span class="op">=</span> <span class="st">"MNT"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">pente</span>, main <span class="op">=</span> <span class="st">"Pente"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">aspect</span>, main <span class="op">=</span> <span class="st">"Aspect"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="workflow-complet">Workflow complet<a class="anchor" aria-label="anchor" href="#workflow-complet"></a>
-</h2>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># 1. Charger le package</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://cedricbouffard.github.io/covariablechamps">covariablechamps</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 2. Charger le champ M2</span></span>
-<span><span class="va">champ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"M2.shp"</span>, package <span class="op">=</span> <span class="st">"covariablechamps"</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 3. Télécharger le MNT depuis LiDAR</span></span>
-<span><span class="va">mnt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/telecharger_lidar.html">telecharger_lidar</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 4. Calculer la pente</span></span>
-<span><span class="va">pente</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_pente.html">calculer_pente</a></span><span class="op">(</span><span class="va">mnt</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 5. Calculer l'aspect</span></span>
-<span><span class="va">aspect</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_aspect.html">calculer_aspect</a></span><span class="op">(</span><span class="va">mnt</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 6. Statistiques</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Pente moyenne:"</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/summarize-generics.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">pente</span><span class="op">)</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="st">"degrés\n"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 7. Sauvegarder</span></span>
-<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/writeRaster.html" class="external-link">writeRaster</a></span><span class="op">(</span><span class="va">pente</span>, <span class="st">"pente.tif"</span><span class="op">)</span></span>
-<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/writeRaster.html" class="external-link">writeRaster</a></span><span class="op">(</span><span class="va">aspect</span>, <span class="st">"aspect.tif"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">mnt</span>, main <span class="op">=</span> <span class="st">"MNT"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="topographie_files/figure-html/extract-all-1.png" class="r-plt" alt="" width="768"></p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">pente</span>, main <span class="op">=</span> <span class="st">"Pente"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="topographie_files/figure-html/extract-all-2.png" class="r-plt" alt="" width="768"></p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">aspect</span>, main <span class="op">=</span> <span class="st">"Aspect"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="topographie_files/figure-html/extract-all-3.png" class="r-plt" alt="" width="768"></p>
 </div>
 <div class="section level2">
 <h2 id="applications-agricoles">Applications agricoles<a class="anchor" aria-label="anchor" href="#applications-agricoles"></a>

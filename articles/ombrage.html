@@ -70,13 +70,18 @@
 
     
     
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://cedricbouffard.github.io/covariablechamps">covariablechamps</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
-<p>L’ombrage projete par les arbres et les haies sur les parcelles
+<p>L’ombrage projeté par les arbres et les haies sur les parcelles
 agricoles peut avoir un impact significatif sur les cultures. Ce guide
-presente les fonctions du package <code>covariablechamps</code> pour
-calculer et visualiser l’ombrage a partir des donnees LiDAR et de la
+présente les fonctions du package <code>covariablechamps</code> pour
+calculer et visualiser l’ombrage à partir des données LiDAR et de la
 position du soleil.</p>
 </div>
 <div class="section level2">
@@ -85,325 +90,175 @@ position du soleil.</p>
 <p>Le calcul de l’ombrage repose sur:</p>
 <ol style="list-style-type: decimal">
 <li>
-<strong>Le Modele Numerique d’Elevation (MNE)</strong>: Inclut les
+<strong>Le Modèle Numérique d’Élévation (MNE)</strong>: Inclut les
 arbres et structures</li>
 <li>
-<strong>La position du soleil</strong>: Azimut et elevation selon la
+<strong>La position du soleil</strong>: Azimut et élévation selon la
 date et l’heure</li>
 <li>
 <strong>Le raycasting</strong>: Projection des ombres selon l’angle
 du soleil</li>
 </ol>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://cedricbouffard.github.io/covariablechamps">covariablechamps</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="preparation-des-donnees">Preparation des donnees<a class="anchor" aria-label="anchor" href="#preparation-des-donnees"></a>
+<h2 id="chargement-du-champ-m2">Chargement du champ M2<a class="anchor" aria-label="anchor" href="#chargement-du-champ-m2"></a>
 </h2>
+<p>Le package inclut un champ d’exemple (<code>M2</code>) situé au
+Québec.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Definir le polygone du champ</span></span>
-<span><span class="va">champ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"mon_champ.gpkg"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Telecharger les donnees LiDAR (MNT et MNE)</span></span>
-<span><span class="va">lidar</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/telecharger_lidar.html">telecharger_lidar</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Le MNE (Modele Numerique d'Elevation) inclut les arbres</span></span>
-<span><span class="va">mne</span> <span class="op">&lt;-</span> <span class="va">lidar</span><span class="op">$</span><span class="va">mne</span></span>
-<span><span class="va">mnt</span> <span class="op">&lt;-</span> <span class="va">lidar</span><span class="op">$</span><span class="va">mnt</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">champ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"M2.shp"</span>, package <span class="op">=</span> <span class="st">"covariablechamps"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Reading layer `M2' from data source </span></span>
+<span><span class="co">#&gt;   `/home/runner/work/_temp/Library/covariablechamps/extdata/M2.shp' </span></span>
+<span><span class="co">#&gt;   using driver `ESRI Shapefile'</span></span>
+<span><span class="co">#&gt; Simple feature collection with 1 feature and 65 fields</span></span>
+<span><span class="co">#&gt; Geometry type: POLYGON</span></span>
+<span><span class="co">#&gt; Dimension:     XY</span></span>
+<span><span class="co">#&gt; Bounding box:  xmin: -71.06012 ymin: 46.64605 xmax: -71.05268 ymax: 46.65118</span></span>
+<span><span class="co">#&gt; Geodetic CRS:  WGS 84</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="calcul-simple-de-lombrage">Calcul simple de l’ombrage<a class="anchor" aria-label="anchor" href="#calcul-simple-de-lombrage"></a>
+<h2 id="téléchargement-du-mne-modèle-numérique-délévation">Téléchargement du MNE (Modèle Numérique d’Élévation)<a class="anchor" aria-label="anchor" href="#t%C3%A9l%C3%A9chargement-du-mne-mod%C3%A8le-num%C3%A9rique-d%C3%A9l%C3%A9vation"></a>
 </h2>
-<p>Pour calculer l’ombrage a un instant donne:</p>
+<p>Le MNE inclut les arbres et permet de calculer les ombres
+projetées.</p>
+<p><strong>Note</strong>: Le téléchargement peut prendre quelques
+minutes.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Calculer l'ombrage pour le 21 juin 2024 a midi</span></span>
-<span><span class="va">ombrage</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_ombrage.html">calculer_ombrage</a></span><span class="op">(</span></span>
-<span>  mne <span class="op">=</span> <span class="va">mne</span>,</span>
-<span>  date <span class="op">=</span> <span class="st">"2024-06-21"</span>,</span>
-<span>  heure <span class="op">=</span> <span class="fl">12</span>,</span>
-<span>  latitude <span class="op">=</span> <span class="fl">46.8</span>,</span>
-<span>  longitude <span class="op">=</span> <span class="op">-</span><span class="fl">71.2</span></span>
+<code class="sourceCode R"><span><span class="co"># Télécharger le MNE (avec arbres)</span></span>
+<span><span class="va">mne</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/telecharger_lidar.html">telecharger_lidar</a></span><span class="op">(</span></span>
+<span>  polygone <span class="op">=</span> <span class="va">champ</span>,</span>
+<span>  mne <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Visualiser</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">ombrage</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mne</span>, main <span class="op">=</span> <span class="st">"MNE (Modèle Numérique d'Élévation)"</span>,</span>
+<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"Terrain"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, border <span class="op">=</span> <span class="st">"black"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ombrage_files/figure-html/telecharger-mne-1.png" class="r-plt" alt="" width="768"></p>
+</div>
+<div class="section level2">
+<h2 id="téléchargement-du-mnt-modèle-numérique-de-terrain">Téléchargement du MNT (Modèle Numérique de Terrain)<a class="anchor" aria-label="anchor" href="#t%C3%A9l%C3%A9chargement-du-mnt-mod%C3%A8le-num%C3%A9rique-de-terrain"></a>
+</h2>
+<p>Le MNT est le terrain sans les arbres (sol nu).</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">mnt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/telecharger_lidar.html">telecharger_lidar</a></span><span class="op">(</span></span>
+<span>  polygone <span class="op">=</span> <span class="va">champ</span>,</span>
+<span>  mne <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mnt</span>, main <span class="op">=</span> <span class="st">"MNT (Modèle Numérique de Terrain)"</span>,</span>
+<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"Terrain"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, border <span class="op">=</span> <span class="st">"black"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ombrage_files/figure-html/telecharger-mnt-1.png" class="r-plt" alt="" width="768"></p>
+</div>
+<div class="section level2">
+<h2 id="calcul-de-lombrage">Calcul de l’ombrage<a class="anchor" aria-label="anchor" href="#calcul-de-lombrage"></a>
+</h2>
+<p>Pour calculer l’ombrage à une date donnée:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ombrage</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_ombrage.html">calculer_ombrage</a></span><span class="op">(</span></span>
+<span>  polygone <span class="op">=</span> <span class="va">champ</span>,</span>
+<span>  date <span class="op">=</span> <span class="st">"2024-06-21"</span>,</span>
+<span>  intervalle_heures <span class="op">=</span> <span class="fl">1</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">ombrage</span><span class="op">$</span><span class="va">ombrage_moyen</span>, main <span class="op">=</span> <span class="st">"Ombrage moyen (21 juin 2024)"</span>,</span>
+<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/gray.html" class="external-link">grey</a></span><span class="op">(</span><span class="fl">100</span><span class="op">:</span><span class="fl">0</span> <span class="op">/</span> <span class="fl">100</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, border <span class="op">=</span> <span class="st">"black"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ombrage_files/figure-html/ombrage-simple-1.png" class="r-plt" alt="" width="768"></p>
 <div class="section level3">
-<h3 id="parametres-importants">Parametres importants<a class="anchor" aria-label="anchor" href="#parametres-importants"></a>
+<h3 id="paramètres-importants">Paramètres importants<a class="anchor" aria-label="anchor" href="#param%C3%A8tres-importants"></a>
 </h3>
 <ul>
 <li>
 <code>date</code>: Date au format “YYYY-MM-DD”</li>
 <li>
-<code>heure</code>: Heure locale (0-24)</li>
+<code>intervalle_heures</code>: Intervalle de temps entre les
+calculs</li>
 <li>
-<code>latitude</code>, <code>longitude</code>: Coordonnees du
-site</li>
-<li>
-<code>zscale</code>: Facteur d’echelle vertical (1 = metres)</li>
+<code>zscale</code>: Facteur d’échelle vertical (1 = mètres)</li>
 </ul>
 </div>
 </div>
 <div class="section level2">
-<h2 id="calcul-de-lombrage-sur-une-periode">Calcul de l’ombrage sur une periode<a class="anchor" aria-label="anchor" href="#calcul-de-lombrage-sur-une-periode"></a>
+<h2 id="heures-densoleillement">Heures d’ensoleillement<a class="anchor" aria-label="anchor" href="#heures-densoleillement"></a>
 </h2>
-<p>Pour analyser l’ombrage au cours d’une journee:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Calculer l'ombrage pour une journee complete</span></span>
-<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_ombrage_periode.html">calculer_ombrage_periode</a></span><span class="op">(</span></span>
-<span>  mne <span class="op">=</span> <span class="va">mne</span>,</span>
-<span>  date <span class="op">=</span> <span class="st">"2024-06-21"</span>,      <span class="co"># Solstice d'ete</span></span>
-<span>  pas_horaire <span class="op">=</span> <span class="fl">2</span>,           <span class="co"># Calcul toutes les 2 heures</span></span>
-<span>  zscale <span class="op">=</span> <span class="fl">1</span>,                <span class="co"># Echelle verticale</span></span>
-<span>  max_distance <span class="op">=</span> <span class="fl">100</span>         <span class="co"># Distance max d'ombre (m)</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<div class="section level3">
-<h3 id="contenu-du-resultat">Contenu du resultat<a class="anchor" aria-label="anchor" href="#contenu-du-resultat"></a>
-</h3>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Le resultat contient plusieurs couches</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Ombrage moyen sur la journee (0 = toujours ombre, 1 = jamais ombre)</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">ombrage_moyen</span>, main <span class="op">=</span> <span class="st">"Ombrage moyen"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Heures d'ensoleillement (nombre d'heures en plein soleil)</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">heures_ensoleillement</span>, main <span class="op">=</span> <span class="st">"Heures d'ensoleillement"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Stack de toutes les heures</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nlyr</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">ombrage_stack</span><span class="op">)</span>  <span class="co"># Nombre de couches horaires</span></span></code></pre></div>
-</div>
-</div>
-<div class="section level2">
-<h2 id="visualisation-detaillee">Visualisation detaillee<a class="anchor" aria-label="anchor" href="#visualisation-detaillee"></a>
-</h2>
-<p>Pour une visualisation plus elaboree:</p>
+<p>Le nombre d’heures d’ensoleillement par pixel:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Visualisation avec parametres personnalises</span></span>
-<span><span class="va">viz</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_ombrage_visualisation.html">calculer_ombrage_visualisation</a></span><span class="op">(</span></span>
-<span>  mne <span class="op">=</span> <span class="va">mne</span>,</span>
-<span>  date <span class="op">=</span> <span class="st">"2024-06-21"</span>,</span>
-<span>  heures <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">8</span>, <span class="fl">12</span>, <span class="fl">16</span><span class="op">)</span>,  <span class="co"># Matin, midi, apres-midi</span></span>
-<span>  palette <span class="op">=</span> <span class="st">"viridis"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">ombrage</span><span class="op">$</span><span class="va">heures_ensoleillement</span>, </span>
+<span>     main <span class="op">=</span> <span class="st">"Heures d'ensoleillement (21 juin 2024)"</span>,</span>
+<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"YlOrRd"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, border <span class="op">=</span> <span class="st">"black"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ombrage_files/figure-html/heures-ensoleillement-1.png" class="r-plt" alt="" width="768"></p>
 </div>
 <div class="section level2">
-<h2 id="analyse-saisonniere">Analyse saisonniere<a class="anchor" aria-label="anchor" href="#analyse-saisonniere"></a>
+<h2 id="comparaison-été-vs-hiver">Comparaison été vs hiver<a class="anchor" aria-label="anchor" href="#comparaison-%C3%A9t%C3%A9-vs-hiver"></a>
 </h2>
-<p>L’ombrage varie considerablement selon la saison.</p>
+<p>L’ombrage varie considérablement selon la saison:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Comparer differentes dates</span></span>
-<span><span class="va">dates</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>  <span class="st">"2024-03-21"</span>,  <span class="co"># Equinoxe de printemps</span></span>
-<span>  <span class="st">"2024-06-21"</span>,  <span class="co"># Solstice d'ete</span></span>
-<span>  <span class="st">"2024-09-21"</span>,  <span class="co"># Equinoxe d'automne</span></span>
-<span>  <span class="st">"2024-12-21"</span>  <span class="co"># Solstice d'hiver</span></span>
+<code class="sourceCode R"><span><span class="co"># Été</span></span>
+<span><span class="va">ombrage_ete</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_ombrage.html">calculer_ombrage</a></span><span class="op">(</span></span>
+<span>  polygone <span class="op">=</span> <span class="va">champ</span>,</span>
+<span>  date <span class="op">=</span> <span class="st">"2024-06-21"</span>,</span>
+<span>  intervalle_heures <span class="op">=</span> <span class="fl">2</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Calculer l'ombrage pour chaque date</span></span>
-<span><span class="va">resultats</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">dates</span>, <span class="kw">function</span><span class="op">(</span><span class="va">d</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="../reference/calculer_ombrage_periode.html">calculer_ombrage_periode</a></span><span class="op">(</span></span>
-<span>    mne <span class="op">=</span> <span class="va">mne</span>,</span>
-<span>    date <span class="op">=</span> <span class="va">d</span>,</span>
-<span>    pas_horaire <span class="op">=</span> <span class="fl">2</span>,</span>
-<span>    max_distance <span class="op">=</span> <span class="fl">100</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="op">}</span><span class="op">)</span></span>
+<span><span class="co"># Hiver</span></span>
+<span><span class="va">ombrage_hiver</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_ombrage.html">calculer_ombrage</a></span><span class="op">(</span></span>
+<span>  polygone <span class="op">=</span> <span class="va">champ</span>,</span>
+<span>  date <span class="op">=</span> <span class="st">"2024-12-21"</span>,</span>
+<span>  intervalle_heures <span class="op">=</span> <span class="fl">2</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Comparer les heures d'ensoleillement</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">dates</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">resultats</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">heures_ensoleillement</span>, </span>
-<span>       main <span class="op">=</span> <span class="va">dates</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="op">}</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">3</span>, <span class="fl">3</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">ombrage_ete</span><span class="op">$</span><span class="va">ombrage_moyen</span>, main <span class="op">=</span> <span class="st">"Ombrage été (21 juin)"</span>,</span>
+<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/gray.html" class="external-link">grey</a></span><span class="op">(</span><span class="fl">100</span><span class="op">:</span><span class="fl">0</span> <span class="op">/</span> <span class="fl">100</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, border <span class="op">=</span> <span class="st">"black"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">ombrage_hiver</span><span class="op">$</span><span class="va">ombrage_moyen</span>, main <span class="op">=</span> <span class="st">"Ombrage hiver (21 décembre)"</span>,</span>
+<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/gray.html" class="external-link">grey</a></span><span class="op">(</span><span class="fl">100</span><span class="op">:</span><span class="fl">0</span> <span class="op">/</span> <span class="fl">100</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, border <span class="op">=</span> <span class="st">"black"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ombrage_files/figure-html/comparaison-saison-1.png" class="r-plt" alt="" width="768"></p>
 </div>
 <div class="section level2">
-<h2 id="integration-avec-lanalyse-des-haies">Integration avec l’analyse des haies<a class="anchor" aria-label="anchor" href="#integration-avec-lanalyse-des-haies"></a>
+<h2 id="calcul-sur-une-période">Calcul sur une période<a class="anchor" aria-label="anchor" href="#calcul-sur-une-p%C3%A9riode"></a>
 </h2>
-<p>Combinez l’ombrage avec la detection des haies pour une analyse
-complete.</p>
+<p>La fonction <code><a href="../reference/calculer_ombrage_periode.html">calculer_ombrage_periode()</a></code> calcule l’ombrage
+moyen sur une période:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># 1. Detecter les haies</span></span>
-<span><span class="va">haies</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/extraire_classifier_haies_lidar.html">extraire_classifier_haies_lidar</a></span><span class="op">(</span></span>
-<span>  mne <span class="op">=</span> <span class="va">mne</span>,</span>
-<span>  mnt <span class="op">=</span> <span class="va">mnt</span>,</span>
-<span>  polygone_champ <span class="op">=</span> <span class="va">champ</span></span>
+<code class="sourceCode R"><span><span class="va">resultat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_ombrage_periode.html">calculer_ombrage_periode</a></span><span class="op">(</span></span>
+<span>  polygone <span class="op">=</span> <span class="va">champ</span>,</span>
+<span>  date_debut <span class="op">=</span> <span class="st">"2024-06-01"</span>,</span>
+<span>  date_fin <span class="op">=</span> <span class="st">"2024-06-30"</span>,</span>
+<span>  intervalle_jours <span class="op">=</span> <span class="fl">7</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 2. Calculer l'ombrage</span></span>
-<span><span class="va">ombrage</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_ombrage_periode.html">calculer_ombrage_periode</a></span><span class="op">(</span></span>
-<span>  mne <span class="op">=</span> <span class="va">mne</span>,</span>
-<span>  date <span class="op">=</span> <span class="st">"2024-06-21"</span>,</span>
-<span>  pas_horaire <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  max_distance <span class="op">=</span> <span class="fl">50</span></span>
-<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>, mar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">3</span>, <span class="fl">3</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 3. Visualiser ensemble</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">ombrage</span><span class="op">$</span><span class="va">heures_ensoleillement</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">haies</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, col <span class="op">=</span> <span class="st">"darkgreen"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, border <span class="op">=</span> <span class="st">"black"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">resultat</span><span class="op">$</span><span class="va">ombrage_moyen_periode</span>, </span>
+<span>     main <span class="op">=</span> <span class="st">"Ombrage moyen (juin 2024)"</span>,</span>
+<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/gray.html" class="external-link">grey</a></span><span class="op">(</span><span class="fl">100</span><span class="op">:</span><span class="fl">0</span> <span class="op">/</span> <span class="fl">100</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, border <span class="op">=</span> <span class="st">"black"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">resultat</span><span class="op">$</span><span class="va">heures_ensoleillement_moyen</span>,</span>
+<span>     main <span class="op">=</span> <span class="st">"Heures d'ensoleillement moy. (juin 2024)"</span>,</span>
+<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">hcl.colors</a></span><span class="op">(</span><span class="fl">100</span>, <span class="st">"YlOrRd"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span>, add <span class="op">=</span> <span class="cn">TRUE</span>, border <span class="op">=</span> <span class="st">"black"</span>, lwd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ombrage_files/figure-html/ombrage-periode-1.png" class="r-plt" alt="" width="768"></p>
 </div>
 <div class="section level2">
-<h2 id="calcul-de-limpact-sur-les-cultures">Calcul de l’impact sur les cultures<a class="anchor" aria-label="anchor" href="#calcul-de-limpact-sur-les-cultures"></a>
-</h2>
-<div class="section level3">
-<h3 id="zone-ombragee-vs-ensoleillee">Zone ombragee vs ensoleillee<a class="anchor" aria-label="anchor" href="#zone-ombragee-vs-ensoleillee"></a>
-</h3>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Seuil: moins de 6 heures = zone ombragee</span></span>
-<span><span class="va">seuil_heures</span> <span class="op">&lt;-</span> <span class="fl">6</span></span>
-<span><span class="va">zones_ombragees</span> <span class="op">&lt;-</span> <span class="va">ombrage</span><span class="op">$</span><span class="va">heures_ensoleillement</span> <span class="op">&lt;</span> <span class="va">seuil_heures</span></span>
-<span></span>
-<span><span class="co"># Calculer la superficie</span></span>
-<span><span class="va">superficie_ombragee</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">zones_ombragees</span><span class="op">)</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">*</span> </span>
-<span>                        <span class="fu"><a href="https://rdrr.io/r/base/prod.html" class="external-link">prod</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">res</a></span><span class="op">(</span><span class="va">zones_ombragees</span><span class="op">)</span><span class="op">)</span> <span class="op">/</span> <span class="fl">10000</span>  <span class="co"># en hectares</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Superficie ombragee (&lt;"</span>, <span class="va">seuil_heures</span>, <span class="st">"h):"</span>, </span>
-<span>    <span class="fu"><a href="https://rspatial.github.io/terra/reference/math-generics.html" class="external-link">round</a></span><span class="op">(</span><span class="va">superficie_ombragee</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"ha\n"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Visualiser les zones</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">zones_ombragees</span>, col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"yellow"</span>, <span class="st">"gray"</span><span class="op">)</span>, </span>
-<span>     main <span class="op">=</span> <span class="st">"Zones ombragees (&lt; 6h d'ensoleillement)"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="statistiques-par-zone">Statistiques par zone<a class="anchor" aria-label="anchor" href="#statistiques-par-zone"></a>
-</h3>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Statistiques de l'ombrage</span></span>
-<span><span class="va">stats</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/global.html" class="external-link">global</a></span><span class="op">(</span><span class="va">ombrage</span><span class="op">$</span><span class="va">heures_ensoleillement</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mean"</span>, <span class="st">"min"</span>, <span class="st">"max"</span>, <span class="st">"sd"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">stats</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Distribution des heures d'ensoleillement</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/hist.html" class="external-link">hist</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/values.html" class="external-link">values</a></span><span class="op">(</span><span class="va">ombrage</span><span class="op">$</span><span class="va">heures_ensoleillement</span><span class="op">)</span>, </span>
-<span>     main <span class="op">=</span> <span class="st">"Distribution des heures d'ensoleillement"</span>,</span>
-<span>     xlab <span class="op">=</span> <span class="st">"Heures"</span>, ylab <span class="op">=</span> <span class="st">"Frequence"</span>,</span>
-<span>     col <span class="op">=</span> <span class="st">"skyblue"</span><span class="op">)</span></span></code></pre></div>
-</div>
-</div>
-<div class="section level2">
-<h2 id="parametres-avances">Parametres avances<a class="anchor" aria-label="anchor" href="#parametres-avances"></a>
-</h2>
-<div class="section level3">
-<h3 id="ajuster-le-zscale">Ajuster le zscale<a class="anchor" aria-label="anchor" href="#ajuster-le-zscale"></a>
-</h3>
-<p>Le parametre <code>zscale</code> ajuste l’echelle verticale:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Si le MNE est en metres et les XY en metres: zscale = 1</span></span>
-<span><span class="co"># Si le MNE est en pieds: zscale = 0.3048</span></span>
-<span><span class="co"># Pour exagerer les ombres: zscale &gt; 1</span></span>
-<span></span>
-<span><span class="va">ombrage_exagere</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_ombrage_periode.html">calculer_ombrage_periode</a></span><span class="op">(</span></span>
-<span>  mne <span class="op">=</span> <span class="va">mne</span>,</span>
-<span>  date <span class="op">=</span> <span class="st">"2024-06-21"</span>,</span>
-<span>  zscale <span class="op">=</span> <span class="fl">2</span>,  <span class="co"># Exageration x2</span></span>
-<span>  max_distance <span class="op">=</span> <span class="fl">100</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="distance-maximale-dombre">Distance maximale d’ombre<a class="anchor" aria-label="anchor" href="#distance-maximale-dombre"></a>
-</h3>
-<p>La <code>max_distance</code> limite la propagation des ombres:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Pour des arbres de 15m de haut:</span></span>
-<span><span class="co"># - A midi en ete: ombre ~5m</span></span>
-<span><span class="co"># - Matin/soir: ombre peut atteindre &gt;30m</span></span>
-<span><span class="co"># Recommande: 2-3x la hauteur maximale des arbres</span></span>
-<span></span>
-<span><span class="va">ombrage_court</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_ombrage_periode.html">calculer_ombrage_periode</a></span><span class="op">(</span>mne <span class="op">=</span> <span class="va">mne</span>, date <span class="op">=</span> <span class="st">"2024-06-21"</span>,</span>
-<span>                                          max_distance <span class="op">=</span> <span class="fl">30</span><span class="op">)</span></span>
-<span><span class="va">ombrage_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_ombrage_periode.html">calculer_ombrage_periode</a></span><span class="op">(</span>mne <span class="op">=</span> <span class="va">mne</span>, date <span class="op">=</span> <span class="st">"2024-06-21"</span>,</span>
-<span>                                         max_distance <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></code></pre></div>
-</div>
-</div>
-<div class="section level2">
-<h2 id="exemple-complet">Exemple complet<a class="anchor" aria-label="anchor" href="#exemple-complet"></a>
-</h2>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://cedricbouffard.github.io/covariablechamps">covariablechamps</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 1. Charger le champ</span></span>
-<span><span class="va">champ</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"champ.gpkg"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 2. Telecharger LiDAR</span></span>
-<span><span class="va">lidar</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/telecharger_lidar.html">telecharger_lidar</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 3. Calculer l'ombrage au solstice d'ete</span></span>
-<span><span class="va">ombrage_ete</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_ombrage_periode.html">calculer_ombrage_periode</a></span><span class="op">(</span></span>
-<span>  mne <span class="op">=</span> <span class="va">lidar</span><span class="op">$</span><span class="va">mne</span>,</span>
-<span>  date <span class="op">=</span> <span class="st">"2024-06-21"</span>,</span>
-<span>  pas_horaire <span class="op">=</span> <span class="fl">2</span>,</span>
-<span>  zscale <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  max_distance <span class="op">=</span> <span class="fl">100</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 4. Calculer l'ombrage en automne</span></span>
-<span><span class="va">ombrage_automne</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculer_ombrage_periode.html">calculer_ombrage_periode</a></span><span class="op">(</span></span>
-<span>  mne <span class="op">=</span> <span class="va">lidar</span><span class="op">$</span><span class="va">mne</span>,</span>
-<span>  date <span class="op">=</span> <span class="st">"2024-09-21"</span>,</span>
-<span>  pas_horaire <span class="op">=</span> <span class="fl">2</span>,</span>
-<span>  zscale <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  max_distance <span class="op">=</span> <span class="fl">100</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 5. Comparer</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">ombrage_ete</span><span class="op">$</span><span class="va">heures_ensoleillement</span>, </span>
-<span>     main <span class="op">=</span> <span class="st">"Ete - 21 juin"</span>,</span>
-<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">terrain.colors</a></span><span class="op">(</span><span class="fl">20</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">ombrage_automne</span><span class="op">$</span><span class="va">heures_ensoleillement</span>, </span>
-<span>     main <span class="op">=</span> <span class="st">"Automne - 21 sept"</span>,</span>
-<span>     col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/palettes.html" class="external-link">terrain.colors</a></span><span class="op">(</span><span class="fl">20</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 6. Calculer la difference</span></span>
-<span><span class="va">difference</span> <span class="op">&lt;-</span> <span class="va">ombrage_ete</span><span class="op">$</span><span class="va">heures_ensoleillement</span> <span class="op">-</span> </span>
-<span>              <span class="va">ombrage_automne</span><span class="op">$</span><span class="va">heures_ensoleillement</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">difference</span>, main <span class="op">=</span> <span class="st">"Difference (ete - automne)"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="considerations-pratiques">Considerations pratiques<a class="anchor" aria-label="anchor" href="#considerations-pratiques"></a>
-</h2>
-<div class="section level3">
-<h3 id="performance">Performance<a class="anchor" aria-label="anchor" href="#performance"></a>
-</h3>
-<ul>
-<li>Le calcul d’ombrage est intensif en ressources</li>
-<li>Reduisez <code>max_distance</code> pour accelerer le calcul</li>
-<li>Augmentez <code>pas_horaire</code> pour moins de calculs</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="precision">Precision<a class="anchor" aria-label="anchor" href="#precision"></a>
-</h3>
-<ul>
-<li>Utilisez des donnees LiDAR recentes</li>
-<li>Le MNE doit inclure la vegetation</li>
-<li>Verifiez que le CRS est en metres</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="limitations">Limitations<a class="anchor" aria-label="anchor" href="#limitations"></a>
-</h3>
-<ul>
-<li>Ne tient pas compte de la diffusion atmospherique</li>
-<li>Suppose un soleil ponctuel (pas de penombre)</li>
-<li>Les arbres a feuilles caduques: adapter selon la saison</li>
-</ul>
-</div>
-</div>
-<div class="section level2">
-<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+<h2 id="applications">Applications<a class="anchor" aria-label="anchor" href="#applications"></a>
 </h2>
 <ul>
-<li>Corripio, J.G. (2003). Vectorial algebra algorithms for calculating
-terrain parameters from DEMs and solar radiation modelling in
-mountainous terrain. International Journal of Geographical Information
-Science.</li>
-<li>Fu, P., Rich, P.M. (2002). A geometric solar radiation model with
-applications in agriculture and forestry. Computers and Electronics in
-Agriculture.</li>
+<li>
+<strong>Cultures sensibles</strong>: Identifier les zones à faible
+ensoleillement</li>
+<li>
+<strong>Serres</strong>: Planifier l’emplacement selon l’ombrage
+naturel</li>
+<li>
+<strong>Arbres fruitiers</strong>: Estimer l’ombre des haies sur les
+cultures</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

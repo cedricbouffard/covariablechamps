@@ -48,10 +48,9 @@ La fonction
 [`obtenir_rose_vents()`](https://cedricbouffard.github.io/covariablechamps/reference/obtenir_rose_vents.md)
 récupère les données de rose des vents depuis l’API NASA POWER.
 
-**Note**: Cette opération nécessite une connexion internet.
+**Note**: Nécessite une connexion internet.
 
 ``` r
-# Obtenir la rose des vents pour le champ M2
 rose <- obtenir_rose_vents(
   polygone = champ,
   date_debut = "20230101",
@@ -59,68 +58,136 @@ rose <- obtenir_rose_vents(
   hauteur = "10m"
 )
 
-# Examiner la structure des résultats
-names(rose)
+cat("Données obtenues pour:", rose$coordonnees[1], ",", rose$coordonnees[2], "\n")
+#> Données obtenues pour: -71.05644 , 46.64874
+cat("Directions analysées:", length(rose$directions), "\n")
+#> Directions analysées: 16
 ```
-
-### Structure des résultats
-
-La fonction retourne une liste contenant:
-
-| Élément       | Description                                 |
-|---------------|---------------------------------------------|
-| `data`        | Données brutes de l’API                     |
-| `directions`  | Vecteur des 16 directions (0-337.5°)        |
-| `wd_pct`      | Pourcentages de fréquence par direction     |
-| `wd_avg`      | Vitesse moyenne du vent par direction (m/s) |
-| `classes`     | Matrice des classes de vent par direction   |
-| `all_classes` | Pourcentages globaux par classe de vent     |
-| `coordonnees` | Coordonnées du point (longitude, latitude)  |
 
 ## Visualisation: Rose des vents
 
-### Rose des vents simple
+### Rose des vents (fréquence)
 
 ``` r
-tracer_rose_vents(rose)
+tracer_rose_vents(rose, type = "pct")
 ```
 
-### Rose des vents empilée
+![](vent-meteo_files/figure-html/rose-simple-1.png)
+
+### Rose des vents (vitesse moyenne)
 
 ``` r
-tracer_rose_vents_stacked(rose)
+tracer_rose_vents(rose, type = "avg")
 ```
+
+![](vent-meteo_files/figure-html/rose-vitesse-1.png)
 
 ## Direction dominante
 
 ``` r
-# Identifier la direction dominante
-direction_dominante <- rose$directions[which.max(rose$wd_pct)]
+direction_dom <- rose$directions[which.max(rose$wd_pct)]
+freq_max <- max(rose$wd_pct, na.rm = TRUE)
 
-cat(sprintf("Direction dominante: %.0f°\n", direction_dominante))
+cat(sprintf("Direction dominante: %.0f° (%.1f%% des vents)\n", 
+            direction_dom, freq_max))
+#> Direction dominante: 225° (14.0% des vents)
+
+cat("\nOrientation:\n")
+#> 
+#> Orientation:
+cat("  0°   = Nord\n")
+#>   0°   = Nord
+cat("  90°  = Est\n")
+#>   90°  = Est
+cat("  180° = Sud\n")
+#>   180° = Sud
+cat("  270° = Ouest\n")
+#>   270° = Ouest
 ```
 
-## Intégration avec l’analyse des distances au vent
-
-Une fois la direction du vent connue, vous pouvez calculer les
-distances:
+## Distribution des directions
 
 ``` r
-# Utiliser la direction dominante pour l'analyse du vent
-# (requiert des arbres détectés depuis LiDAR)
+df_rose <- data.frame(
+  direction = rose$directions,
+  frequence = rose$wd_pct
+) |>
+  mutate(
+    direction_cardinale = case_when(
+      direction >= 337.5 | direction < 22.5 ~ "N",
+      direction >= 22.5 & direction < 67.5 ~ "NE",
+      direction >= 67.5 & direction < 112.5 ~ "E",
+      direction >= 112.5 & direction < 157.5 ~ "SE",
+      direction >= 157.5 & direction < 202.5 ~ "S",
+      direction >= 202.5 & direction < 247.5 ~ "SO",
+      direction >= 247.5 & direction < 292.5 ~ "O",
+      direction >= 292.5 & direction < 337.5 ~ "NO"
+    )
+  )
 
-direction_vent <- direction_dominante
+ggplot(df_rose, aes(x = direction, y = frequence, fill = direction_cardinale)) +
+  geom_col(width = 20) +
+  scale_fill_brewer(palette = "Set1") +
+  coord_polar(theta = "x", start = -11.25 * pi / 180) +
+  scale_x_continuous(breaks = seq(0, 337.5, by = 45),
+                     labels = c("N", "NE", "E", "SE", "S", "SO", "O", "NO")) +
+  theme_minimal() +
+  labs(title = "Fréquence des directions du vent",
+       x = "", y = "Fréquence (%)", fill = "Direction")
+```
 
-# Calculer les distances amont/aval
-dist_dir <- calculer_distances_amont_aval(
-  arbres_sf = arbres,
-  angle_vent = direction_vent,
-  champ_bbox = champ,
-  buffer_arbre = 3
+![](vent-meteo_files/figure-html/distribution-directions-1.png)
+
+## Comparaison saisonnière
+
+``` r
+# Hiver (décembre-février)
+rose_hiver <- obtenir_rose_vents(
+  polygone = champ,
+  date_debut = "20230101",
+  date_fin = "20230331",
+  hauteur = "10m"
 )
 
-visualiser_distances_vent(dist_dir, type = "comparaison")
+# Été (juin-août)
+rose_ete <- obtenir_rose_vents(
+  polygone = champ,
+  date_debut = "20230601",
+  date_fin = "20230831",
+  hauteur = "10m"
+)
+
+par(mfrow = c(1, 2), mar = c(4, 4, 4, 4))
+
+# Fonction pour tracer une rose simple
+plot_rose_simple <- function(rose_data, main) {
+  freqs <- rose_data$wd_pct
+  angles <- (rose_data$directions - 90) * pi / 180
+  freqs[is.na(freqs)] <- 0
+  
+  barplot(freqs, axes = FALSE, axisnames = FALSE,
+          width = rep(1, length(freqs)), space = 0.1,
+          col = rgb(0.2, 0.4, 0.8, 0.6),
+          main = main)
+  
+  r_max <- max(freqs, na.rm = TRUE)
+  for (i in seq(0, r_max, length.out = 4)) {
+    angle_seq <- seq(0, 2 * pi, length.out = 100)
+    lines(i * cos(angle_seq), i * sin(angle_seq), col = "grey80")
+  }
+  
+  dir_labels <- c("N", "NE", "E", "SE", "S", "SO", "O", "NO")
+  angles_labels <- seq(0, 7) * pi / 4
+  text(r_max * 1.1 * cos(angles_labels), 
+       r_max * 1.1 * sin(angles_labels), 
+       dir_labels, cex = 0.8)
+}
+
+plot_rose_simple(rose_hiver, "Hiver (Jan-Mar)")
+plot_rose_simple(rose_ete, "Été (Jun-Aug)")
 ```
+
+![](vent-meteo_files/figure-html/comparaison-saison-1.png)
 
 ## Applications agricoles
 
@@ -129,25 +196,12 @@ visualiser_distances_vent(dist_dir, type = "comparaison")
 - Planifier l’orientation des haies perpendiculairement au vent dominant
 - Estimer la zone de protection (1-10H où H = hauteur de la haie)
 
-### Ombrage
-
-- Tenir compte de l’ombre projetée par les obstacles selon la direction
-  du soleil
-- Estimer l’impact sur les cultures sensibles
-
 ### Érosion
 
 - Identifier les zones vulnérables au vent
 - Prévoir les dépôts de sable
 
-### Aviation/pulvérisation
-
-- Planifier les interventions selon les fenêtres de vent calme
-- Estimer la dérive des pulvérisations
-
 ## Références
 
 - [NASA POWER](https://power.larc.nasa.gov/) - Données météorologiques
   mondiales
-- [Documentation
-  API](https://power.larc.nasa.gov/api/application/windrose/point)
