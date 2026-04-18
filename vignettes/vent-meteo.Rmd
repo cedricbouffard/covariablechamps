@@ -68,55 +68,43 @@ cat("Données obtenues pour:", rose$coordonnees[1], ",", rose$coordonnees[2], "\
 cat("Directions analysées:", length(rose$directions), "\n")
 ```
 
-## Visualisation: Rose des vents (ggplot2)
+## Visualisation: Rose des vents
 
-Nous créons notre propre visualisation avec ggplot2:
+### Rose des vents (fréquence)
 
-```{r rose-ggplot}
-# Préparer les données
-df_rose <- data.frame(
-  direction = rose$directions,
-  frequence = rose$wd_pct,
-  vitesse = rose$wd_avg
-)
+```{r rose-simple, cache = TRUE}
+tracer_rose_vents(rose, type = "pct")
+```
 
-# Ordonner par angle
-df_rose <- df_rose |>
-  arrange(direction) |>
-  mutate(idx = row_number())
+### Rose des vents (vitesse moyenne)
 
-# Coordonnées polaires
-n_dir <- nrow(df_rose)
-bin <- 2 * pi / n_dir
-df_rose <- df_rose |>
-  mutate(theta = (idx - 1) * bin)
+```{r rose-vitesse, cache = TRUE}
+tracer_rose_vents(rose, type = "avg")
+```
 
-# Fermer le polygone
-df_closed <- bind_rows(df_rose, df_rose[1, ] |> mutate(theta = 2 * pi))
+## Direction dominante
 
-# Directions cardinales
-dir_names <- c("N","NNE","NE","ENE","E","ESE","SE","SSE",
-               "S","SSW","SW","WSW","W","WNW","NW","NNW")
+```{r direction-dominante}
+direction_dom <- rose$directions[which.max(rose$wd_pct)]
+freq_max <- max(rose$wd_pct, na.rm = TRUE)
 
-# Tracer
-ggplot(df_closed, aes(x = theta, y = frequence, group = 1)) +
-  geom_polygon(fill = "steelblue", alpha = 0.35, color = "steelblue", linewidth = 1) +
-  geom_point(color = "steelblue", size = 1.8) +
-  coord_radial(start = 0, expand = FALSE, inner.radius = 0.10, r.axis.inside = 0, reverse = "none") +
-  scale_x_continuous(breaks = (0:(n_dir - 1)) * bin, labels = dir_names, limits = c(0, 2 * pi), expand = c(0, 0)) +
-  theme_minimal() +
-  labs(title = "Rose des vents - Fréquence des directions",
-       subtitle = paste("Hauteur:", rose$hauteur, "| Période:", rose$periode["debut"], "à", rose$periode["fin"]),
-       x = NULL, y = "Fréquence (%)",
-       caption = paste("Source: NASA POWER | Coordonnées:", 
-                       round(rose$coordonnees["longitude"], 4), ",",
-                       round(rose$coordonnees["latitude"], 4)))
+cat(sprintf("Direction dominante: %.0f° (%.1f%% des vents)\n", 
+            direction_dom, freq_max))
+
+cat("\nOrientation:\n")
+cat("  0°   = Nord\n")
+cat("  90°  = Est\n")
+cat("  180° = Sud\n")
+cat("  270° = Ouest\n")
 ```
 
 ## Distribution des directions
 
 ```{r distribution-directions}
-df_rose <- df_rose |>
+df_rose <- data.frame(
+  direction = rose$directions,
+  frequence = rose$wd_pct
+) |>
   mutate(
     direction_cardinale = case_when(
       direction >= 337.5 | direction < 22.5 ~ "N",
@@ -141,38 +129,6 @@ ggplot(df_rose, aes(x = direction, y = frequence, fill = direction_cardinale)) +
        x = "", y = "Fréquence (%)", fill = "Direction")
 ```
 
-## Direction dominante
-
-```{r direction-dominante}
-direction_dom <- rose$directions[which.max(rose$wd_pct)]
-freq_max <- max(rose$wd_pct, na.rm = TRUE)
-
-cat(sprintf("Direction dominante: %.0f° (%.1f%% des vents)\n", 
-            direction_dom, freq_max))
-
-cat("\nOrientation:\n")
-cat("  0°   = Nord\n")
-cat("  90°  = Est\n")
-cat("  180° = Sud\n")
-cat("  270° = Ouest\n")
-```
-
-## Rose des vents avec vitesse moyenne
-
-```{r rose-vitesse}
-ggplot(df_closed, aes(x = theta, y = frequence, group = 1)) +
-  geom_polygon(aes(fill = c(vitesse, vitesse[1])), alpha = 0.7) +
-  geom_point(aes(color = c(vitesse, vitesse[1])), size = 2) +
-  scale_fill_gradientn(colors = hcl.colors(100, "YlOrRd"), name = "Vitesse (m/s)") +
-  scale_color_gradientn(colors = hcl.colors(100, "YlOrRd"), name = "Vitesse (m/s)") +
-  coord_radial(start = 0, expand = FALSE, inner.radius = 0.10, r.axis.inside = 0, reverse = "none") +
-  scale_x_continuous(breaks = (0:(n_dir - 1)) * bin, labels = dir_names, limits = c(0, 2 * pi), expand = c(0, 0)) +
-  theme_minimal() +
-  labs(title = "Rose des vents avec vitesse moyenne",
-       subtitle = paste("Hauteur:", rose$hauteur),
-       x = NULL, y = "Fréquence (%)")
-```
-
 ## Comparaison saisonnière
 
 ```{r comparaison-saison, cache = TRUE}
@@ -194,26 +150,23 @@ rose_ete <- obtenir_rose_vents(
 
 par(mfrow = c(1, 2), mar = c(4, 4, 4, 4))
 
-# Fonction pour tracer une rose simple avec barplot polaire
+# Fonction pour tracer une rose simple
 plot_rose_simple <- function(rose_data, main) {
   freqs <- rose_data$wd_pct
-  angles <- (rose_data$directions - 90) * pi / 180  # Rotation pour avoir Nord en haut
+  angles <- (rose_data$directions - 90) * pi / 180
   freqs[is.na(freqs)] <- 0
   
-  # Barplot polaire
   barplot(freqs, axes = FALSE, axisnames = FALSE,
           width = rep(1, length(freqs)), space = 0.1,
           col = rgb(0.2, 0.4, 0.8, 0.6),
           main = main)
   
-  # Ajouter les axes
   r_max <- max(freqs, na.rm = TRUE)
   for (i in seq(0, r_max, length.out = 4)) {
     angle_seq <- seq(0, 2 * pi, length.out = 100)
     lines(i * cos(angle_seq), i * sin(angle_seq), col = "grey80")
   }
   
-  # Labels des directions
   dir_labels <- c("N", "NE", "E", "SE", "S", "SO", "O", "NO")
   angles_labels <- seq(0, 7) * pi / 4
   text(r_max * 1.1 * cos(angles_labels), 

@@ -197,7 +197,14 @@ tracer_rose_vents <- function(rose_vents,
     "Nord","N-NE","NE","E-NE","Est","E-SE","SE","S-SE",
     "Sud","S-SO","SO","O-SO","Ouest","O-NO","NO","N-NO"
   )
-  
+   
+  # Create dataframe from rose_vents data
+  df <- data.frame(
+    angle = rose_vents$directions,
+    pct = rose_vents$wd_pct,
+    avg = rose_vents$wd_avg
+  )
+   
   # ensure order by angle
   df <- df |>
     dplyr::arrange(angle) |>
