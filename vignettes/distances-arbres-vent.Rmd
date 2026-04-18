@@ -12,11 +12,13 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 8,
-  fig.height = 6
+  fig.height = 6,
+  message = FALSE,
+  warning = FALSE
 )
 ```
 
-```{r setup, message = FALSE}
+```{r setup}
 library(covariablechamps)
 library(sf)
 library(terra)
@@ -47,41 +49,27 @@ ggplot() +
        subtitle = "Champ d'exemple inclus dans le package")
 ```
 
-## Détection des arbres depuis LiDAR
+## Téléchargement et détection des arbres
 
-Les arbres doivent être détectés à partir des données LiDAR. Utilisez `extraire_classifier_haies_lidar()` pour obtenir les arbres classifiés.
+Les arbres sont détectés à partir des données LiDAR ponctuelles.
 
-**Note**: Cette opération nécessite des données LiDAR réelles.
+**Note**: Cette opération peut prendre quelques minutes.
 
-```{r detection-arbres, eval = FALSE}
-# 1. Télécharger les données LiDAR
+```{r telecharger-arbres, cache = TRUE}
+# Télécharger les données LiDAR ponctuelles
 lidar <- telecharger_lidar_ponctuel(champ)
 
-# 2. Détecter et classifier les arbres
-resultat <- extraire_classifier_haies_lidar(
-  nuage_points = lidar$nuage_points,
-  res_dtm = 1,
-  res_chm = 0.25,
-  hmin = 2,
-  eps_dbscan = 6,
-  minPts_dbscan = 3
-)
-
-# 3. Récupérer les arbres
-arbres <- resultat$trees_sf
-
-# 4. Visualiser
-plot(st_geometry(champ), col = "lightgreen")
-plot(st_geometry(arbres), add = TRUE, col = "darkgreen", pch = 19, cex = 0.5)
+# Vérifier le nuage de points
+cat("Nombre de points LiDAR:", nrow(lidar$nuage_points), "\n")
 ```
 
 ## Distance simple aux arbres
 
 La fonction `calculer_distance_arbres()` calcule la distance euclidienne aux arbres.
 
-```{r distance-simple, eval = FALSE}
+```{r distance-simple, cache = TRUE}
 dist_simple <- calculer_distance_arbres(
-  arbres_sf = arbres,
+  arbres_sf = lidar$arbres,
   champ_bbox = champ,
   resolution = 2,
   buffer_arbre = 3,
@@ -98,9 +86,9 @@ La fonction `calculer_distances_amont_aval()` distingue les distances selon la d
 - **Amont**: Vent qui vient DE l'arbre (protection contre le vent)
 - **Aval**: Vent qui va VERS l'arbre (accélération après l'arbre)
 
-```{r distances-amont-aval, eval = FALSE}
+```{r distances-amont-aval, cache = TRUE}
 dist_dir <- calculer_distances_amont_aval(
-  arbres_sf = arbres,
+  arbres_sf = lidar$arbres,
   angle_vent = 270,
   champ_bbox = champ,
   resolution = 2,
@@ -115,13 +103,21 @@ viz$amont
 viz$aval
 ```
 
+### Visualiser chaque type séparément
+
+```{r visualisation-separee}
+visualiser_distances_vent(dist_dir, type = "amont")
+visualiser_distances_vent(dist_dir, type = "aval")
+visualiser_distances_vent(dist_dir, type = "totale")
+```
+
 ## Fetch de vent elliptique
 
 La fonction `calculer_fetch_vent()` calcule un buffer elliptique aligné avec la direction du vent.
 
-```{r fetch-elliptique, eval = FALSE}
+```{r fetch-elliptique, cache = TRUE}
 fetch <- calculer_fetch_vent(
-  arbres_sf = arbres,
+  arbres_sf = lidar$arbres,
   angle_vent = 270,
   champ_bbox = champ,
   resolution = 2,
@@ -134,6 +130,28 @@ viz_fetch$simple
 viz_fetch$elliptique
 ```
 
+## Comparaison des méthodes
+
+```{r comparaison}
+par(mfrow = c(2, 2), mar = c(3, 3, 3, 3))
+
+plot(dist_simple$distance_buffer, main = "Distance simple (buffer)",
+     col = hcl.colors(100, "Terrain"))
+plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
+
+plot(dist_dir$amont, main = "Amont (m)",
+     col = hcl.colors(100, "Blues"))
+plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
+
+plot(dist_dir$aval, main = "Aval (m)",
+     col = hcl.colors(100, "Reds"))
+plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
+
+plot(dist_dir$totale, main = "Distance totale (m)",
+     col = hcl.colors(100, "Viridis"))
+plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
+```
+
 ## Choisir la bonne approche
 
 | Fonction | Usage | Avantage |
@@ -143,42 +161,8 @@ viz_fetch$elliptique
 | `calculer_fetch_vent()` | Buffer elliptique pour effet directionnel | Modélisation physically-based |
 | `calculer_distances_vent()` | Version simple des distances directionnelles | Bon compromis |
 
-## Workflow complet
+## Applications
 
-```{r workflow-complet, eval = FALSE}
-# 1. Charger le champ M2
-champ <- st_read(system.file("extdata", "M2.shp", package = "covariablechamps"))
-
-# 2. Télécharger et détecter les arbres
-lidar <- telecharger_lidar_ponctuel(champ)
-resultat <- extraire_classifier_haies_lidar(nuage_points = lidar$nuage_points)
-arbres <- resultat$trees_sf
-
-# 3. Distance simple
-dist_simple <- calculer_distance_arbres(
-  arbres_sf = arbres,
-  champ_bbox = champ,
-  buffer_arbre = 3
-)
-visualiser_distance_arbres(dist_simple, type = "buffer")
-
-# 4. Distances amont/aval
-dist_dir <- calculer_distances_amont_aval(
-  arbres_sf = arbres,
-  angle_vent = 270,
-  champ_bbox = champ,
-  buffer_arbre = 3
-)
-visualiser_distances_vent(dist_dir, type = "comparaison")
-
-# 5. Simuler la vitesse
-vitesse <- simuler_vitesse_vent(
-  result = dist_dir,
-  vitesse_ref = 5,
-  coef_amont = 0.5,
-  coef_aval = 0.3
-)
-
-# 6. Cartographier
-tracer_carte_vent(distances, type = "les_deux")
-```
+- **Protection des cultures**: Identifier les zones protégées par les arbres
+- **Modélisation du vent**: Estimer la vitesse du vent à chaque point
+- **Planification**: Optimiser l'implantation de nouvelles haies

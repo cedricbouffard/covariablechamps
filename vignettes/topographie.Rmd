@@ -13,7 +13,8 @@ knitr::opts_chunk$set(
   comment = "#>",
   fig.width = 8,
   fig.height = 6,
-  message = FALSE
+  message = FALSE,
+  warning = FALSE
 )
 ```
 
@@ -54,20 +55,19 @@ ggplot() +
 
 ## Téléchargement du MNT depuis LiDAR
 
-Le MNT (Modèle Numérique de Terrain) est téléchargé depuis les données LiDAR.
+Le MNT (Modèle Numérique de Terrain) est téléchargé depuis les données LiDAR du DataCube du Canada.
 
-**Note**: Cette opération nécessite des données LiDAR réelles.
+**Note**: Le téléchargement peut prendre quelques minutes selon la taille de la zone.
 
-```{r telecharger-mnt, eval = FALSE}
+```{r telecharger-mnt, cache = TRUE}
 # Télécharger le MNT depuis LiDAR
 mnt <- telecharger_lidar(
   polygone = champ,
-  dossier = "output/lidar",
   mne = FALSE  # FALSE = MNT (sans arbres)
 )
 
-# Visualiser le MNT
-plot(mnt, main = "Modèle Numérique de Terrain (MNT)")
+plot(mnt, main = "Modèle Numérique de Terrain (MNT)",
+     col = hcl.colors(100, "Terrain"))
 plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 ```
 
@@ -75,7 +75,7 @@ plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 
 La fonction `calculer_pente()` calcule l'inclinaison du terrain en degrés.
 
-```{r pente, eval = FALSE}
+```{r pente, cache = TRUE}
 pente <- calculer_pente(mnt)
 
 plot(pente, main = "Pente (degrés)",
@@ -85,7 +85,7 @@ plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 
 ### Distribution des pentes
 
-```{r distribution-pente, eval = FALSE}
+```{r distribution-pente}
 vals_pente <- terra::values(pente)
 vals_pente <- vals_pente[!is.na(vals_pente)]
 
@@ -104,7 +104,7 @@ cat(sprintf("  Médiane: %.1f°\n", median(vals_pente)))
 
 La fonction `calculer_aspect()` calcule l'orientation du terrain.
 
-```{r aspect, eval = FALSE}
+```{r aspect, cache = TRUE}
 aspect <- calculer_aspect(mnt)
 
 plot(aspect, main = "Aspect (degrés - direction du Nord)",
@@ -122,64 +122,42 @@ L'aspect est exprimé en degrés:
 
 Les valeurs manquantes (NA) indiquent les zones plates.
 
-## Classification en géomorphons
+## Visualisation combinée
 
-Les géomorphons classifient le terrain en 10 formes:
+```{r combine, cache = TRUE}
+par(mfrow = c(2, 2), mar = c(3, 3, 3, 3))
 
-| Code | Nom | Description |
-|------|-----|-------------|
-| 1 | Plat | Surface horizontale |
-| 2 | Pic | Point culminant |
-| 3 | Crête | Ligne de partage |
-| 4 | Épaulement | Transition crête-pente |
-| 5 | Éperon | Protubérance sur une pente |
-| 6 | Pente | Surface inclinée |
-| 7 | Creux | Dépression sur une pente |
-| 8 | Pied | Base d'une pente |
-| 9 | Vallée | Ligne de thalweg |
-| 10 | Fosse | Point bas |
+plot(mnt, main = "MNT (élévation)", col = hcl.colors(100, "Terrain"))
+plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 
-**Note**: Le calcul des géomorphons nécessite le package `rgeomorphon`.
+plot(pente, main = "Pente (degrés)", col = hcl.colors(100, "Reds"))
+plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
+
+plot(aspect, main = "Aspect (degrés)", col = hcl.colors(100, "Cyclical"))
+plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
+
+# Ombrage (hillshade)
+hillshade <- terra::shade(slope = pente * pi / 180, 
+                          aspect = aspect * pi / 180,
+                          premult = TRUE)
+plot(hillshade, main = "Ombrage (hillshade)", col = grey(0:100 / 100))
+plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
+```
 
 ## Extraction complète des covariables terrain
 
 La fonction `extraire_covariables_terrain()` calcule toutes les covariables en une seule commande:
 
-```{r extract-all, eval = FALSE}
+```{r extract-all, cache = TRUE}
 result <- extraire_covariables_terrain(
   polygone = champ,
-  dossier = "output/terrain"
+  dossier = NULL  # Sans sauvegarder
 )
 
 plot(result$mnt, main = "MNT")
 plot(result$pente, main = "Pente")
 plot(result$aspect, main = "Aspect")
-```
-
-## Workflow complet
-
-```{r workflow, eval = FALSE}
-# 1. Charger le package
-library(covariablechamps)
-
-# 2. Charger le champ M2
-champ <- st_read(system.file("extdata", "M2.shp", package = "covariablechamps"))
-
-# 3. Télécharger le MNT depuis LiDAR
-mnt <- telecharger_lidar(champ)
-
-# 4. Calculer la pente
-pente <- calculer_pente(mnt)
-
-# 5. Calculer l'aspect
-aspect <- calculer_aspect(mnt)
-
-# 6. Statistiques
-cat("Pente moyenne:", mean(terra::values(pente), na.rm = TRUE), "degrés\n")
-
-# 7. Sauvegarder
-terra::writeRaster(pente, "pente.tif")
-terra::writeRaster(aspect, "aspect.tif")
+plot(result$geomorphons, main = "Géomorphons")
 ```
 
 ## Applications agricoles
