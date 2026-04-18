@@ -49,18 +49,65 @@ ggplot() +
        subtitle = "Champ d'exemple inclus dans le package")
 ```
 
-## Téléchargement et détection des arbres
+## Téléchargement des données LiDAR
 
-Les arbres sont détectés à partir des données LiDAR ponctuelles.
+Le MNT et MNE sont téléchargés depuis le DataCube du Canada.
 
-**Note**: Cette opération peut prendre quelques minutes.
+```{r telecharger-lidar, cache = TRUE}
+# Télécharger les données LiDAR
+lidar <- telecharger_lidar(
+  polygone = champ,
+  mne = TRUE
+)
 
-```{r telecharger-arbres, cache = TRUE}
-# Télécharger les données LiDAR ponctuelles
-lidar <- telecharger_lidar_ponctuel(champ)
+mne <- lidar$mne
+mnt <- lidar$mnt
 
-# Vérifier le nuage de points
-cat("Nombre de points LiDAR:", nrow(lidar$nuage_points), "\n")
+plot(mne, main = "MNE (Modèle Numérique d'Élévation)",
+     col = hcl.colors(100, "Terrain"))
+plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
+```
+
+## Création d'arbres synthétiques
+
+Pour la démonstration, nous créons des arbres synthétiques autour du champ. En pratique, les arbres proviendraient de `extraire_classifier_haies_lidar()`.
+
+```{r creer-arbres}
+# Obtenir l'étendue du champ
+bbox_champ <- st_bbox(champ)
+
+# Créer des arbres synthétique le long des bordures
+set.seed(42)
+n_arbres <- 50
+coords_arbres <- rbind(
+  # Arbres au nord
+  cbind(runif(n_arbres/4, bbox_champ["xmin"], bbox_champ["xmax"]),
+         runif(n_arbres/4, bbox_champ["ymax"], bbox_champ["ymax"] + 30)),
+  # Arbres au sud
+  cbind(runif(n_arbres/4, bbox_champ["xmin"], bbox_champ["xmax"]),
+         runif(n_arbres/4, bbox_champ["ymin"] - 30, bbox_champ["ymin"])),
+  # Arbres à l'ouest
+  cbind(runif(n_arbres/4, bbox_champ["xmin"] - 30, bbox_champ["xmin"]),
+         runif(n_arbres/4, bbox_champ["ymin"], bbox_champ["ymax"])),
+  # Arbres à l'est
+  cbind(runif(n_arbres/4, bbox_champ["xmax"], bbox_champ["xmax"] + 30),
+         runif(n_arbres/4, bbox_champ["ymin"], bbox_champ["ymax"]))
+)
+
+# Créer l'objet sf
+pts <- lapply(1:nrow(coords_arbres), function(i) {
+  sf::st_point(coords_arbres[i, ])
+})
+arbres <- sf::st_sf(
+  id = 1:nrow(coords_arbres),
+  geometry = sf::st_sfc(pts, crs = st_crs(champ))
+)
+
+ggplot() +
+  geom_sf(data = champ, fill = "lightgreen", alpha = 0.3) +
+  geom_sf(data = arbres, color = "darkgreen", size = 2) +
+  theme_minimal() +
+  labs(title = "Champ M2 avec arbres synthétiques")
 ```
 
 ## Distance simple aux arbres
@@ -69,7 +116,7 @@ La fonction `calculer_distance_arbres()` calcule la distance euclidienne aux arb
 
 ```{r distance-simple, cache = TRUE}
 dist_simple <- calculer_distance_arbres(
-  arbres_sf = lidar$arbres,
+  arbres_sf = arbres,
   champ_bbox = champ,
   resolution = 2,
   buffer_arbre = 3,
@@ -88,7 +135,7 @@ La fonction `calculer_distances_amont_aval()` distingue les distances selon la d
 
 ```{r distances-amont-aval, cache = TRUE}
 dist_dir <- calculer_distances_amont_aval(
-  arbres_sf = lidar$arbres,
+  arbres_sf = arbres,
   angle_vent = 270,
   champ_bbox = champ,
   resolution = 2,
@@ -117,7 +164,7 @@ La fonction `calculer_fetch_vent()` calcule un buffer elliptique aligné avec la
 
 ```{r fetch-elliptique, cache = TRUE}
 fetch <- calculer_fetch_vent(
-  arbres_sf = lidar$arbres,
+  arbres_sf = arbres,
   angle_vent = 270,
   champ_bbox = champ,
   resolution = 2,
