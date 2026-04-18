@@ -156,7 +156,6 @@ result <- extraire_covariables_terrain(
 plot(result$mnt, main = "MNT")
 plot(result$pente, main = "Pente")
 plot(result$aspect, main = "Aspect")
-plot(result$geomorphons, main = "Géomorphons")
 ```
 
 ## Applications agricoles
