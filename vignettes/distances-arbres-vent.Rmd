@@ -38,56 +38,48 @@ Le package offre plusieurs approches:
 Le package inclut un champ d'exemple (`M2`) situé au Québec.
 
 ```{r charger-champ}
-# Charger le champ M2 inclus dans le package
 champ <- st_read(system.file("extdata", "M2.shp", package = "covariablechamps"))
 
-# Vérifier le CRS
-st_crs(champ)
-
-# Créer des arbres synthétique autour du champ pour la démonstration
-# (en réalité, les arbres proviendraient de extraire_classifier_haies_lidar)
-bbox <- st_bbox(champ)
-set.seed(42)
-
-# Arbres le long des bordure du champ
-coords_arbres <- rbind(
-  # Arbres au nord
-  cbind(runif(8, bbox["xmin"], bbox["xmax"]), 
-        runif(8, bbox["ymax"] - 20, bbox["ymax"] + 10)),
-  # Arbres au sud
-  cbind(runif(6, bbox["xmin"], bbox["xmax"]), 
-        runif(6, bbox["ymin"] - 10, bbox["ymin"] + 20)),
-  # Arbres à l'ouest
-  cbind(runif(5, bbox["xmin"] - 10, bbox["xmin"] + 15), 
-        runif(5, bbox["ymin"], bbox["ymax"])),
-  # Arbres à l'est
-  cbind(runif(5, bbox["xmax"] - 15, bbox["xmax"] + 10), 
-        runif(5, bbox["ymin"], bbox["ymax"]))
-)
-
-# Créer les points
-pts <- lapply(1:nrow(coords_arbres), function(i) {
-  sf::st_point(coords_arbres[i, ])
-})
-
-arbres <- sf::st_sf(
-  id = 1:nrow(coords_arbres),
-  geometry = sf::st_sfc(pts, crs = st_crs(champ))
-)
-
-# Visualiser les données
 ggplot() +
-  geom_sf(data = champ, fill = "lightgreen", alpha = 0.3) +
-  geom_sf(data = arbres, color = "darkgreen", size = 3) +
-  ggtitle("Champ M2 avec arbres (points verts)") +
-  theme_minimal()
+  geom_sf(data = champ, fill = "lightgreen", alpha = 0.5) +
+  theme_minimal() +
+  labs(title = "Champ M2",
+       subtitle = "Champ d'exemple inclus dans le package")
 ```
 
-## Étape 1: Distance simple aux arbres
+## Détection des arbres depuis LiDAR
 
-La fonction `calculer_distance_arbres()` calcule la distance euclidienne aux arbres avec un buffer optionnel.
+Les arbres doivent être détectés à partir des données LiDAR. Utilisez `extraire_classifier_haies_lidar()` pour obtenir les arbres classifiés.
 
-```{r distance-simple}
+**Note**: Cette opération nécessite des données LiDAR réelles.
+
+```{r detection-arbres, eval = FALSE}
+# 1. Télécharger les données LiDAR
+lidar <- telecharger_lidar_ponctuel(champ)
+
+# 2. Détecter et classifier les arbres
+resultat <- extraire_classifier_haies_lidar(
+  nuage_points = lidar$nuage_points,
+  res_dtm = 1,
+  res_chm = 0.25,
+  hmin = 2,
+  eps_dbscan = 6,
+  minPts_dbscan = 3
+)
+
+# 3. Récupérer les arbres
+arbres <- resultat$trees_sf
+
+# 4. Visualiser
+plot(st_geometry(champ), col = "lightgreen")
+plot(st_geometry(arbres), add = TRUE, col = "darkgreen", pch = 19, cex = 0.5)
+```
+
+## Distance simple aux arbres
+
+La fonction `calculer_distance_arbres()` calcule la distance euclidienne aux arbres.
+
+```{r distance-simple, eval = FALSE}
 dist_simple <- calculer_distance_arbres(
   arbres_sf = arbres,
   champ_bbox = champ,
@@ -99,14 +91,14 @@ dist_simple <- calculer_distance_arbres(
 visualiser_distance_arbres(dist_simple, type = "buffer")
 ```
 
-## Étape 2: Distances amont/aval avec direction du vent
+## Distances amont/aval avec direction du vent
 
 La fonction `calculer_distances_amont_aval()` distingue les distances selon la direction du vent:
 
 - **Amont**: Vent qui vient DE l'arbre (protection contre le vent)
 - **Aval**: Vent qui va VERS l'arbre (accélération après l'arbre)
 
-```{r distances-amont-aval}
+```{r distances-amont-aval, eval = FALSE}
 dist_dir <- calculer_distances_amont_aval(
   arbres_sf = arbres,
   angle_vent = 270,
@@ -123,11 +115,11 @@ viz$amont
 viz$aval
 ```
 
-## Étape 3: Fetch de vent elliptique
+## Fetch de vent elliptique
 
 La fonction `calculer_fetch_vent()` calcule un buffer elliptique aligné avec la direction du vent.
 
-```{r fetch-elliptique}
+```{r fetch-elliptique, eval = FALSE}
 fetch <- calculer_fetch_vent(
   arbres_sf = arbres,
   angle_vent = 270,
@@ -140,16 +132,6 @@ fetch <- calculer_fetch_vent(
 viz_fetch <- visualiser_fetch(fetch, type = "comparaison")
 viz_fetch$simple
 viz_fetch$elliptique
-```
-
-## Étape 4: Comparaison des méthodes
-
-### Différence entre distance simple et directionnelle
-
-```{r comparaison-methodes}
-par(mfrow = c(1, 2), mar = c(4, 4, 2, 2))
-plot(dist_simple$distance_buffer, main = "Distance simple (buffer)")
-plot(dist_dir$totale, main = "Distance directionnelle (totale)")
 ```
 
 ## Choisir la bonne approche
@@ -167,8 +149,10 @@ plot(dist_dir$totale, main = "Distance directionnelle (totale)")
 # 1. Charger le champ M2
 champ <- st_read(system.file("extdata", "M2.shp", package = "covariablechamps"))
 
-# 2. Obtenir les arbres (via détection LiDAR)
-arbres <- extraire_classifier_haies_lidar(mne, mnt, polygone_champ = champ)
+# 2. Télécharger et détecter les arbres
+lidar <- telecharger_lidar_ponctuel(champ)
+resultat <- extraire_classifier_haies_lidar(nuage_points = lidar$nuage_points)
+arbres <- resultat$trees_sf
 
 # 3. Distance simple
 dist_simple <- calculer_distance_arbres(
