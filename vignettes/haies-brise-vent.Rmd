@@ -28,31 +28,41 @@ library(ggplot2)
 
 Les haies brise-vent jouent un rôle important dans la protection des cultures contre le vent. Ce guide présente les fonctions du package `covariablechamps` pour détecter, classifier et analyser les haies à partir des données LiDAR.
 
-## Données d'exemple
+## Chargement du champ M2
 
-Pour cet article, nous créons des données synthétiques représentant un champ avec des haies.
+Le package inclut un champ d'exemple (`M2`) situé au Québec.
 
-```{r donnees-exemple}
-# Créer un champ
-coords_champ <- matrix(c(0, 0, 300, 0, 300, 200, 0, 200, 0, 0), ncol = 2, byrow = TRUE)
-champ <- sf::st_polygon(list(coords_champ))
-champ <- sf::st_sfc(champ, crs = 32618)
-champ <- sf::st_sf(geometry = champ)
+```{r charger-champ}
+# Charger le champ M2
+champ <- st_read(system.file("extdata", "M2.shp", package = "covariablechamps"))
 
-# Créer des haies comme lignes droites
+# Obtenir le bounding box
+bbox <- st_bbox(champ)
+
+# Créer des haies synthétiques le long des bordure du champ
+# (en réalité, les haies proviendraient de extraire_classifier_haies_lidar)
+crs_champ <- st_crs(champ)
+
+# Ligne de haie au nord
+haie_nord <- sf::st_sfc(
+  sf::st_linestring(matrix(c(bbox["xmin"] - 5, bbox["ymax"],
+                              bbox["xmax"] + 5, bbox["ymax"]), 
+                           ncol = 2, byrow = TRUE)),
+  crs = crs_champ
+)
+
+# Ligne de haie à l'ouest
 haie_ouest <- sf::st_sfc(
-  sf::st_linestring(matrix(c(-5, 30, -5, 170), ncol = 2, byrow = TRUE)),
-  crs = 32618
-)
-haie_interieure <- sf::st_sfc(
-  sf::st_linestring(matrix(c(50, 100, 150, 100), ncol = 2, byrow = TRUE)),
-  crs = 32618
+  sf::st_linestring(matrix(c(bbox["xmin"], bbox["ymin"],
+                              bbox["xmin"], bbox["ymax"]), 
+                           ncol = 2, byrow = TRUE)),
+  crs = crs_champ
 )
 
-# Créer un sf avec deux géométries
+# Créer sf avec les deux haies
 haies <- sf::st_sf(
   id = 1:2,
-  geometry = c(haie_ouest, haie_interieure)
+  geometry = c(haie_nord, haie_ouest)
 )
 
 # Convertir les haies en POINTS pour les fonctions de distance
@@ -60,7 +70,7 @@ set.seed(42)
 points_haie <- lapply(1:2, function(i) {
   g <- haies$geometry[[i]]
   coords <- sf::st_coordinates(g)
-  n <- max(3, floor(sf::st_length(g) / 10))
+  n <- max(5, floor(sf::st_length(g) / 8))
   if (n > 1) {
     seq_idx <- seq(1, nrow(coords), length.out = n)
   } else {
@@ -81,7 +91,7 @@ arbres_haies <- sf::st_sf(
     lapply(1:nrow(points_haie), function(i) {
       sf::st_point(c(points_haie$x[i], points_haie$y[i]))
     }),
-    crs = 32618
+    crs = crs_champ
   )
 )
 
@@ -89,7 +99,7 @@ ggplot() +
   geom_sf(data = champ, fill = "lightgreen", alpha = 0.3, col = "darkgreen") +
   geom_sf(data = haies, col = "darkgreen", lwd = 2) +
   geom_sf(data = arbres_haies, col = "forestgreen", size = 2) +
-  ggtitle("Champ avec haies brise-vent") +
+  ggtitle("Champ M2 avec haies brise-vent") +
   theme_minimal()
 ```
 
@@ -98,19 +108,16 @@ ggplot() +
 Les haies brise-vent créent des zones de protection dont l'étendue dépend de la hauteur de la haie.
 
 ```{r zones-protection}
-# Direction du vent dominante (en degrés)
 direction_vent <- 270  # Vent d'ouest
 
-# Créer un raster de zones de vent à partir des distances
 distances_haies <- calculer_distance_arbres(
   arbres_sf = arbres_haies,
   champ_bbox = champ,
-  resolution = 5,
-  buffer_arbre = 5,
+  resolution = 2,
+  buffer_arbre = 3,
   max_distance = 100
 )
 
-# Visualiser les zones de protection
 visualiser_distance_arbres(distances_haies, type = "buffer")
 ```
 
@@ -131,22 +138,15 @@ dist_dir_haies <- calculer_distances_amont_aval(
   arbres_sf = arbres_haies,
   angle_vent = direction_vent,
   champ_bbox = champ,
-  resolution = 5,
-  buffer_arbre = 5,
+  resolution = 2,
+  buffer_arbre = 3,
   angle_focal = 30,
   max_distance = 100
 )
 
 viz <- visualiser_distances_vent(dist_dir_haies, type = "comparaison")
-viz$amont +
-  ggtitle("Zone AMONT (face au vent)",
-          subtitle = "Vent vient de la haie vers le champ") +
-  theme_minimal()
-
-viz$aval +
-  ggtitle("Zone AVAL (sous le vent)",
-          subtitle = "Vent va de l'autre côté de la haie") +
-  theme_minimal()
+viz$amont
+viz$aval
 ```
 
 ## Étape 3: Fetch de vent
@@ -156,96 +156,48 @@ fetch_haies <- calculer_fetch_vent(
   arbres_sf = arbres_haies,
   angle_vent = direction_vent,
   champ_bbox = champ,
-  resolution = 5,
+  resolution = 2,
   max_fetch = 100,
   coef_ellipse = 3
 )
 
 viz_fetch <- visualiser_fetch(fetch_haies, type = "comparaison")
-viz_fetch$simple +
-  ggtitle("Fetch simple (cercle)") +
-  theme_minimal()
-
-viz_fetch$elliptique +
-  ggtitle("Fetch elliptique (aligné vent)",
-          subtitle = "Effet de voile plus important dans la direction du vent") +
-  theme_minimal()
+viz_fetch$simple
+viz_fetch$elliptique
 ```
 
 ## Étape 4: Rasterisation pour analyse
 
-Pour des analyses spatiales plus poussées, les zones peuvent être rasterisées.
-
 ```{r rasteriser}
-# La rasterisation utilise le résultat des distances
 raster_dist <- distances_haies$distance_buffer
 plot(raster_dist, main = "Raster des distances aux haies")
 ```
 
-### Gradient continu
-
-Le gradient montre la diminution progressive de la protection:
-
-```{r gradient}
-# Créer un gradient de protection (1 = protection max, 0 = pas de protection)
-raster_protection <- distances_haies$distance_buffer / distances_haies$max_distance
-raster_protection <- 1 - raster_protection
-
-# Visualiser
-plot(raster_protection, main = "Gradient de protection",
-     col = hcl.colors(100, "Blues"))
-```
-
 ## Étape 5: Simulation de la vitesse du vent
 
-Estimez la réduction de vitesse du vent due aux haies.
-
 ```{r simulation-vent, fig.show = 'hold'}
-# Avec les distances simples
 vitesse_simple <- simuler_vitesse_vent_simple(
   dist_result = distances_haies,
   vitesse_ref = 5,
   coef_protection = 0.6
 )
 
-# Visualiser directement avec terra
 print(terra::plot(vitesse_simple$vitesse, main = "Vitesse du vent (m/s)",
      col = hcl.colors(100, "RdBu")))
 ```
 
-## Étape 6: Intégration avec les données météo
-
-Combinez avec les roses des vents pour une analyse complète.
-
-```{r meteo-rose, eval = FALSE}
-# Obtenir la rose des vents (requiert connexion internet)
-rose <- obtenir_rose_vents(
-  lat = 46.8,
-  lon = -71.2,
-  date_debut = "2023-01-01",
-  date_fin = "2023-12-31"
-)
-
-# Visualiser
-tracer_rose_vents(rose)
-```
-
-**Note**: La fonction `obtenir_rose_vents()` nécessite une connexion internet pour accéder aux données NASA POWER.
-
 ## Comparaison des méthodes de protection
 
 ```{r comparaison}
-# Préparer les données
 distances_haies_vent <- calculer_distances_vent(
   arbres_sf = arbres_haies,
   angle_vent = direction_vent,
   champ_bbox = champ,
-  resolution = 5,
+  resolution = 2,
   max_distance = 100,
   ouverture_angulaire = 45
 )
 
-# Visualiser les différentes couches
 par(mfrow = c(2, 2), mar = c(3, 3, 3, 3))
 
 plot(distances_haies$distance_buffer, main = "Distance simple",
@@ -273,11 +225,12 @@ library(covariablechamps)
 library(sf)
 library(terra)
 
-# 1. Charger le champ
-champ <- st_read("champ.gpkg")
+# 1. Charger le champ M2
+champ <- st_read(system.file("extdata", "M2.shp", package = "covariablechamps"))
 
-# 2. Charger ou détecter les haies
-haies <- st_read("haies.shp")
+# 2. Obtenir les haies via détection LiDAR
+resultat_lidar <- extraire_classifier_haies_lidar(mne, mnt, polygone_champ = champ)
+haies <- resultat_lidar$haies
 
 # 3. Définir la direction du vent (270 = ouest)
 direction_vent <- 270

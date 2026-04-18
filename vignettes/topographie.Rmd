@@ -38,39 +38,51 @@ Ces covariables influencent:
 - La sensibilité à l'érosion
 - Le choix des cultures
 
+## Chargement du champ M2
+
+Le package inclut un champ d'exemple (`M2`) situé au Québec.
+
+```{r charger-champ}
+champ <- st_read(system.file("extdata", "M2.shp", package = "covariablechamps"))
+
+# Visualiser le champ
+ggplot() +
+  geom_sf(data = champ, fill = "lightgreen", alpha = 0.5) +
+  theme_minimal() +
+  labs(title = "Champ M2",
+       subtitle = "Exemples de données inclus dans le package")
+```
+
 ## Création d'un MNT synthétique
 
-Pour cet article, nous créons un MNT (Modèle Numérique de Terrain) synthétique représentant un terrain vallonné.
+Pour cet article, nous créons un MNT (Modèle Numérique de Terrain) synthétique représentant un terrain vallonnant autour du champ M2.
 
 ```{r create-dem}
-# Créer un raster de base (300m x 200m à 5m de résolution)
+# Obtenir l'étendue du champ avec un buffer
+bbox <- st_bbox(champ)
+buffer <- 50  # mètres
+
+# Créer un raster de base
 r <- terra::rast(
-  ncols = 60,
-  nrows = 40,
-  xmin = 0, xmax = 300,
-  ymin = 0, ymax = 200,
-  crs = "EPSG:32618"
+  ncols = 80,
+  nrows = 60,
+  xmin = bbox["xmin"] - buffer, xmax = bbox["xmax"] + buffer,
+  ymin = bbox["ymin"] - buffer, ymax = bbox["ymax"] + buffer,
+  crs = st_crs(champ)$input
 )
 
 # Créer des coordonnées
 coords <- terra::xyFromCell(r, 1:terra::ncell(r))
 
-# Simuler un terrain vallonné (combinaison de functions sin/cos)
+# Simuler un terrain vallonné
 elevation <- 100 + 
-  10 * sin(coords[, 1] / 30) * cos(coords[, 2] / 40) +
-  5 * sin(coords[, 1] / 15 + coords[, 2] / 20) +
-  2 * cos(coords[, 1] * coords[, 2] / 500)
+  10 * sin(coords[, 1] / 50) * cos(coords[, 2] / 60) +
+  5 * sin(coords[, 1] / 30 + coords[, 2] / 40) +
+  2 * cos(coords[, 1] * coords[, 2] / 3000)
 
 # Ajouter le raster d'élévation
 mnt <- r
 terra::values(mnt) <- elevation
-
-# Définir le polygone du champ
-coords_champ <- matrix(c(0, 0, 300, 0, 300, 200, 0, 200, 0, 0), 
-                       ncol = 2, byrow = TRUE)
-champ <- sf::st_polygon(list(coords_champ))
-champ <- sf::st_sfc(champ, crs = 32618)
-champ <- sf::st_sf(geometry = champ)
 
 # Visualiser le MNT
 plot(mnt, main = "Modèle Numérique de Terrain (MNT)",
@@ -85,7 +97,6 @@ La fonction `calculer_pente()` calcule l'inclinaison du terrain en degrés.
 ```{r pente}
 pente <- calculer_pente(mnt)
 
-# Visualiser
 plot(pente, main = "Pente (degrés)",
      col = hcl.colors(100, "Reds"))
 plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
@@ -101,7 +112,6 @@ hist(vals_pente, breaks = 30, main = "Distribution des pentes",
      xlab = "Pente (degrés)", ylab = "Fréquence",
      col = "lightblue", border = "white")
 
-# Statistiques
 cat("Statistiques de la pente:\n")
 cat(sprintf("  Min: %.1f°\n", min(vals_pente)))
 cat(sprintf("  Max: %.1f°\n", max(vals_pente)))
@@ -111,12 +121,11 @@ cat(sprintf("  Médiane: %.1f°\n", median(vals_pente)))
 
 ## Calcul de l'aspect (orientation)
 
-La fonction `calculer_aspect()` calcule l'orientation du terrain (direction vers laquelle regarde la pente).
+La fonction `calculer_aspect()` calcule l'orientation du terrain.
 
 ```{r aspect}
 aspect <- calculer_aspect(mnt)
 
-# Visualiser avec une palette的方向
 plot(aspect, main = "Aspect (degrés - direction du Nord)",
      col = hcl.colors(100, "Cyclical"))
 plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
@@ -149,13 +158,7 @@ Les géomorphons classifient le terrain en 10 formes:
 | 9 | Vallée | Ligne de thalweg |
 | 10 | Fosse | Point bas |
 
-```{r geomorphons, eval = FALSE}
-# Le calcul des géomorphons nécessite le package rgeomorphon
-# Non disponible sur toutes les plateformes
-
-# geomorphons <- calculer_geomorphons(mnt, search_radius = 50)
-# plot(geomorphons, main = "Géomorphons")
-```
+**Note**: Le calcul des géomorphons nécessite le package `rgeomorphon` et n'est pas exécuté dans cet article.
 
 ## Extraction complète des covariables terrain
 
@@ -163,14 +166,12 @@ La fonction `extraire_covariables_terrain()` calcule toutes les covariables en u
 
 ```{r extract-all, eval = FALSE}
 # Cette fonction requiert des données LiDAR réelles
-# Non exécutable dans cet article
 
 result <- extraire_covariables_terrain(
   polygone = champ,
   dossier = "output/terrain"
 )
 
-# Visualiser
 plot(result$mnt, main = "MNT")
 plot(result$pente, main = "Pente")
 plot(result$aspect, main = "Aspect")
@@ -182,21 +183,22 @@ plot(result$aspect, main = "Aspect")
 # 1. Charger le package
 library(covariablechamps)
 
-# 2. Charger ou créer le MNT
-mnt <- telecharger_lidar(champ)  # Version réelle
-# ou
-mnt <- votre_raster_mnt  # Version chargée depuis un fichier
+# 2. Charger le champ M2
+champ <- st_read(system.file("extdata", "M2.shp", package = "covariablechamps"))
 
-# 3. Calculer la pente
+# 3. Télécharger le MNT depuis LiDAR
+mnt <- telecharger_lidar(champ)
+
+# 4. Calculer la pente
 pente <- calculer_pente(mnt)
 
-# 4. Calculer l'aspect
+# 5. Calculer l'aspect
 aspect <- calculer_aspect(mnt)
 
-# 5. Statistiques
+# 6. Statistiques
 cat("Pente moyenne:", mean(terra::values(pente), na.rm = TRUE), "degrés\n")
 
-# 6. Sauvegarder
+# 7. Sauvegarder
 terra::writeRaster(pente, "pente.tif")
 terra::writeRaster(aspect, "aspect.tif")
 ```

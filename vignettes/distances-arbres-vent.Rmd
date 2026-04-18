@@ -33,45 +33,53 @@ Le package offre plusieurs approches:
 - **Distances directionnelles (amont/aval)**: Distance distinguant le sens du vent
 - **Fetch elliptique**: Distance avec effet de buffer elliptique aligné sur le vent
 
-## Création des données d'exemple
+## Chargement du champ M2
 
-Pour cet article, nous créons des données synthétiques représentant un champ avec des arbres.
+Le package inclut un champ d'exemple (`M2`) situé au Québec.
 
-```{r donnees-exemple}
-# Créer un champ (polygone 200m x 150m)
-coords_champ <- matrix(c(0, 0, 200, 0, 200, 150, 0, 150, 0, 0), ncol = 2, byrow = TRUE)
-champ <- sf::st_polygon(list(coords_champ))
-champ <- sf::st_sfc(champ, crs = 32618)
-champ <- sf::st_sf(geometry = champ)
+```{r charger-champ}
+# Charger le champ M2 inclus dans le package
+champ <- st_read(system.file("extdata", "M2.shp", package = "covariablechamps"))
 
-# Créer des arbres (points dispersés autour du champ)
+# Vérifier le CRS
+st_crs(champ)
+
+# Créer des arbres synthétique autour du champ pour la démonstration
+# (en réalité, les arbres proviendraient de extraire_classifier_haies_lidar)
+bbox <- st_bbox(champ)
 set.seed(42)
+
+# Arbres le long des bordure du champ
 coords_arbres <- rbind(
-  # Arbres à l'ouest (x < 10)
-  cbind(runif(5, -20, 5), runif(5, 20, 130)),
-  # Arbres à l'est (x > 190)
-  cbind(runif(5, 195, 220), runif(5, 20, 130)),
-  # Arbres au nord (y > 140)
-  cbind(runif(4, 20, 180), runif(4, 145, 170)),
-  # Quelques arbres isolés
-  c(50, 75), c(120, 60), c(150, 100)
+  # Arbres au nord
+  cbind(runif(8, bbox["xmin"], bbox["xmax"]), 
+        runif(8, bbox["ymax"] - 20, bbox["ymax"] + 10)),
+  # Arbres au sud
+  cbind(runif(6, bbox["xmin"], bbox["xmax"]), 
+        runif(6, bbox["ymin"] - 10, bbox["ymin"] + 20)),
+  # Arbres à l'ouest
+  cbind(runif(5, bbox["xmin"] - 10, bbox["xmin"] + 15), 
+        runif(5, bbox["ymin"], bbox["ymax"])),
+  # Arbres à l'est
+  cbind(runif(5, bbox["xmax"] - 15, bbox["xmax"] + 10), 
+        runif(5, bbox["ymin"], bbox["ymax"]))
 )
 
-# Créer les points individually
+# Créer les points
 pts <- lapply(1:nrow(coords_arbres), function(i) {
   sf::st_point(coords_arbres[i, ])
 })
 
 arbres <- sf::st_sf(
   id = 1:nrow(coords_arbres),
-  geometry = sf::st_sfc(pts, crs = 32618)
+  geometry = sf::st_sfc(pts, crs = st_crs(champ))
 )
 
 # Visualiser les données
 ggplot() +
   geom_sf(data = champ, fill = "lightgreen", alpha = 0.3) +
   geom_sf(data = arbres, color = "darkgreen", size = 3) +
-  ggtitle("Champ agricole avec arbres (points verts)") +
+  ggtitle("Champ M2 avec arbres (points verts)") +
   theme_minimal()
 ```
 
@@ -83,30 +91,15 @@ La fonction `calculer_distance_arbres()` calcule la distance euclidienne aux arb
 dist_simple <- calculer_distance_arbres(
   arbres_sf = arbres,
   champ_bbox = champ,
-  resolution = 5,
+  resolution = 2,
   buffer_arbre = 3,
   max_distance = 100
 )
 
-# Visualiser la distance au buffer des arbres
 visualiser_distance_arbres(dist_simple, type = "buffer")
 ```
 
-```{r distance-points}
-# Visualiser la distance aux points d'arbres
-visualiser_distance_arbres(dist_simple, type = "points")
-```
-
-## Étape 2: Comparaison des méthodes de distance
-
-```{r comparaison-distances}
-# Comparaison buffer vs points
-viz <- visualiser_distance_arbres(dist_simple, type = "comparaison")
-viz$points
-viz$buffer
-```
-
-## Étape 3: Distances amont/aval avec direction du vent
+## Étape 2: Distances amont/aval avec direction du vent
 
 La fonction `calculer_distances_amont_aval()` distingue les distances selon la direction du vent:
 
@@ -114,48 +107,32 @@ La fonction `calculer_distances_amont_aval()` distingue les distances selon la d
 - **Aval**: Vent qui va VERS l'arbre (accélération après l'arbre)
 
 ```{r distances-amont-aval}
-# Calcul avec vent de 270 degrés (vent d'ouest)
 dist_dir <- calculer_distances_amont_aval(
   arbres_sf = arbres,
   angle_vent = 270,
   champ_bbox = champ,
-  resolution = 5,
+  resolution = 2,
   buffer_arbre = 3,
   angle_focal = 45,
   max_distance = 100,
   taille_lissage = 5
 )
 
-# Visualiser la comparaison amont vs aval
 viz <- visualiser_distances_vent(dist_dir, type = "comparaison")
 viz$amont
 viz$aval
 ```
 
-### Visualiser chaque type séparément
+## Étape 3: Fetch de vent elliptique
 
-```{r amont-seul}
-visualiser_distances_vent(dist_dir, type = "amont")
-```
-
-```{r aval-seul}
-visualiser_distances_vent(dist_dir, type = "aval")
-```
-
-```{r totale}
-visualiser_distances_vent(dist_dir, type = "totale")
-```
-
-## Étape 4: Fetch de vent elliptique
-
-La fonction `calculer_fetch_vent()` calcule un buffer elliptique aligné avec la direction du vent. Le vent a plus d'effet dans sa direction de propagation.
+La fonction `calculer_fetch_vent()` calcule un buffer elliptique aligné avec la direction du vent.
 
 ```{r fetch-elliptique}
 fetch <- calculer_fetch_vent(
   arbres_sf = arbres,
   angle_vent = 270,
   champ_bbox = champ,
-  resolution = 5,
+  resolution = 2,
   max_fetch = 100,
   coef_ellipse = 3
 )
@@ -165,84 +142,11 @@ viz_fetch$simple
 viz_fetch$elliptique
 ```
 
-### Fetch elliptique seul
-
-```{r fetch-seul}
-visualiser_fetch(fetch, type = "elliptique")
-```
-
-## Étape 5: Simuler la vitesse du vent
-
-Plusieurs fonctions permettent de simuler la vitesse du vent selon les distances calculées:
-
-### Simulation simple (distance euclidienne)
-
-```{r vitesse-simple}
-vitesse_simple <- simuler_vitesse_vent_simple(
-  dist_result = dist_simple,
-  vitesse_ref = 5,
-  coef_protection = 0.5
-)
-
-# Visualiser directement avec terra
-plot(vitesse_simple$vitesse, main = "Vitesse du vent (m/s)",
-     col = hcl.colors(100, "RdBu"))
-```
-
-### Simulation avec distances amont/aval
-
-Pour le résultat de `calculer_distances_amont_aval`, la simulation directe n'est pas disponible. À la place, vous pouvez utiliser le résultat pour analyses ultérieures ou créer une carte de vent :
-
-```{r vitesse-amont-aval}
-# Le résultat dist_dir contient les rasters amont, aval et totale
-# Ces rasters peuvent être utilisés directement pour l'analyse
-par(mfrow = c(1, 3), mar = c(3, 3, 3, 3))
-plot(dist_dir$amont, main = "Distance amont (m)")
-plot(dist_dir$aval, main = "Distance aval (m)")
-plot(dist_dir$totale, main = "Distance totale (m)")
-```
-
-## Étape 6: Cartographie avec flèches de vent
-
-La fonction `tracer_carte_vent()` crée une carte avec les distances et des flèches indiquant la direction du vent.
-
-```{r carte-vent}
-distances <- calculer_distances_vent(
-  arbres_sf = arbres,
-  angle_vent = 270,
-  champ_bbox = champ,
-  resolution = 5,
-  max_distance = 100,
-  ouverture_angulaire = 45
-)
-
-carte_amont <- tracer_carte_vent(distances, type = "amont")
-carte_amont
-```
-
-```{r carte-aval}
-carte_aval <- tracer_carte_vent(distances, type = "aval")
-carte_aval
-```
-
-```{r carte-combinee}
-carte_combinee <- tracer_carte_vent(distances, type = "les_deux")
-carte_combinee
-```
-
-## Comparaison des méthodes
+## Étape 4: Comparaison des méthodes
 
 ### Différence entre distance simple et directionnelle
 
 ```{r comparaison-methodes}
-# Préparer les données pour comparaison
-df_simple <- as.data.frame(dist_simple$distance_buffer, xy = TRUE)
-names(df_simple)[3] <- "distance"
-
-df_dir <- as.data.frame(dist_dir$totale, xy = TRUE)
-names(df_dir)[3] <- "distance"
-
-# Créer une comparaison visuelle
 par(mfrow = c(1, 2), mar = c(4, 4, 2, 2))
 plot(dist_simple$distance_buffer, main = "Distance simple (buffer)")
 plot(dist_dir$totale, main = "Distance directionnelle (totale)")
@@ -259,14 +163,14 @@ plot(dist_dir$totale, main = "Distance directionnelle (totale)")
 
 ## Workflow complet
 
-Voici un exemple de workflow complet pour analyser l'effet du vent:
-
 ```{r workflow-complet, eval = FALSE}
-# 1. Charger les données (remplacez par vos fichiers)
-champ <- st_read("chemin/vers/champ.shp")
-arbres <- st_read("chemin/vers/arbres.shp")
+# 1. Charger le champ M2
+champ <- st_read(system.file("extdata", "M2.shp", package = "covariablechamps"))
 
-# 2. Distance simple
+# 2. Obtenir les arbres (via détection LiDAR)
+arbres <- extraire_classifier_haies_lidar(mne, mnt, polygone_champ = champ)
+
+# 3. Distance simple
 dist_simple <- calculer_distance_arbres(
   arbres_sf = arbres,
   champ_bbox = champ,
@@ -274,16 +178,16 @@ dist_simple <- calculer_distance_arbres(
 )
 visualiser_distance_arbres(dist_simple, type = "buffer")
 
-# 3. Distances amont/aval
+# 4. Distances amont/aval
 dist_dir <- calculer_distances_amont_aval(
   arbres_sf = arbres,
-  angle_vent = 270,  # Vent d'ouest
+  angle_vent = 270,
   champ_bbox = champ,
   buffer_arbre = 3
 )
 visualiser_distances_vent(dist_dir, type = "comparaison")
 
-# 4. Simuler la vitesse
+# 5. Simuler la vitesse
 vitesse <- simuler_vitesse_vent(
   result = dist_dir,
   vitesse_ref = 5,
@@ -291,6 +195,6 @@ vitesse <- simuler_vitesse_vent(
   coef_aval = 0.3
 )
 
-# 5. Cartographier
+# 6. Cartographier
 tracer_carte_vent(distances, type = "les_deux")
 ```
