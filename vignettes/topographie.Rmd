@@ -138,8 +138,7 @@ plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 
 # Ombrage (hillshade)
 hillshade <- terra::shade(slope = pente * pi / 180, 
-                          aspect = aspect * pi / 180,
-                          premult = TRUE)
+                          aspect = aspect * pi / 180)
 plot(hillshade, main = "Ombrage (hillshade)", col = grey(0:100 / 100))
 plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 ```
