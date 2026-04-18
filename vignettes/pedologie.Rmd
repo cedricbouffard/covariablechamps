@@ -50,41 +50,57 @@ Une **série de sols** est une unité de classification basée sur:
 
 Pour utiliser `proba_et_classement_serie_quota_ilr()`, vous avez besoin de:
 
-1. **Polygones des champs** avec les séries de sols identifiées
+1. **Polygones des champs** avec les séries de sols identifiées (du gouvernement du Québec)
 2. **Table des séries** avec les compositions granulométriques
 3. **MNT** pour intégrer l'effet topographique
 
-## Exemple de données synthétiques
+## Chargement du champ M2
 
-Pour cet article, nous créons des données synthétiques.
+Le package inclut un champ d'exemple (`M2`) situé au Québec.
 
-```{r donnees-synth}
-# Créer un champ
-coords_champ <- matrix(c(0, 0, 300, 0, 300, 200, 0, 200, 0, 0), 
-                       ncol = 2, byrow = TRUE)
-champ <- sf::st_polygon(list(coords_champ))
-champ <- sf::st_sfc(champ, crs = 32618)
-champ <- sf::st_sf(geometry = champ)
+```{r charger-champ}
+champ <- st_read(system.file("extdata", "M2.shp", package = "covariablechamps"))
 
-# Créer des polygones de sols (3 séries)
-set.seed(42)
-polygones_sols <- lapply(1:3, function(i) {
-  offset_x <- sample(0:200, 1)
-  offset_y <- sample(0:100, 1)
-  w <- sample(50:100, 1)
-  h <- sample(50:100, 1)
-  coords <- matrix(c(offset_x, offset_y,
-                     offset_x + w, offset_y,
-                     offset_x + w, offset_y + h,
-                     offset_x, offset_y + h,
-                     offset_x, offset_y), 
-                   ncol = 2, byrow = TRUE)
-  sf::st_polygon(list(coords))
-})
-polygones_sols <- sf::st_sfc(polygones_sols, crs = 32618)
-polygones_sols <- sf::st_sf(ID = 1:3, geometry = polygones_sols)
+ggplot() +
+  geom_sf(data = champ, fill = "lightgreen", alpha = 0.5) +
+  theme_minimal() +
+  labs(title = "Champ M2",
+       subtitle = "Champ d'exemple inclus dans le package")
+```
 
-# Table des séries de sols
+## Workflow de désagrégation des sols
+
+**Note**: Les opérations ci-dessous nécessitent des données pédologiques réelles (polygones de séries de sols du gouvernement).
+
+### Préparer les données
+
+```{r preparer-donnees, eval = FALSE}
+# 1. Charger les polygones de sols (source: gouvernement du Québec)
+polygones_sols <- st_read("sols_poly.shp")
+
+# 2. Table des séries avec composition granulométrique
+table_series <- read.csv("table_sols.csv")
+
+# 3. Vérifier la concordance
+head(polygones_sols)
+head(table_series)
+```
+
+### Table des séries de sols
+
+La table des séries doit contenir:
+
+| Colonne | Description |
+|---------|-------------|
+| `Code.polygone` | Identifiant reliant à polygones_sols |
+| `Composante` | Nom de la série de sols |
+| `Pourcentage` | Proportion de la série dans le polygone |
+| `Sable` | Pourcentage de sable (0-100) |
+| `Limon` | Pourcentage de limon (0-100) |
+| `Argile` | Pourcentage d'argile (0-100) |
+
+Exemple:
+```{r exemple-table, eval = FALSE}
 table_series <- data.frame(
   Code.polygone = 1:3,
   Composante = c("Soulange", "Kamouraska", "Saint-André"),
@@ -93,79 +109,32 @@ table_series <- data.frame(
   Limon = c(45, 35, 30),
   Argile = c(25, 20, 15)
 )
-
-cat("Séries de sols:\n")
 print(table_series)
-```
-
-## Visualisation des polygones de sols
-
-```{r visualisation-sols}
-# Créer un raster de référence
-r_template <- terra::rast(
-  ncols = 60,
-  nrows = 40,
-  xmin = 0, xmax = 300,
-  ymin = 0, ymax = 200,
-  crs = 32618
-)
-
-# Colour palette for soils
-soil_colors <- c("steelblue", "sienna", "forestgreen")
-names(soil_colors) <- table_series$Composante
-
-ggplot() +
-  geom_sf(data = polygones_sols, aes(fill = factor(ID)), alpha = 0.5) +
-  geom_sf(data = champ, fill = NA, color = "black", linewidth = 1.5) +
-  scale_fill_discrete(name = "Série", labels = table_series$Composante) +
-  theme_minimal() +
-  labs(title = "Polygones de séries de sols",
-       subtitle = "Exemple de distribution spatiale")
 ```
 
 ## Triangle textural
 
 Le triangle textural montre la classification des sols selon les proportions de sable, limon et argile.
 
-```{r triangle-textural}
-# Créer les points du triangle
-par(mar = c(4, 4, 4, 4))
+| Texture | Sable | Limon | Argile |
+|---------|-------|-------|--------|
+| Argileuse | 0-45 | 0-40 | 55-100 |
+| Limoneuse | 0-45 | 50-100 | 0-55 |
+| Sableuse | 50-100 | 0-50 | 0-50 |
+| Franco-argilo-limoneuse | 20-45 | 30-50 | 30-45 |
 
-# Labels des coins
-text(0.5, 1.05, "ARGILE", adj = 0.5, font = 2)
-text(-0.05, -0.05, "SABLE", adj = 0.5, font = 2, srt = 60)
-text(1.05, -0.05, "LIMON", adj = 0.5, font = 2, srt = -60)
+## Calcul de la désagrégation
 
-# Ajouter les points pour chaque série
-for (i in 1:nrow(table_series)) {
-  # Conversion en coordonnées triangulaires
-  # (simplifié)
-  x <- table_series$Sable[i] / 100 * 0.5 + table_series$Limon[i] / 100
-  y <- table_series$Sable[i] / 100 * sqrt(3) / 2
-  
-  points(x, y, pch = 19, cex = 3, col = soil_colors[i])
-  text(x, y + 0.08, table_series$Composante[i], font = 2)
-}
+La fonction `proba_et_classement_serie_quota_ilr()` effectue la désagrégation:
 
-title("Triangle textural des séries de sols")
-```
+```{r desagregation, eval = FALSE}
+# Charger le MNT (via LiDAR)
+mnt <- telecharger_lidar(champ)
 
-## Workflow complet
-
-La fonction `proba_et_classement_serie_quota_ilr()` effectue une désagrégation des polygones de sols:
-
-```{r workflow-complet, eval = FALSE}
-# 1. Charger les données
-champs_sf <- sf::st_read("champs.shp")
-table_sols <- read.csv("sols.csv")
-
-# 2. Charger le MNT
-mnt <- terra::rast("mnt.tif")
-
-# 3. Calculer les probabilités et classifications
+# Effectuer la désagrégation
 resultat <- proba_et_classement_serie_quota_ilr(
-  polygones_sf = champs_sf,
-  table_series = table_sols,
+  polygones_sf = polygones_sols,
+  table_series = table_series,
   mnt = mnt,
   id_col = "Code.polygone",
   serie_col = "Composante",
@@ -175,39 +144,31 @@ resultat <- proba_et_classement_serie_quota_ilr(
   argile_col = "Argile"
 )
 
-# 4. Visualiser
-plot(resultat$prob)  # Probabilités par série
-plot(resultat$closest_label)  # Classification finale
+# Visualiser les probabilités
+plot(resultat$prob)
+
+# Visualiser la classification finale
+plot(resultat$closest_label)
 ```
 
-## Paramètres de la fonction
+### Paramètres de la fonction
 
-### Résolution (`grid_m`)
-
-Contrôle la résolution de la grille de désagrégation:
-- Plus fin = plus détaillé mais plus lent
-- Recommandé: 10-50m selon la qualité des données
-
-### Voisinage (`sigma_voisin`)
-
-Lissage spatial pour éviter les地块 isolés:
-- Plus grand = plus de lissage
-- Recommandé: 30-100m
-
-### Effet MNT (`beta_mnt`)
-
-Influence de la topographie sur la texture:
-- Beta = 0:不考虑 MNT
-- Beta = 0.2: Effet modéré
-- Beta = 0.5: Effet fort
+| Paramètre | Description | Valeur par défaut |
+|-----------|-------------|-------------------|
+| `grid_m` | Résolution de la grille (m) | 20 |
+| `sigma_voisin` | Écart-type du noyau gaussien (m) | 60 |
+| `alpha_voisin` | Pondération de similarité de voisinage | 8 |
+| `beta_mnt` | Pondération de l'effet MNT | 0.2 |
+| `lambda_base` | Pondération de la probabilité de base | 0.25 |
 
 ## Interprétation des résultats
 
 ### Raster de probabilités
 
-Chaque couche représente la probabilité d'appartenance à une série:
-- Valeurs près de 1 = forte probabilité
-- Valeurs près de 0 = faible probabilité
+Chaque couche du raster `prob` représente la probabilité d'appartenance à une série:
+
+- Valeurs proches de 1 = forte probabilité
+- Valeurs proches de 0 = faible probabilité
 
 ### Classification finale
 
@@ -232,3 +193,8 @@ Le raster `closest_label` assigne chaque pixel à la série la plus probable.
 
 - Identifier les zones à risque de saturation
 - Planifier les systèmes de drainage
+
+## Références
+
+- Commission de protection des terres agricoles du Québec (CPTAQ)
+- Agence de développement du Canada (AAFC) - Bases de données des sols
