@@ -23,6 +23,7 @@ library(covariablechamps)
 library(sf)
 library(terra)
 library(ggplot2)
+library(lidR)
 ```
 
 ## Introduction
@@ -49,65 +50,65 @@ ggplot() +
        subtitle = "Champ d'exemple inclus dans le package")
 ```
 
-## Téléchargement des données LiDAR
+## Téléchargement des données LiDAR ponctuelles
 
-Le MNT et MNE sont téléchargés depuis le DataCube du Canada.
+La fonction `telecharger_lidar_ponctuel()` télécharge le nuage de points LiDAR au format COPC.
+
+**Note**: Cette opération peut prendre quelques minutes.
 
 ```{r telecharger-lidar, cache = TRUE}
-# Télécharger les données LiDAR
-lidar <- telecharger_lidar(
+# Télécharger le nuage de points LiDAR
+lidar <- telecharger_lidar_ponctuel(
   polygone = champ,
-  mne = TRUE
+  buffer = 50
 )
 
-mne <- lidar$mne
-mnt <- lidar$mnt
-
-plot(mne, main = "MNE (Modèle Numérique d'Élévation)",
-     col = hcl.colors(100, "Terrain"))
-plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
+cat("Nuage de points téléchargé\n")
+cat("Nombre de points:", lidar$nuage_points$npoints, "\n")
+cat("Système de référence:", lidar$nuage_points$crs, "\n")
 ```
 
-## Création d'arbres synthétiques
+## Classification des arbres et haies
 
-Pour la démonstration, nous créons des arbres synthétiques autour du champ. En pratique, les arbres proviendraient de `extraire_classifier_haies_lidar()`.
+La fonction `extraire_classifier_haies_lidar()` détecte et classifie automatiquement les arbres et haies à partir du nuage de points LiDAR.
 
-```{r creer-arbres}
-# Obtenir l'étendue du champ
-bbox_champ <- st_bbox(champ)
+**Note**: Le traitement peut prendre plusieurs minutes selon la taille du nuage de points.
 
-# Créer des arbres synthétique le long des bordures
-set.seed(42)
-n_arbres <- 50
-coords_arbres <- rbind(
-  # Arbres au nord
-  cbind(runif(n_arbres/4, bbox_champ["xmin"], bbox_champ["xmax"]),
-         runif(n_arbres/4, bbox_champ["ymax"], bbox_champ["ymax"] + 30)),
-  # Arbres au sud
-  cbind(runif(n_arbres/4, bbox_champ["xmin"], bbox_champ["xmax"]),
-         runif(n_arbres/4, bbox_champ["ymin"] - 30, bbox_champ["ymin"])),
-  # Arbres à l'ouest
-  cbind(runif(n_arbres/4, bbox_champ["xmin"] - 30, bbox_champ["xmin"]),
-         runif(n_arbres/4, bbox_champ["ymin"], bbox_champ["ymax"])),
-  # Arbres à l'est
-  cbind(runif(n_arbres/4, bbox_champ["xmax"], bbox_champ["xmax"] + 30),
-         runif(n_arbres/4, bbox_champ["ymin"], bbox_champ["ymax"]))
+```{r classifier-arbres, cache = TRUE}
+# Classifier les arbres et haies
+resultat <- extraire_classifier_haies_lidar(
+  nuage_points = lidar$nuage_points,
+  res_dtm = 1,
+  res_chm = 0.5,
+  hmin = 2,
+  eps_dbscan = 5,
+  minPts_dbscan = 3,
+  seuil_aspect = 6,
+  seuil_largeur_max = 10
 )
 
-# Créer l'objet sf
-pts <- lapply(1:nrow(coords_arbres), function(i) {
-  sf::st_point(coords_arbres[i, ])
-})
-arbres <- sf::st_sf(
-  id = 1:nrow(coords_arbres),
-  geometry = sf::st_sfc(pts, crs = st_crs(champ))
-)
+# Récupérer les arbres classifiés
+arbres <- resultat$trees_sf
+
+cat("\nArbres détectés:", nrow(arbres), "\n")
+cat("Classes:", table(arbres$classe), "\n")
+```
+
+## Visualisation des arbres détectés
+
+```{r visualiser-arbres}
+# Colorer par classe
+couleurs_classe <- c("individuel" = "forestgreen", 
+                     "haie_brise_vent" = "darkgreen",
+                     "foret" = "darkblue")
 
 ggplot() +
   geom_sf(data = champ, fill = "lightgreen", alpha = 0.3) +
-  geom_sf(data = arbres, color = "darkgreen", size = 2) +
+  geom_sf(data = arbres, aes(color = classe), size = 1.5) +
+  scale_color_manual(values = couleurs_classe, name = "Classe") +
   theme_minimal() +
-  labs(title = "Champ M2 avec arbres synthétiques")
+  labs(title = "Arbres détectés depuis LiDAR",
+       subtitle = "Classés en: individuel, haie_brise_vent, foret")
 ```
 
 ## Distance simple aux arbres
@@ -185,6 +186,7 @@ par(mfrow = c(2, 2), mar = c(3, 3, 3, 3))
 plot(dist_simple$distance_buffer, main = "Distance simple (buffer)",
      col = hcl.colors(100, "Terrain"))
 plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
+plot(sf::st_geometry(arbres), add = TRUE, col = "darkgreen", pch = 19, cex = 0.5)
 
 plot(dist_dir$amont, main = "Amont (m)",
      col = hcl.colors(100, "Blues"))
