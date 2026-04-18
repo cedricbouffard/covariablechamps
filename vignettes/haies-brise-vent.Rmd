@@ -111,9 +111,7 @@ distances_haies <- calculer_distance_arbres(
 )
 
 # Visualiser les zones de protection
-visualiser_distance_arbres(distances_haies, type = "buffer") +
-  ggtitle("Zones de protection contre le vent",
-          subtitle = "Distance aux haies (plus sombre = plus protégé)")
+visualiser_distance_arbres(distances_haies, type = "buffer")
 ```
 
 ### Comprendre les zones de protection
@@ -202,7 +200,7 @@ plot(raster_protection, main = "Gradient de protection",
 
 Estimez la réduction de vitesse du vent due aux haies.
 
-```{r simulation-vent}
+```{r simulation-vent, fig.show = 'hold'}
 # Avec les distances simples
 vitesse_simple <- simuler_vitesse_vent_simple(
   dist_result = distances_haies,
@@ -211,8 +209,8 @@ vitesse_simple <- simuler_vitesse_vent_simple(
 )
 
 # Visualiser directement avec terra
-plot(vitesse_simple$vitesse, main = "Vitesse du vent (m/s)",
-     col = hcl.colors(100, "RdBu"))
+print(terra::plot(vitesse_simple$vitesse, main = "Vitesse du vent (m/s)",
+     col = hcl.colors(100, "RdBu")))
 ```
 
 ## Étape 6: Intégration avec les données météo
