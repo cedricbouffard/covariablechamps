@@ -49,7 +49,9 @@ extraire_classifier_haies_lidar <- function(
   # Checks
   # ----------------------------
   if (!requireNamespace("lidR", quietly = TRUE))
-    stop("Le package 'lidR' est requis.")
+    stop("Le package 'lidR' est requis. Installez-le avec:\n",
+         "remotes::install_github('r-lidar/rlas')\n",
+         "remotes::install_github('r-lidar/lidR')")
   if (!requireNamespace("terra", quietly = TRUE))
     stop("Le package 'terra' est requis.")
   if (!requireNamespace("sf", quietly = TRUE))
@@ -63,7 +65,8 @@ extraire_classifier_haies_lidar <- function(
   if (!requireNamespace("tibble", quietly = TRUE))
     stop("Le package 'tibble' est requis.")
   if (!requireNamespace("lidaRtRee", quietly = TRUE))
-    stop("Le package 'lidaRtRee' est requis.")
+    stop("Le package 'lidaRtRee' est requis. Installez-le avec:\n",
+         "remotes::install_github('cran/lidaRtRee')")
 
   # ----------------------------
   # Helper: PCA-MBR avec rectangle et angle (stable, sans lwgeom)
