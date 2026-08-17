@@ -30,7 +30,8 @@ Imports:
     jsonlite,
     dplyr,
     suncalc,
-    rayshader
+    rayshader,
+    viridis
 Suggests:
     testthat (>= 3.0.0),
     knitr,
