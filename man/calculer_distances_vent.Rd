@@ -2,33 +2,39 @@
 % Please edit documentation in R/distances_vent.R
 \name{calculer_distances_vent}
 \alias{calculer_distances_vent}
-\title{Calculer les distances aux arbres selon la direction du vent}
+\title{Calculer les distances amont/aval avec lissage}
 \usage{
 calculer_distances_vent(
   arbres_sf,
   angle_vent,
   champ_bbox,
   resolution = 2,
-  max_distance = 100,
-  ouverture_angulaire = 45
+  buffer_arbre = 3,
+  angle_focal = 45,
+  max_distance = 200,
+  taille_lissage = 7
 )
 }
 \arguments{
-\item{arbres_sf}{Objet sf POINT}
+\item{arbres_sf}{Objet sf POINT avec les arbres}
 
-\item{angle_vent}{Angle du vent en degrés (0-360)}
+\item{angle_vent}{Angle du vent en degrés (0=Nord, 90=Est)}
 
 \item{champ_bbox}{Objet sf avec le contour du champ}
 
 \item{resolution}{Résolution du raster en mètres}
 
-\item{max_distance}{Distance maximale à calculer}
+\item{buffer_arbre}{Rayon du buffer autour des arbres (m)}
 
-\item{ouverture_angulaire}{Angle d'ouverture en degrés}
+\item{angle_focal}{Angle focal en degrés}
+
+\item{max_distance}{Distance maximale}
+
+\item{taille_lissage}{Taille de la fenêtre de lissage (cellules)}
 }
 \value{
-Liste avec les distances
+Liste avec les rasters amont et aval
 }
 \description{
-Calculer les distances aux arbres selon la direction du vent
+Calculer les distances amont/aval avec lissage
 }

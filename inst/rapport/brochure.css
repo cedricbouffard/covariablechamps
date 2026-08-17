@@ -1,0 +1,2339 @@
+/*
+================================================================================
+PROFESSIONAL REPORT TEMPLATE - CSS Stylesheet
+================================================================================
+
+This stylesheet provides a comprehensive set of components for creating
+professional paged reports using R Markdown and pagedown.
+
+QUICK START:
+1. Copy this CSS file and the companion files to your project
+2. Update the YAML header in your .Rmd file
+3. Use the components documented below in your report
+
+FILES REQUIRED:
+- brochure.css (this file)
+- header_overrides.html (JavaScript for footnotes, headers/footers)
+
+YAML CONFIGURATION:
+---
+title: "Your Report Title"
+subtitle: "Subtitle"
+author: "Organization Name"
+date: "Month Year"
+header-left: "Report Title"        # Left header text
+header-right: "Organization"       # Right header text
+footer-left: "Confidential"        # Left footer text
+footer-right: "Date"               # Center footer text
+page-number-position: "right"      # "right" or "alternate" (book-style)
+output:
+  pagedown::html_paged:
+    css: ["default-page", "default", "brochure.css"]
+    includes:
+      in_header: header_overrides.html
+---
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+
+1. COLOR PALETTE - Customize brand colors
+2. PAGE LAYOUT - Headers, footers, margins
+3. TYPOGRAPHY - Headings, paragraphs, links
+4. INFOBOXES - Colored alert/info boxes
+5. CALLOUT BOXES - Tips, warnings, notes
+6. VALUE BOXES - KPI display cards
+7. STAT HIGHLIGHTS - Inline statistics
+8. PROGRESS BARS - Visual progress indicators
+9. BADGES/TAGS - Labels and categorization
+10. TIMELINE - Chronological display
+11. TABLES - Styled data tables
+12. BLOCKQUOTES - Quoted text
+13. LISTS - Styled lists (striped, feature, icon)
+14. PROCESS STEPS - Workflow visualization
+15. METRIC CARDS - Dashboard-style metrics
+16. KEY FINDINGS - Highlighted insights
+17. SUMMARY BOX - Executive summary
+18. QUOTE BOX - Testimonials
+19. SCORECARD - Score grid display
+20. GRIDS - Layout helpers
+21. FOOTNOTES - Page-bottom footnotes
+22. SECTION BREAKS - Full-page dividers
+23. CHARTS - Chart containers
+
+================================================================================
+*/
+
+/* ==========================================================
+   1. COLOR PALETTE - IRDA 2023 Theme
+
+   Couleurs officielles de l'IRDA (Institut de recherche et
+   de développement en agroenvironnement)
+   ========================================================== */
+:root {
+  /* IRDA Brand Colors */
+  --primary: #002752;           /* Bleu foncé IRDA (principal) */
+  --primary-dark: #001D3D;
+  --primary-light: #e6eef5;     /* Bleu très pâle */
+  --secondary: #AED136;         /* Vert lime IRDA */
+  --secondary-dark: #8fb82a;
+  --secondary-light: #f4f9e6;
+  --accent: #D5785A;            /* Orange/terracotta IRDA */
+  --accent-dark: #b85d42;
+  --accent-light: #fbeee9;
+
+  /* IRDA Extended Palette */
+  --irda-gold: #D1AD06;         /* Or/jaune */
+  --irda-green: #75AA41;        /* Vert forêt */
+  --irda-brown: #833C0B;        /* Brun terre */
+
+  /* Semantic colors - Adapted to IRDA palette */
+  --success: #75AA41;           /* Vert forêt IRDA */
+  --warning: #D1AD06;           /* Or IRDA */
+  --danger: #D5785A;            /* Orange/terracotta IRDA */
+  --info: #002752;              /* Bleu foncé IRDA */
+
+  /* Light backgrounds */
+  --success-light: #f0f7e8;
+  --warning-light: #fdf8e6;
+  --danger-light: #fbeee9;
+  --info-light: #e6eef5;
+
+  /* Dark variants */
+  --success-dark: #5a8832;
+  --warning-dark: #a68a05;
+  --danger-dark: #b85d42;
+  --info-dark: #001D3D;
+
+  /* Neutral colors */
+  --bg-light: #f8f9fa;          /* Light background */
+  --bg-dark: #002752;           /* Dark background (IRDA blue) */
+  --text-dark: #002752;         /* Main text color (IRDA blue) */
+  --text-medium: #44546A;       /* Secondary text */
+  --text-light: #767171;        /* Muted text */
+  --white: #ffffff;
+  --border-light: #E7E6E6;      /* Light borders */
+  --border-medium: #dee2e6;     /* Medium borders */
+
+  /* Effects */
+  --shadow-sm: 0 1px 3px rgba(0,39,82,0.08);
+  --shadow-md: 0 4px 12px rgba(0,39,82,0.1);
+  --shadow-lg: 0 8px 24px rgba(0,39,82,0.12);
+
+  /* Sizing */
+  --radius-sm: 4pt;
+  --radius-md: 8pt;
+  --radius-lg: 12pt;
+
+  --spacing-xs: 5pt;
+  --spacing-sm: 10pt;
+  --spacing-md: 15pt;
+  --spacing-lg: 25pt;
+  --spacing-xl: 40pt;
+}
+
+/* ===== GLOBAL - Override defaults to prevent counter resets ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html, body {
+  width: 100%;
+  background: var(--white);
+}
+body {
+  font-family: 'Calibri', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  color: var(--text-dark);
+  line-height: 1.6;
+  font-size: 11pt;
+}
+
+/* Improved paragraph spacing */
+p {
+  margin-bottom: 0.8em;
+  text-align: justify;
+  hyphens: auto;
+}
+
+/* Better link styling */
+a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+a:hover {
+  border-bottom-color: var(--accent);
+}
+
+/* CRITICAL: Disable all page counter resets */
+.front-page,
+.main .level1:first-child h1,
+.level1,
+.level2,
+h1, h2, h3, h4, h5, h6,
+.section-break,
+.toc,
+.front-matter-container {
+  counter-reset: none !important;
+}
+
+/* Prevent any data-page-number counter resets from taking effect */
+[data-page-number] {
+  counter-reset: none !important;
+  counter-increment: page !important;
+}
+
+/* Ensure paged.js page containers never reset counters */
+.pagedjs_page,
+.pagedjs_pagebox,
+.pagedjs_page_content {
+  counter-reset: none !important;
+}
+
+/* ==========================================================
+   PAGE RULES - Must override default-page.css
+   ========================================================== */
+
+/* ==========================================================
+   PAGE LAYOUT - Headers & Footers
+
+   Configure in YAML:
+     header-left: "Document Title"
+     header-right: "Organization"
+     footer-left: "Confidential"
+     footer-right: "Date"
+     page-number-position: "right" | "alternate"
+
+   "right" = page number always on right
+   "alternate" = book-style (left on even pages, right on odd)
+   ========================================================== */
+
+/* Base @page - Letter with normal margins */
+@page {
+  size: letter;
+  margin: 0.8in 0.6in 0.7in 0.6in;
+
+  /* Header - content set via JavaScript from YAML */
+  @top-left {
+    content: "";
+    font-size: 9pt;
+    color: var(--text-light);
+    font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
+  }
+  @top-center {
+    content: "";
+    font-size: 9pt;
+    color: var(--text-light);
+    font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
+  }
+  @top-right {
+    content: "";
+    font-size: 9pt;
+    color: var(--text-light);
+    font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
+  }
+
+  /* Footer - content set via JavaScript from YAML */
+  @bottom-left {
+    content: "";
+    font-size: 8pt;
+    color: var(--text-light);
+    font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
+  }
+  @bottom-center {
+    content: "";
+    font-size: 8pt;
+    color: var(--text-light);
+    font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
+  }
+  @bottom-right {
+    content: "";
+    font-size: 8pt;
+    color: var(--text-light);
+    font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
+  }
+}
+
+/* First page (front cover) - full bleed, no header/footer */
+@page:first {
+  margin: 0 !important;
+  padding: 0 !important;
+  @top-left { content: none; }
+  @top-center { content: none; }
+  @top-right { content: none; }
+  @bottom-left { content: none; }
+  @bottom-center { content: none; }
+  @bottom-right { content: none; }
+}
+
+/* Page number position is handled via JavaScript in header_overrides.html
+   based on the page-number-position YAML setting:
+   - "right": page number always on right side
+   - "alternate": book-style (left on even pages, right on odd pages) */
+
+/* Override .level1 from default-page.css:
+   - Remove break-before: recto (forces right page)
+   - Remove page: chapter (creates new counter context) */
+.level1,
+.level1-noreset {
+  break-before: page !important;
+  page: auto !important;
+  counter-reset: none !important;
+}
+
+/* Override any recto forcing from default-page.css */
+.section.level1,
+.section.level1 > h1 {
+  break-before: page !important;
+  page: auto !important;
+  counter-reset: none !important;
+}
+
+/* Prevent page counter resets on section headings */
+h1,
+.section-break h1,
+.main .level1:first-child h1 {
+  counter-reset: none !important;
+}
+
+/* Override front-matter pages */
+.front-matter-container .level1 {
+  page: auto !important;
+  counter-reset: none !important;
+}
+
+/* Override the counter-reset on first h1 */
+.main .level1:first-child h1 {
+  counter-reset: none !important;
+}
+
+/* ==========================================================
+   3. FRONT PAGE / COVER (Style IRDA)
+
+   Page de couverture IRDA avec:
+   - Bandeau DROIT (bandeaugauche.png)
+   - Logo IRDA en haut à droite (sur le bandeau)
+   - Image de couverture circulaire à droite
+   - Type de rapport, titre et date à gauche
+   ========================================================== */
+.front-page {
+  background-color: var(--white);
+  color: var(--primary);
+  display: block;
+  margin: 0 !important;
+  padding: 0 !important;
+  min-height: 100vh;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Bandeau DROIT - ajouté via JavaScript pour éviter problèmes de rendu */
+.front-page .bandeau-droit {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 140pt;
+  height: 100%;
+  background-image: url('bandeaugauche.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 1;
+}
+
+/* Subtitle = Type de rapport (en haut, en OR) */
+.front-page .subtitle {
+  position: absolute;
+  left: 50pt;
+  top: 330pt;
+  z-index: 2;
+}
+
+.front-page .subtitle span {
+  font-family: 'Calibri', sans-serif;
+  font-size: 14pt;
+  font-weight: 400;
+  color: var(--irda-gold);
+}
+
+/* Title = Titre du rapport (en GRAS) */
+.front-page .title {
+  font-family: 'Calibri', sans-serif;
+  font-size: 26pt;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 10pt;
+  border: none;
+  position: absolute;
+  left: 50pt;
+  top: 380pt;
+  max-width: 320pt;
+  line-height: 1.2;
+  z-index: 2;
+}
+
+/* Date */
+.front-page .date {
+  font-family: 'Calibri', sans-serif;
+  font-size: 11pt;
+  font-weight: 400;
+  color: var(--primary);
+  border: none;
+  position: absolute;
+  left: 50pt;
+  top: 470pt;
+  z-index: 2;
+}
+
+/* Author - en bas */
+.front-page .author {
+  font-family: 'Calibri', sans-serif;
+  font-size: 9pt;
+  font-weight: 400;
+  color: var(--text-medium);
+  border: none;
+  position: absolute;
+  left: 50pt;
+  bottom: 80pt;
+  max-width: 320pt;
+  z-index: 2;
+}
+
+/* Logo IRDA - en haut à droite, sur le bandeau */
+.front-page .logo-irda {
+  position: absolute;
+  top: 25pt;
+  right: 155pt;
+  width: 170pt;
+  height: auto;
+  z-index: 10;
+}
+
+/* Image de couverture - 35% du top, 140pt de la droite */
+.front-page .image-couverture {
+  position: absolute;
+  top: 28%;
+  right: 140pt;
+  transform: translateY(-50%);
+  width: 260pt;
+  height: auto;
+  z-index: 5;
+}
+
+/* ==========================================================
+   4. TABLE OF CONTENTS
+
+   Auto-generated when toc: true in YAML.
+   Customize title with toc_title in YAML.
+   ========================================================== */
+.toc {
+  break-after: auto;
+  padding: 1cm 0;
+  page: auto;
+}
+
+.toc::before {
+  content: "Table des matières";
+  display: block;
+  font-family: 'Calibri Light', 'Calibri', sans-serif;
+  color: var(--primary);
+  font-size: 20pt;
+  margin-bottom: 30pt;
+  font-weight: 400;
+  page-break-after: auto;
+}
+
+.toc ul,
+#TOC ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.toc li,
+#TOC li {
+  margin-bottom: 6pt;
+  font-size: 12pt;
+}
+
+/* Indent h2 items in TOC - nested lists for level 2 headings */
+.toc ul ul,
+#TOC ul ul,
+.toc > ul > li > ul,
+#TOC > ul > li > ul,
+nav.toc ul ul {
+  padding-left: 1.5em !important;
+  margin-left: 0 !important;
+  margin-top: 6pt;
+}
+
+.toc ul ul li,
+#TOC ul ul li,
+.toc li li,
+#TOC li li,
+.toc > ul > li > ul > li,
+#TOC > ul > li > ul > li {
+  margin-left: 0;
+  padding-left: 0;
+  font-size: 11pt;
+  margin-bottom: 4pt;
+}
+
+/* Alternative selector for paged.js generated TOC */
+.pagedjs_toc_content ul ul {
+  padding-left: 1.5em !important;
+  margin-left: 0 !important;
+}
+
+.toc a {
+  text-decoration: none;
+  color: var(--primary);
+  font-family: 'Calibri', sans-serif;
+}
+
+/* Hide page number 0 in TOC (bug with accents) */
+.toc a[data-page="0"]::after,
+#TOC a[data-page="0"]::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* TOC section numbering */
+.toc-num {
+  display: inline;
+  color: var(--primary);
+  margin-right: 0.3em;
+}
+
+/* Hide heading numbers on actual pages in TOC */
+.toc .heading-number,
+#TOC .heading-number,
+.front-page .heading-number,
+.section-break .heading-number {
+  display: none;
+}
+
+/* Force page break before element */
+.page-break-before {
+  break-before: page;
+}
+
+/* Keep TOC-only class unused */
+
+/* Full-bleed section pages and continuous numbering (paged.js bleed vars) */
+.section-break {
+  --pagedjs-margin-top: 0cm;
+  --pagedjs-margin-right: 0cm;
+  --pagedjs-margin-left: 0cm;
+  --pagedjs-margin-bottom: 0cm;
+  --pagedjs-border-top: 0;
+  --pagedjs-border-right: 0mm;
+  --pagedjs-border-left: 0mm;
+  --pagedjs-border-bottom: 0mm;
+  --pagedjs-pagebox-width: 100%;
+  --pagedjs-pagebox-height: 100vh;
+
+  width: 100% !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background-color: var(--primary) !important;
+  color: var(--white) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  break-before: page !important;
+  break-after: auto !important;
+  page: auto !important;
+  counter-reset: none !important; /* continuous numbering */
+}
+
+/* Apply zero margins on the paged.js page area when section-break is present */
+.pagedjs_page:has(.section-break) .pagedjs_area,
+.pagedjs_page:has(.section-break) .pagedjs_pagebox,
+.pagedjs_page:has(.section-break) .pagedjs_page_content {
+  --pagedjs-margin-top: 0cm;
+  --pagedjs-margin-right: 0cm;
+  --pagedjs-margin-left: 0cm;
+  --pagedjs-margin-bottom: 0cm;
+  --pagedjs-border-top: 0;
+  --pagedjs-border-right: 0mm;
+  --pagedjs-border-left: 0mm;
+  --pagedjs-border-bottom: 0mm;
+  --pagedjs-pagebox-width: 100%;
+  --pagedjs-pagebox-height: 100vh;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+@page section-break {
+  margin: 0 !important;
+  padding: 0 !important;
+  @top-left { content: none; }
+  @top-center { content: none; }
+  @top-right { content: none; }
+  @bottom-left { content: none; }
+  @bottom-center { content: none; }
+  @bottom-right { content: none; }
+}
+
+@page section-break:left, @page section-break:right {
+  margin: 0 !important;
+  padding: 0 !important;
+  @top-left { content: none; }
+  @top-center { content: none; }
+  @top-right { content: none; }
+  @bottom-left { content: none; }
+  @bottom-center { content: none; }
+  @bottom-right { content: none; }
+}
+
+/* TOC tweaks */
+.toc-title { display: none; }
+
+/* Prevent blank page after TOC */
+.toc {
+  break-after: auto !important;
+  page-break-after: auto !important;
+}
+
+/* First section after TOC should not force a page break if unnecessary */
+.toc + .level1,
+.toc + .section.level1,
+#TOC + .level1,
+#TOC + .section.level1 {
+  break-before: auto !important;
+  page-break-before: auto !important;
+}
+
+.section-break h1 {
+  font-family: 'Calibri Light', 'Calibri', sans-serif;
+  font-size: 32pt;
+  text-transform: none;
+  border: none;
+  color: var(--white);
+  margin: 0;
+  padding: 0;
+  font-weight: 400;
+}
+
+/* Prevent extra blank pages before section-break titles */
+.section-break .section.level1,
+.section-break .section.level1 > h1,
+.section-break h1 {
+  break-before: avoid !important;
+  page-break-before: avoid !important;
+}
+
+/* ==========================================================
+   5. TYPOGRAPHY - Headings (IRDA Style)
+
+   Style basé sur le gabarit IRDA:
+   - h1: Bleu IRDA #002752, numéroté (1., 2., ...), bold
+   - h2: Orange/terracotta #D5785A, numéroté (1.1, 1.2, ...), bold
+   - h3: Bleu IRDA, numéroté (1.1.1, ...), bold
+   - h4, h5, h6: Non numérotés
+   ========================================================== */
+
+/* Heading number styling (added via JavaScript) */
+.heading-number {
+  font-weight: 400;
+  margin-right: 0.3em;
+}
+
+/* H1 - Titre de chapitre principal (style Titre1 IRDA) */
+h1 {
+  font-family: 'Calibri', sans-serif;
+  color: var(--primary);
+  font-size: 13pt;
+  font-weight: 700;
+  margin-top: var(--spacing-xl);
+  margin-bottom: var(--spacing-md);
+  line-height: 1.3;
+}
+
+/* H2 - Sous-sections principales (style Titre2 IRDA - Orange) */
+h2 {
+  font-family: 'Calibri', sans-serif;
+  color: var(--accent);
+  font-size: 12pt;
+  font-weight: 700;
+  margin-top: var(--spacing-lg);
+  margin-bottom: var(--spacing-sm);
+  padding-left: 0;
+  border-left: none;
+  text-transform: none;
+  letter-spacing: normal;
+  string-set: section-title content(text);
+}
+
+/* H3 - Sous-sous-sections (style Titre3 IRDA - Bleu) */
+h3 {
+  font-family: 'Calibri', sans-serif;
+  color: var(--primary);
+  font-size: 11pt;
+  font-weight: 700;
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-xs);
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* H4, H5, H6 - Non numérotés */
+h4 {
+  font-family: 'Calibri', sans-serif;
+  color: var(--primary);
+  font-size: 11pt;
+  font-weight: 700;
+  font-style: italic;
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-xs);
+}
+
+h5 {
+  font-family: 'Calibri', sans-serif;
+  color: var(--text-medium);
+  font-size: 11pt;
+  font-weight: 600;
+  margin-top: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+h6 {
+  font-family: 'Calibri', sans-serif;
+  color: var(--text-light);
+  font-size: 10pt;
+  font-weight: 600;
+  margin-top: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+/* ==========================================================
+   6. RESUME CARDS - Summary grid
+
+   USAGE:
+   ::: {.resume-grid}
+   ::: {.resume-card}
+   #### Title
+   Content here
+   :::
+   ::: {.resume-card}
+   #### Title
+   Content here
+   :::
+   :::
+   ========================================================== */
+.resume-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15pt;
+}
+
+.resume-card {
+  flex: 1 1 calc(50% - var(--spacing-md));
+  background: var(--white);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border-top: 4pt solid var(--secondary);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.resume-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.resume-card h4 {
+  font-family: 'Calibri', sans-serif;
+  color: var(--primary);
+  margin-top: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+  border: none;
+  padding: 0;
+}
+
+/* ==========================================================
+   7. INFOBOXES - Colored alert boxes
+
+   VARIANTS: .info (blue), .success (green), .warning (orange),
+             .danger (red), .primary, .secondary
+   SIZES: .small, .large
+
+   USAGE:
+   ::: {.infobox .warning}
+   #### Warning Title
+   Warning message content here.
+   :::
+   ========================================================== */
+.infobox {
+  padding: 15pt;
+  margin: 20pt 0;
+  border-radius: 0;
+  background: var(--primary-light);
+  border-left: 5pt solid var(--primary);
+  break-inside: avoid;
+  font-family: 'Calibri', sans-serif;
+}
+
+.infobox.info {
+  background: var(--info-light);
+  border-left-color: var(--primary);
+}
+
+.infobox.success {
+  background: var(--success-light);
+  border-left-color: var(--irda-green);
+}
+
+.infobox.warning {
+  background: var(--warning-light);
+  border-left-color: var(--irda-gold);
+}
+
+.infobox.danger {
+  background: var(--danger-light);
+  border-left-color: var(--accent);
+}
+
+.infobox.secondary {
+  background: var(--secondary-light);
+  border-left-color: var(--secondary);
+}
+
+.infobox.primary {
+  background: var(--primary-light);
+  border-left-color: var(--primary);
+}
+
+.infobox.small {
+  padding: 10pt;
+  font-size: 10pt;
+}
+
+.infobox.large {
+  padding: 25pt;
+  font-size: 12pt;
+}
+
+/* ==========================================================
+   8. SECTION BREAKS - Full-page dividers
+
+   VARIANTS: .primary (green), .secondary (dark), .accent (blue)
+
+   USAGE:
+   ::: {.section-break .secondary}
+   # Section Title {#section-id}
+   :::
+   ========================================================== */
+.section-break.primary {
+  background-color: var(--primary) !important;
+}
+
+.section-break.secondary {
+  background-color: var(--secondary) !important;
+}
+
+.section-break.accent {
+  background-color: var(--accent) !important;
+}
+
+/* ==========================================================
+   9. VALUE BOXES - KPI display cards
+
+   VARIANTS: .primary, .secondary, .accent, .success, .warning, .danger, .info
+   TRENDS: .trend.up (green), .trend.down (red), .trend.neutral (gray)
+
+   USAGE:
+   ::: {.value-box-grid}
+   ::: {.value-box .primary}
+   <span class="value">+15%</span>
+   <span class="label">Yield Increase</span>
+   <span class="trend up">vs last year</span>
+   :::
+   :::
+   ========================================================== */
+.value-box-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15pt;
+  margin: 20pt 0;
+}
+
+.value-box {
+  flex: 1 1 calc(25% - var(--spacing-md));
+  min-width: 140pt;
+  background: var(--white);
+  padding: var(--spacing-lg) var(--spacing-md);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+  border-top: 5pt solid var(--secondary);
+  position: relative;
+  overflow: hidden;
+  break-inside: avoid;
+  font-family: 'Calibri', sans-serif;
+}
+
+/* Subtle background pattern */
+.value-box::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, transparent 50%, rgba(0,0,0,0.02) 50%);
+  pointer-events: none;
+}
+
+.value-box.primary { border-top-color: var(--primary); }
+.value-box.secondary { border-top-color: var(--secondary); }
+.value-box.accent { border-top-color: var(--accent); }
+.value-box.success { border-top-color: var(--irda-green); }
+.value-box.warning { border-top-color: var(--irda-gold); }
+.value-box.danger { border-top-color: var(--accent); }
+.value-box.info { border-top-color: var(--primary); }
+
+.value-box .value {
+  font-family: 'Calibri Light', 'Calibri', sans-serif;
+  font-size: 24pt;
+  font-weight: 400;
+  color: var(--primary);
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  line-height: 1.1;
+}
+
+.value-box .label {
+  font-size: 9pt;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 1pt;
+  font-weight: 500;
+}
+
+.value-box .icon {
+  font-size: 20pt;
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-light);
+  opacity: 0.7;
+}
+
+.value-box .trend {
+  font-size: 9pt;
+  margin-top: var(--spacing-sm);
+  padding: 3pt 8pt;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 4pt;
+  font-weight: 500;
+}
+
+.value-box .trend.up {
+  background: var(--success-light);
+  color: var(--success-dark);
+}
+
+.value-box .trend.down {
+  background: var(--danger-light);
+  color: var(--danger-dark);
+}
+
+.value-box .trend.neutral {
+  background: var(--secondary-light);
+  color: var(--text-medium);
+}
+
+/* ==========================================================
+   10. STAT HIGHLIGHTS - Inline statistics
+
+   VARIANTS: .secondary, .accent, .success, .warning, .danger
+
+   USAGE:
+   <div class="stat-highlight">
+     <span class="number">2,450</span>
+     <span class="desc">kg/ha avg</span>
+   </div>
+   ========================================================== */
+.stat-highlight {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: var(--bg-light);
+  margin: var(--spacing-xs);
+  min-width: 80pt;
+}
+
+.stat-highlight .number {
+  font-size: 22pt;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1.2;
+}
+
+.stat-highlight .desc {
+  font-size: 9pt;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5pt;
+}
+
+/* Stat highlight variants */
+.stat-highlight.secondary .number { color: var(--secondary); }
+.stat-highlight.accent .number { color: var(--accent); }
+.stat-highlight.success .number { color: var(--success); }
+.stat-highlight.warning .number { color: var(--warning); }
+.stat-highlight.danger .number { color: var(--danger); }
+
+/* In-text images - paged.js compatible */
+img[style*="float: right"] {
+  float: right;
+  margin-left: 15pt;
+  margin-bottom: 10pt;
+}
+
+img[style*="float: left"] {
+  float: left;
+  margin-right: 15pt;
+  margin-bottom: 10pt;
+}
+
+/* Ensure paragraphs wrap around floated images */
+p {
+  overflow: visible;
+}
+
+/* ==========================================================
+   11. FOOTNOTES - Page-bottom footnotes
+
+   Footnotes are automatically numbered and placed at the
+   bottom of the page where they appear.
+
+   USAGE:
+   Text with a footnote<span class="footnote">Footnote content here.</span> continues.
+   ========================================================== */
+
+/* Hide the original footnote content (renamed to footnote-hidden by JS) */
+span.footnote,
+span.footnote-hidden {
+  display: none !important;
+}
+
+/* Footnote reference in text (superscript number) */
+sup.footnote-ref {
+  font-size: 8pt;
+  color: var(--accent);
+  font-weight: bold;
+  cursor: default;
+  margin-left: 1pt;
+}
+
+/* Footnote area at bottom of page - only show when footnotes exist */
+.page-footnotes:empty,
+.page-footnotes:not(:has(.footnote-item)) {
+  display: none;
+}
+
+.page-footnotes {
+  position: absolute;
+  bottom: -40px;
+  left: 0;
+  right: 0;
+  border-top: 1pt solid var(--accent);
+  padding-top: 8pt;
+  margin-top: 15pt;
+  font-size: 9pt;
+  color: var(--text-light);
+  background: transparent;
+  font-family: 'Calibri', sans-serif;
+}
+
+.page-footnotes .footnote-item {
+  margin-bottom: 4pt;
+  line-height: 1.4;
+}
+
+.page-footnotes .footnote-item sup {
+  color: var(--accent);
+  font-weight: bold;
+  margin-right: 4pt;
+}
+
+/* Ensure page area can contain absolute positioned footnotes */
+.pagedjs_page_content {
+  position: relative;
+}
+
+.pagedjs_area {
+  position: relative;
+}
+
+/* Hide default R Markdown footnotes section if present */
+section.footnotes,
+div.footnotes ol {
+  display: none;
+}
+
+.float-right {
+  float: right;
+  margin-left: 15pt;
+  margin-bottom: 10pt;
+}
+
+/* ==========================================================
+   12. CALLOUT BOXES - Tips, warnings, notes
+
+   VARIANTS: .tip (green), .info (blue), .warning (orange),
+             .danger (red), .success (green)
+
+   USAGE:
+   ::: {.callout .tip}
+   ##### Tip Title
+   Tip content here.
+   :::
+   ========================================================== */
+.callout {
+  padding: 15pt;
+  margin: 15pt 0;
+  border-radius: 6pt;
+  border-left: 4pt solid;
+  background: var(--bg-light);
+  break-inside: avoid;
+}
+
+.callout.info { border-color: var(--accent); background: var(--info-light); }
+.callout.tip { border-color: var(--primary); background: var(--primary-light); }
+.callout.warning { border-color: var(--warning); background: var(--warning-light); }
+.callout.danger { border-color: var(--danger); background: var(--danger-light); }
+.callout.success { border-color: var(--success); background: var(--success-light); }
+
+.callout-title {
+  font-weight: 700;
+  margin-bottom: 8pt;
+  display: flex;
+  align-items: center;
+  gap: 8pt;
+}
+
+/* ==========================================================
+   13. PROGRESS BARS - Visual progress indicators
+
+   VARIANTS: .primary, .secondary, .accent, .success, .warning, .danger, .info
+
+   USAGE:
+   ::: {.progress-container}
+   <div class="progress-label"><span>Task</span><span>75%</span></div>
+   <div class="progress-bar"><div class="progress-fill primary" style="width: 75%;"></div></div>
+   :::
+   ========================================================== */
+.progress-container {
+  margin: 10pt 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.progress-container .progress-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5pt;
+  font-size: 11pt;
+}
+
+.progress-container .progress-bar {
+  height: 12pt;
+  background: var(--border-light);
+  border-radius: 6pt;
+  overflow: hidden;
+}
+
+.progress-container .progress-fill {
+  height: 100%;
+  border-radius: 6pt;
+}
+
+.progress-container .progress-fill.primary { background: var(--primary); }
+.progress-container .progress-fill.secondary { background: var(--secondary); }
+.progress-container .progress-fill.accent { background: var(--accent); }
+.progress-container .progress-fill.success { background: var(--success); }
+.progress-container .progress-fill.warning { background: var(--warning); }
+.progress-container .progress-fill.danger { background: var(--danger); }
+.progress-container .progress-fill.info { background: var(--info); }
+
+/* ==========================================================
+   14. BADGES - Labels and tags
+
+   VARIANTS: .primary, .secondary, .accent, .success, .warning, .danger, .info, .light
+
+   USAGE:
+   <span class="badge primary">Label</span>
+   <span class="badge success">Approved</span>
+   ========================================================== */
+.badge {
+  display: inline-block;
+  padding: 3pt 8pt;
+  font-size: 8pt;
+  font-weight: 600;
+  font-family: 'Calibri', sans-serif;
+  border-radius: 2pt;
+  text-transform: uppercase;
+  letter-spacing: 0.5pt;
+}
+
+.badge.primary { background: var(--primary); color: var(--white); }
+.badge.secondary { background: var(--secondary); color: var(--primary); }
+.badge.accent { background: var(--accent); color: var(--white); }
+.badge.success { background: var(--irda-green); color: var(--white); }
+.badge.warning { background: var(--irda-gold); color: var(--primary); }
+.badge.danger { background: var(--accent); color: var(--white); }
+.badge.info { background: var(--primary); color: var(--white); }
+.badge.light { background: var(--secondary-light); color: var(--primary); }
+
+/* ==========================================================
+   15. TIMELINE - Chronological events
+
+   USAGE:
+   ::: {.timeline}
+   ::: {.timeline-item}
+   <span class="date">Q1 2026</span>
+   <span class="title">Event Title</span>
+   Event description here.
+   :::
+   :::
+   ========================================================== */
+.timeline {
+  margin: 20pt 0;
+  padding-left: 20pt;
+  border-left: 3pt solid var(--secondary);
+  font-family: 'Calibri', sans-serif;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 20pt;
+  padding-left: 15pt;
+}
+
+.timeline-item::before {
+  content: "";
+  position: absolute;
+  left: -27pt;
+  top: 5pt;
+  width: 12pt;
+  height: 12pt;
+  background: var(--secondary);
+  border-radius: 50%;
+  border: 2pt solid var(--white);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.timeline-item .date {
+  font-size: 10pt;
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+.timeline-item .title {
+  font-size: 12pt;
+  font-weight: 600;
+  color: var(--secondary);
+  margin: 3pt 0;
+}
+
+/* ==========================================================
+   16. LEGEND BOX - Map/chart legends
+
+   USAGE:
+   ::: {.legend-box}
+   ##### Legend Title
+   ::: {.legend-item}
+   <div class="legend-color solid" style="background: #27ae60;"></div>
+   Category A
+   :::
+   :::
+   ========================================================== */
+.legend-box {
+  background: var(--white);
+  padding: 15pt;
+  border-radius: 8pt;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  margin: 15pt 0;
+  border: 1pt solid var(--border-light);
+}
+
+.legend-title {
+  font-size: 12pt;
+  font-weight: 700;
+  color: var(--secondary);
+  margin-bottom: 10pt;
+  text-transform: uppercase;
+  letter-spacing: 0.5pt;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin: 8pt 0;
+  font-size: 11pt;
+}
+
+.legend-color {
+  width: 20pt;
+  height: 20pt;
+  border-radius: 4pt;
+  margin-right: 10pt;
+  flex-shrink: 0;
+}
+
+.legend-color.solid { border: none; }
+.legend-color.outline { border: 2pt solid; background: var(--white) !important; }
+
+/* ==========================================================
+   17. BLOCKQUOTE - Quoted text
+
+   USAGE:
+   > "Quote text here."
+   >
+   > — Author Name
+   ========================================================== */
+blockquote {
+  margin: 20pt 0;
+  padding: 15pt 20pt;
+  border-left: 4pt solid var(--accent);
+  background: var(--bg-light);
+  font-family: 'Calibri', sans-serif;
+  font-style: italic;
+  font-size: 11pt;
+  color: var(--primary);
+}
+
+blockquote footer {
+  margin-top: 10pt;
+  font-size: 10pt;
+  font-style: normal;
+  color: var(--text-light);
+}
+
+/* Checkbox list */
+.checklist {
+  list-style: none;
+  padding-left: 0;
+}
+
+.checklist li {
+  padding-left: 25pt;
+  position: relative;
+  margin-bottom: 6pt;
+}
+
+.checklist li::before {
+  content: "\f096";
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  position: absolute;
+  left: 0;
+  color: var(--text-light);
+}
+
+.checklist li.checked::before {
+  content: "\f14a";
+  color: var(--primary);
+}
+
+/* Nested list indentation */
+ul ul, ol ol, ul ol, ol ul {
+  margin-left: 25pt;
+  padding-left: 15pt;
+}
+
+li ul, li ol {
+  margin-left: 25pt;
+  padding-left: 10pt;
+}
+
+li {
+  margin-bottom: 4pt;
+}
+
+/* ==========================================================
+   18. TABLES - Data tables
+
+   Standard tables are auto-styled. For comparison tables use:
+   <table class="comparison-table">
+
+   For compact tables use:
+   <table class="compact-table">
+   ========================================================== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 15pt 5pt;
+}
+
+/* table-row-group prevents CSS from auto-repeating the header on page breaks.
+   paged.js RepeatingTableHeadersHandler clones the thead on continuation pages,
+   providing exactly one header per page fragment. */
+table thead {
+  display: table-row-group;
+}
+
+table tbody {
+  display: table-row-group;
+}
+
+table tr {
+  display: table-row;
+}
+
+table tfoot {
+  display: table-footer-group;
+}
+
+th {
+  background-color: var(--primary);
+  color: var(--white);
+  padding: 8pt 10pt;
+  text-align: left;
+  font-family: 'Calibri', sans-serif;
+  font-weight: 600;
+  font-size: 10pt;
+}
+
+td {
+  padding: 6pt 10pt;
+  border-bottom: 1px solid var(--border-light);
+  font-family: 'Calibri', sans-serif;
+  font-size: 10pt;
+}
+
+/* ==========================================================
+   19. CHART CONTAINERS - For R plots
+
+   USAGE:
+   <div class="chart-container">
+   ```{r}
+   ggplot(...) + ...
+   ```
+   </div>
+   ========================================================== */
+.chart-container {
+  background: var(--white);
+  padding: 10pt;
+  border-radius: 8pt;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  margin: 15pt 0;
+}
+
+/* ==========================================================
+   20. TEXT LAYOUTS - Multi-column and full-width
+
+   USAGE:
+   ::: {.full-width-text}
+   Full-width justified text content.
+   :::
+
+   ::: {.two-column-text}
+   Content split into two columns.
+   :::
+   ========================================================== */
+.full-width-text {
+  margin: 20pt 0;
+}
+
+.full-width-text h3 {
+  color: var(--primary);
+  margin-top: 15pt;
+  margin-bottom: 10pt;
+  font-size: 14pt;
+}
+
+.full-width-text p {
+  margin-bottom: 12pt;
+  text-align: justify;
+  line-height: 1.7;
+}
+
+.two-column-text {
+  column-count: 2;
+  column-gap: 30pt;
+  margin: 20pt 0;
+}
+
+.two-column-text h3 {
+  color: var(--primary);
+  margin-top: 15pt;
+  margin-bottom: 10pt;
+  font-size: 14pt;
+  column-span: all;
+}
+
+.two-column-text h4 {
+  color: var(--secondary);
+  margin-top: 12pt;
+  margin-bottom: 8pt;
+  font-size: 12pt;
+  font-weight: 600;
+}
+
+.two-column-text > *:first-child h4 {
+  margin-top: 0pt;
+}
+
+.two-column-text p,
+.two-column-text ul {
+  margin-bottom: 10pt;
+  line-height: 1.6;
+  font-size: 11pt;
+}
+
+.two-column-text ul {
+  padding-left: 15pt;
+}
+
+.two-column-text li {
+  margin-bottom: 6pt;
+}
+
+/* ==========================================================
+    FULL PAGE CHARTS
+    ========================================================== */
+.full-page-content {
+  margin: var(--spacing-sm) 0;
+}
+
+.full-page-content .chart-container {
+  padding: var(--spacing-sm);
+}
+
+/* ==========================================================
+   21. COMPARISON TABLE - Side-by-side comparisons
+
+   Use .highlight on cells to emphasize, .check/.cross for icons
+
+   USAGE:
+   <table class="comparison-table">
+   <tr><td class="highlight">Best option</td></tr>
+   </table>
+   ========================================================== */
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--spacing-md) 0;
+}
+
+.comparison-table th {
+  background: var(--primary);
+  color: var(--white);
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-align: left;
+  font-family: 'Calibri', sans-serif;
+  font-weight: 600;
+}
+
+.comparison-table th:first-child {
+  border-radius: var(--radius-sm) 0 0 0;
+}
+
+.comparison-table th:last-child {
+  border-radius: 0 var(--radius-sm) 0 0;
+}
+
+.comparison-table td {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.comparison-table tr:nth-child(even) {
+  background: var(--bg-light);
+}
+
+.comparison-table tr:hover {
+  background: var(--primary-light);
+}
+
+.comparison-table .highlight {
+  background: var(--primary-light) !important;
+  font-weight: 600;
+}
+
+.comparison-table .check {
+  color: var(--success);
+  font-weight: bold;
+}
+
+.comparison-table .cross {
+  color: var(--danger);
+  font-weight: bold;
+}
+
+/* ==========================================================
+   22. DEFINITION LIST - Glossary/terminology
+
+   USAGE:
+   ::: {.definition-list}
+   <dt>Term</dt>
+   <dd>Definition of the term.</dd>
+   :::
+   ========================================================== */
+.definition-list {
+  margin: var(--spacing-md) 0;
+}
+
+.definition-list dt {
+  font-weight: 600;
+  color: var(--secondary);
+  margin-top: var(--spacing-md);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 2pt solid var(--primary);
+  display: inline-block;
+}
+
+.definition-list dd {
+  margin-left: 0;
+  padding: var(--spacing-sm) 0 var(--spacing-sm) var(--spacing-md);
+  color: var(--text-medium);
+  border-left: 2pt solid var(--border-light);
+}
+
+/* ==========================================================
+   23. FEATURE LIST - Icon + title + description
+
+   USAGE:
+   ::: {.feature-list}
+   <li>
+   <span class="feature-icon">`r fa("icon")`</span>
+   <div class="feature-content">
+   <span class="feature-title">Feature Name</span>
+   <span class="feature-desc">Description</span>
+   </div>
+   </li>
+   :::
+   ========================================================== */
+.feature-list {
+  list-style: none;
+  padding: 0;
+  margin: var(--spacing-md) 0;
+}
+
+.feature-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.feature-list li:last-child {
+  border-bottom: none;
+}
+
+.feature-list .feature-icon {
+  color: var(--primary);
+  font-size: 12pt;
+  flex-shrink: 0;
+  width: 20pt;
+  text-align: center;
+}
+
+.feature-list .feature-content {
+  flex: 1;
+}
+
+.feature-list .feature-title {
+  font-weight: 600;
+  color: var(--secondary);
+  display: block;
+}
+
+.feature-list .feature-desc {
+  font-size: 10pt;
+  color: var(--text-light);
+}
+
+/* ==========================================================
+   24. PROCESS STEPS - Numbered workflow
+
+   USAGE:
+   <div class="process-steps">
+   <div class="process-step">
+   <span class="step-number">1</span>
+   <span class="step-title">Step Title</span>
+   <span class="step-desc">Step description</span>
+   </div>
+   </div>
+   ========================================================== */
+.process-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15pt;
+  margin: 25pt 0;
+}
+
+.process-step {
+  flex: 1 1 calc(25% - 15pt);
+  min-width: 120pt;
+  text-align: left;
+  position: relative;
+  background: var(--white);
+  padding: 15pt 10pt;
+  border-radius: 8pt;
+  box-shadow: var(--shadow-sm);
+}
+
+.process-step .step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36pt;
+  height: 36pt;
+  background: var(--secondary);
+  color: var(--primary);
+  border-radius: 50%;
+  font-family: 'Calibri', sans-serif;
+  font-size: 14pt;
+  font-weight: 700;
+  margin: 0 auto 10pt;
+}
+
+.process-step .step-title {
+  display: block;
+  font-weight: 600;
+  color: var(--secondary);
+  margin-bottom: 5pt;
+  font-size: 11pt;
+  text-align: center;
+}
+
+.process-step .step-desc {
+  display: block;
+  font-size: 9pt;
+  color: var(--text-light);
+  line-height: 1.4;
+  text-align: left;
+  text-align: center;
+}
+
+/* ==========================================================
+   25. METRIC CARD - Dashboard-style metrics
+
+   VARIANTS: .secondary, .accent
+   CHANGE: .metric-change.positive (green), .negative (red)
+
+   USAGE:
+   ::: {.metric-card}
+   <div class="metric-icon">`r fa("chart-line")`</div>
+   <div class="metric-content">
+   <div class="metric-value">+15%</div>
+   <div class="metric-label">Growth</div>
+   <div class="metric-change positive">vs last year</div>
+   </div>
+   :::
+   ========================================================== */
+.metric-card {
+  background: var(--white);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-md);
+  margin: var(--spacing-sm) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  break-inside: avoid;
+}
+
+.metric-card .metric-icon {
+  width: 50pt;
+  height: 50pt;
+  border-radius: var(--radius-md);
+  background: var(--primary-light);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20pt;
+  flex-shrink: 0;
+}
+
+.metric-card.secondary .metric-icon {
+  background: var(--secondary-light);
+  color: var(--secondary);
+}
+
+.metric-card.accent .metric-icon {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.metric-card .metric-content {
+  flex: 1;
+}
+
+.metric-card .metric-value {
+  font-size: 24pt;
+  font-weight: 700;
+  color: var(--secondary);
+  line-height: 1.1;
+}
+
+.metric-card .metric-label {
+  font-size: 10pt;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.5pt;
+}
+
+.metric-card .metric-change {
+  font-size: 9pt;
+  margin-top: var(--spacing-xs);
+}
+
+.metric-card .metric-change.positive {
+  color: var(--success);
+}
+
+.metric-card .metric-change.negative {
+  color: var(--danger);
+}
+
+/* ==========================================================
+   26. SUMMARY BOX - Executive summary (dark background)
+
+   USAGE:
+   ::: {.summary-box}
+   ### Key Takeaways
+   Summary content with bullet points.
+   - Point 1
+   - Point 2
+   :::
+   ========================================================== */
+.summary-box {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: var(--white);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-sm);
+  margin: var(--spacing-lg) 0;
+  break-inside: avoid;
+  font-family: 'Calibri', sans-serif;
+}
+
+.summary-box h3 {
+  font-family: 'Calibri Light', 'Calibri', sans-serif;
+  color: var(--white);
+  border-bottom: 2pt solid rgba(174,209,54,0.5);
+  padding-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.summary-box p {
+  opacity: 0.9;
+  margin-bottom: var(--spacing-sm);
+}
+
+.summary-box ul {
+  list-style: none;
+  padding: 0;
+}
+
+.summary-box li {
+  padding: var(--spacing-xs) 0;
+  padding-left: var(--spacing-md);
+  position: relative;
+}
+
+.summary-box li::before {
+  content: ">";
+  position: absolute;
+  left: 0;
+  color: var(--secondary);
+  font-weight: bold;
+}
+
+/* ==========================================================
+   27. QUOTE BOX - Testimonials
+
+   USAGE:
+   ::: {.quote-box}
+   <div class="quote-text">Quote content here.</div>
+   <div class="quote-author">
+   <strong>Author Name</strong>
+   Title/Organization
+   </div>
+   :::
+   ========================================================== */
+.quote-box {
+  background: var(--bg-light);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  margin: var(--spacing-lg) 0;
+  position: relative;
+  break-inside: avoid;
+}
+
+.quote-box::before {
+  content: open-quote;
+  font-size: 60pt;
+  color: var(--accent);
+  opacity: 0.3;
+  position: absolute;
+  top: 0;
+  left: var(--spacing-sm);
+  line-height: 1;
+  font-family: Georgia, serif;
+}
+
+.quote-box .quote-text {
+  font-family: 'Calibri', sans-serif;
+  font-size: 11pt;
+  font-style: italic;
+  color: var(--primary);
+  padding-left: var(--spacing-xl);
+  margin-bottom: var(--spacing-md);
+}
+
+.quote-box .quote-author {
+  text-align: right;
+  font-size: 10pt;
+  color: var(--text-medium);
+}
+
+.quote-box .quote-author strong {
+  color: var(--secondary);
+  display: block;
+}
+
+/* ==========================================================
+   28. KEY FINDING - Highlighted insights
+
+   VARIANTS: .success (green), .warning (orange), .danger (red), .info (blue)
+
+   USAGE:
+   ::: {.key-finding .success}
+   <div class="finding-accent"></div>
+   <div class="finding-content">
+   <div class="finding-label">Label</div>
+   <div class="finding-value">+23% increase</div>
+   <div class="finding-desc">Description text</div>
+   </div>
+   :::
+   ========================================================== */
+.key-finding {
+  display: flex;
+  align-items: stretch;
+  background: var(--white);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  margin: var(--spacing-md) 0;
+  break-inside: avoid;
+}
+
+.key-finding .finding-accent {
+  width: 8pt;
+  background: var(--primary);
+  flex-shrink: 0;
+}
+
+.key-finding.warning .finding-accent { background: var(--warning); }
+.key-finding.danger .finding-accent { background: var(--danger); }
+.key-finding.success .finding-accent { background: var(--success); }
+.key-finding.info .finding-accent { background: var(--info); }
+
+.key-finding .finding-content {
+  padding: var(--spacing-md);
+  flex: 1;
+}
+
+.key-finding .finding-label {
+  font-size: 9pt;
+  text-transform: uppercase;
+  letter-spacing: 1pt;
+  color: var(--text-light);
+  margin-bottom: var(--spacing-xs);
+}
+
+.key-finding .finding-value {
+  font-size: 20pt;
+  font-weight: 700;
+  color: var(--secondary);
+  line-height: 1.2;
+}
+
+.key-finding .finding-desc {
+  font-size: 10pt;
+  color: var(--text-medium);
+  margin-top: var(--spacing-xs);
+}
+
+/* ==========================================================
+    ICON LIST
+    ========================================================== */
+.icon-list {
+  list-style: none;
+  padding: 0;
+  margin: var(--spacing-md) 0;
+}
+
+.icon-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px dashed var(--border-light);
+}
+
+.icon-list li:last-child {
+  border-bottom: none;
+}
+
+.icon-list .icon {
+  color: var(--primary);
+  width: 16pt;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* ==========================================================
+    SPLIT CONTENT (50/50)
+    ========================================================== */
+.split-content {
+  display: flex;
+  gap: var(--spacing-lg);
+  margin: var(--spacing-lg) 0;
+}
+
+.split-content > * {
+  flex: 1;
+}
+
+.split-content.reverse {
+  flex-direction: row-reverse;
+}
+
+/* ==========================================================
+   29. BIG STAT - Large featured statistic
+
+   VARIANTS: .secondary (dark), .accent (blue)
+
+   USAGE:
+   ::: {.big-stat}
+   <span class="stat-number">2,450</span>
+   <span class="stat-unit">kg/ha</span>
+   <span class="stat-label">Average Yield</span>
+   :::
+   ========================================================== */
+.big-stat {
+  text-align: center;
+  padding: var(--spacing-xl) var(--spacing-lg);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: var(--white);
+  border-radius: var(--radius-sm);
+  margin: var(--spacing-lg) 0;
+  break-inside: avoid;
+  font-family: 'Calibri', sans-serif;
+}
+
+.big-stat .stat-number {
+  font-family: 'Calibri Light', 'Calibri', sans-serif;
+  font-size: 48pt;
+  font-weight: 300;
+  line-height: 1;
+  margin-bottom: var(--spacing-sm);
+}
+
+.big-stat .stat-unit {
+  font-size: 18pt;
+  font-weight: 300;
+  opacity: 0.8;
+}
+
+.big-stat .stat-label {
+  font-size: 12pt;
+  text-transform: uppercase;
+  letter-spacing: 2pt;
+  opacity: 0.9;
+}
+
+.big-stat.secondary {
+  background: linear-gradient(135deg, var(--irda-green) 0%, #5a8832 100%);
+}
+
+.big-stat.accent {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+}
+
+/* ==========================================================
+   30. MARGIN NOTE - Sidebar notes
+
+   VARIANTS: .left (float left instead of right)
+
+   USAGE:
+   <div class="margin-note">
+   Note content here.
+   </div>
+   ========================================================== */
+.margin-note {
+  float: right;
+  width: 150pt;
+  margin-left: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: var(--bg-light);
+  border-left: 3pt solid var(--accent);
+  font-size: 9pt;
+  color: var(--text-medium);
+}
+
+.margin-note.left {
+  float: left;
+  margin-left: 0;
+  margin-right: var(--spacing-md);
+}
+
+/* ==========================================================
+   31. DIVIDERS - Section separators
+
+   VARIANTS: .primary (gradient), .center (centered gradient),
+             .thick (4pt), .dashed
+
+   USAGE:
+   <hr class="divider primary">
+   ========================================================== */
+.divider {
+  height: 2pt;
+  background: var(--border-light);
+  margin: var(--spacing-lg) 0;
+  border: none;
+}
+
+.divider.primary {
+  background: linear-gradient(90deg, var(--primary), transparent);
+}
+
+.divider.center {
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+}
+
+.divider.thick {
+  height: 4pt;
+}
+
+.divider.dashed {
+  background: none;
+  border-top: 2pt dashed var(--border-medium);
+}
+
+/* ==========================================================
+   32. TAG GROUP - Pill-style tags
+
+   VARIANTS: .primary, .secondary, .accent, .success, .warning, .danger
+
+   USAGE:
+   <div class="tag-group">
+   <span class="tag primary">Tag 1</span>
+   <span class="tag success">Tag 2</span>
+   </div>
+   ========================================================== */
+.tag-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin: var(--spacing-sm) 0;
+}
+
+.tag {
+  display: inline-block;
+  padding: 2pt 8pt;
+  font-size: 8pt;
+  font-weight: 500;
+  border-radius: 10pt;
+  background: var(--secondary-light);
+  color: var(--text-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5pt;
+}
+
+.tag.primary { background: var(--primary-light); color: var(--primary-dark); }
+.tag.secondary { background: var(--secondary-light); color: var(--secondary); }
+.tag.accent { background: var(--accent-light); color: var(--accent-dark); }
+.tag.success { background: var(--success-light); color: var(--success-dark); }
+.tag.warning { background: var(--warning-light); color: var(--warning-dark); }
+.tag.danger { background: var(--danger-light); color: var(--danger-dark); }
+
+/* ==========================================================
+   33. SCORECARD - Score/metric grid
+
+   Use .highlight on items to emphasize
+
+   USAGE:
+   ::: {.scorecard}
+   ::: {.scorecard-item .highlight}
+   <div class="score">A+</div>
+   <div class="score-label">Overall</div>
+   :::
+   :::
+   ========================================================== */
+.scorecard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100pt, 1fr));
+  gap: var(--spacing-sm);
+  margin: var(--spacing-md) 0;
+}
+
+.scorecard-item {
+  background: var(--white);
+  border: 1pt solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm);
+  text-align: center;
+}
+
+.scorecard-item .score {
+  font-family: 'Calibri Light', 'Calibri', sans-serif;
+  font-size: 20pt;
+  font-weight: 400;
+  color: var(--primary);
+}
+
+.scorecard-item .score-label {
+  font-size: 8pt;
+  color: var(--text-light);
+  text-transform: uppercase;
+}
+
+.scorecard-item.highlight {
+  background: var(--secondary);
+  border-color: var(--secondary);
+}
+
+.scorecard-item.highlight .score,
+.scorecard-item.highlight .score-label {
+  color: var(--white);
+}
+
+/* ==========================================================
+    ANNOTATION / FIGURE CAPTION
+    ========================================================== */
+.figure-caption {
+  font-size: 9pt;
+  color: var(--text-light);
+  text-align: center;
+  margin-top: var(--spacing-sm);
+  font-style: italic;
+}
+
+.figure-caption strong {
+  color: var(--text-medium);
+  font-style: normal;
+}
+
+.figure-source {
+  font-size: 8pt;
+  color: var(--text-light);
+  text-align: right;
+  margin-top: var(--spacing-xs);
+}
+
+/* ==========================================================
+    COMPACT TABLE
+    ========================================================== */
+.compact-table {
+  font-size: 9pt;
+}
+
+.compact-table th,
+.compact-table td {
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+/* ==========================================================
+   34. STRIPED LIST - Alternating row list
+
+   USAGE:
+   ::: {.striped-list}
+   <li><span class="label">Label</span><span class="value">Value</span></li>
+   :::
+   ========================================================== */
+.striped-list {
+  list-style: none;
+  padding: 0;
+  margin: var(--spacing-md) 0;
+  border: 1pt solid var(--border-light);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.striped-list li {
+  padding: var(--spacing-sm) var(--spacing-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.striped-list li:nth-child(odd) {
+  background: var(--bg-light);
+}
+
+.striped-list .label {
+  color: var(--text-medium);
+}
+
+.striped-list .value {
+  font-weight: 600;
+  color: var(--secondary);
+}
+
+/* ==========================================================
+   35. GRID HELPERS - Layout utilities
+
+   USAGE:
+   ::: {.grid-2}
+   Column 1 content
+
+   Column 2 content
+   :::
+   ========================================================== */
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-md);
+}
+
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-md);
+}
+
+/* ==========================================================
+    PRINT OPTIMIZATIONS
+    ========================================================== */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .page-break-before {
+    break-before: page;
+  }
+
+  .page-break-after {
+    break-after: page;
+  }
+
+  .avoid-break {
+    break-inside: avoid;
+  }
+}

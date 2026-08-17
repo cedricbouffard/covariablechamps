@@ -307,10 +307,20 @@ proba_et_classement_serie_quota_ilr <- function(
     tab$argile <- tab$argile / 100
   }
 
+  # Associer les IDs de table_series aux index de polygones
   tab$id_int <- unname(code_to_idint[tab$code])
+  
+  # Si certains codes sont absents du spatial, on les ignore avec un message
   if (anyNA(tab$id_int)) {
     bad <- unique(tab$code[is.na(tab$id_int)])
-    stop("Codes polygone introuvables dans polygones_sf: ", paste(head(bad, 10), collapse = ", "))
+    if (verbose) {
+      message(sprintf("Note: %d codes dans table_series n'ont pas de correspondance dans polygones_sf et seront ignorés.", length(bad)))
+    }
+    tab <- tab[!is.na(tab$id_int), , drop = FALSE]
+  }
+  
+  if (nrow(tab) == 0) {
+    stop("Erreur: Aucune correspondance entre table_series et les IDs de polygones_sf. Vérifiez la colonne id_col.")
   }
 
   tab <- tab |>

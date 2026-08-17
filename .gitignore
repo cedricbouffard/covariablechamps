@@ -10,3 +10,8 @@ vignettes/*.html
 vignettes/*.R
 check/
 *.tar.gz
+Rplots.pdf
+tests/testthat/Rplots.pdf
+tests/testthat/testthat-problems.rds
+vignettes/output/*.tif
+vignettes/output/*.xml

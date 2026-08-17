@@ -9,11 +9,11 @@ Ce module fournit des fonctions pour calculer et visualiser les distances aux ar
 \details{
 \itemize{
   \item calculer_distance_arbres(): Distance euclidienne simple aux arbres
-  \item calculer_distances_amont_aval(): Distance directionnelle (amont/aval)
+  \item calculer_distances_vent(): Distance directionnelle (amont/aval)
   \item visualiser_distance_arbres(): Visualiser la distance simple
-  \item visualiser_distances_vent(): Visualiser la distance directionnelle
+  \item tracer_carte_vent(): Visualiser la distance directionnelle
   \item simuler_vitesse_vent_simple(): Simuler la vitesse du vent (distance simple)
-  \item simuler_vitesse_vent(): Simuler la vitesse du vent (amont/aval)
+  \item simuler_vitesse_vent_fetch(): Simuler la vitesse du vent (fetch)
 }
 }
 \examples{
@@ -26,10 +26,11 @@ visualiser_distance_arbres(dist, type = "buffer")
 vitesse <- simuler_vitesse_vent_simple(dist, vitesse_ref = 5, coef_protection = 0.5)
 
 # Distance directionnelle (amont/aval)
-dist_dir <- calculer_distances_amont_aval(arbres, 245, champ, buffer_arbre = 3)
-visualiser_distances_vent(dist_dir, type = "comparaison")
+dist_dir <- calculer_distances_vent(arbres, 245, champ, buffer_arbre = 3)
+tracer_carte_vent(dist_dir, type = "les_deux")
 
-# Vitesse du vent (direction du vent)
-vitesse <- simuler_vitesse_vent(dist_dir, vitesse_ref = 5)
+# Fetch de vent et vitesse associée
+fetch <- calculer_fetch_vent(arbres, 245, champ, max_fetch = 200)
+vitesse <- simuler_vitesse_vent_fetch(fetch, vitesse_ref = 5)
 }
 }

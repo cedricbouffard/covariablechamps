@@ -58,29 +58,29 @@ tracer_carte_vent <- function(distances,
   }
 
   if (type == "amont") {
-    df_plot <- raster_to_df(distances$distance_amont, "distance")
+    df_plot <- raster_to_df(distances$amont, "distance")
     df_plot <- df_plot[!is.na(df_plot$distance), ]
-    max_val <- max(terra::values(distances$distance_totale), na.rm = TRUE)
+    max_val <- max(terra::values(distances$totale), na.rm = TRUE)
   } else if (type == "aval") {
-    df_plot <- raster_to_df(distances$distance_aval, "distance")
+    df_plot <- raster_to_df(distances$aval, "distance")
     df_plot <- df_plot[!is.na(df_plot$distance), ]
-    max_val <- max(terra::values(distances$distance_totale), na.rm = TRUE)
+    max_val <- max(terra::values(distances$totale), na.rm = TRUE)
   } else if (type == "total") {
-    df_plot <- raster_to_df(distances$distance_totale, "distance")
+    df_plot <- raster_to_df(distances$totale, "distance")
     df_plot$distance[is.na(df_plot$distance)] <- 0
-    max_val <- max(terra::values(distances$distance_totale), na.rm = TRUE)
+    max_val <- max(terra::values(distances$totale), na.rm = TRUE)
   } else {
-    df_amont <- raster_to_df(distances$distance_amont, "distance")
-    df_aval <- raster_to_df(distances$distance_aval, "distance")
+    df_amont <- raster_to_df(distances$amont, "distance")
+    df_aval <- raster_to_df(distances$aval, "distance")
     df_amont <- df_amont[!is.na(df_amont$distance), ]
     df_aval <- df_aval[!is.na(df_aval$distance), ]
     df_amont$distance <- -df_amont$distance
     df_plot <- rbind(df_amont, df_aval)
-    max_val <- max(terra::values(distances$distance_totale), na.rm = TRUE)
+    max_val <- max(terra::values(distances$totale), na.rm = TRUE)
   }
 
   # Étendue
-  ext <- terra::ext(distances$distance_totale)
+  ext <- terra::ext(distances$totale)
   x_range <- ext[2] - ext[1]
   y_range <- ext[4] - ext[3]
 
@@ -133,7 +133,7 @@ tracer_carte_vent <- function(distances,
   # Configuration
   p + ggplot2::coord_fixed(ratio = 1) +
     ggplot2::theme_minimal() +
-    ggplot2::labs(title = titre, subtitle = paste0("Ouverture: ±", distances$ouverture_angulaire, "°"),
+    ggplot2::labs(title = titre, subtitle = paste0("Ouverture: ±", distances$angle_focal, "°"),
                   x = "X (m)", y = "Y (m)") +
     ggplot2::theme(
       plot.title = ggplot2::element_text(face = "bold", size = 14),

@@ -83,12 +83,11 @@ reference:
     desc: "Fonctions pour calculer les distances aux arbres et l'effet du vent"
     contents:
       - calculer_distance_arbres
-      - calculer_distances_amont_aval
-      - visualiser_distance_arbres
-      - visualiser_distances_vent
-      - simuler_vitesse_vent_simple
-      - simuler_vitesse_vent
       - calculer_distances_vent
+      - visualiser_distance_arbres
+      - tracer_carte_vent
+      - simuler_vitesse_vent_simple
+      - simuler_vitesse_vent_fetch
       - calculer_fetch_vent
       - visualiser_fetch
       - distance_arbres-package

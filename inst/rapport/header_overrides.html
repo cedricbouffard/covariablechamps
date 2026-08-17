@@ -1,0 +1,531 @@
+<!--
+  Header/Footer Configuration Script
+  
+  This script reads YAML metadata and configures page headers/footers.
+  
+  YAML Options:
+    header-left: "Text for left header"
+    header-middle: "Text for center header"
+    header-right: "Text for right header"
+    footer-left: "Text for left footer"
+    footer-middle: "Text for center footer"
+    footer-right: "Text for right footer"
+    page-number-position: "right" | "alternate"
+      - "right": Page number always on right (replaces footer-right)
+      - "alternate": Book-style - even pages: number on left (replaces footer-left)
+                                  odd pages: number on right (replaces footer-right)
+-->
+<script>
+(function() {
+  window.PagedConfig = window.PagedConfig || {};
+  const priorBefore = window.PagedConfig.before;
+  window.PagedConfig.before = async () => {
+    try {
+      if (priorBefore) await priorBefore();
+
+      // ============================================
+      // READ YAML METADATA FROM META TAGS
+      // ============================================
+      const getMeta = (name) => {
+        const el = document.querySelector('meta[name="' + name + '"]');
+        return el ? el.getAttribute('content') : '';
+      };
+      
+      const headerLeft = getMeta('header-left') || '';
+      const headerMiddle = getMeta('header-middle') || '';
+      const headerRight = getMeta('header-right') || '';
+      const footerLeft = getMeta('footer-left') || '';
+      const footerMiddle = getMeta('footer-middle') || '';
+      const footerRight = getMeta('footer-right') || '';
+      const pageNumPosition = getMeta('page-number-position') || 'right';
+      
+      // Store all values for after hook
+      document.body.dataset.headerLeft = headerLeft;
+      document.body.dataset.headerMiddle = headerMiddle;
+      document.body.dataset.headerRight = headerRight;
+      document.body.dataset.footerLeft = footerLeft;
+      document.body.dataset.footerMiddle = footerMiddle;
+      document.body.dataset.footerRight = footerRight;
+      document.body.dataset.pageNumPosition = pageNumPosition;
+
+      // ============================================
+      // FOOTNOTE PROCESSING
+      // Convert inline footnotes to page-bottom footnotes
+      // Usage: <span class="footnote">Footnote text here</span>
+      // ============================================
+      let footnoteCounter = 0;
+      document.querySelectorAll('span.footnote').forEach(fn => {
+        footnoteCounter++;
+        const ref = document.createElement('sup');
+        ref.className = 'footnote-ref';
+        ref.textContent = footnoteCounter;
+        ref.setAttribute('data-fn-id', footnoteCounter);
+        
+        fn.setAttribute('data-fn-id', footnoteCounter);
+        fn.setAttribute('data-fn-content', fn.innerHTML);
+        fn.className = 'footnote-hidden';
+        fn.style.display = 'none';
+        
+        fn.parentNode.insertBefore(ref, fn);
+      });
+    } catch (e) {
+      console.error('Before hook error:', e);
+    }
+
+    // ============================================
+    // FRONT PAGE IMAGES (Bandeau + Logo + Image couverture)
+    // ============================================
+    const frontPage = document.querySelector('.front-page');
+    if (frontPage) {
+      // Add bandeau droit
+      const bandeau = document.createElement('div');
+      bandeau.className = 'bandeau-droit';
+      frontPage.appendChild(bandeau);
+      
+      // Add logo IRDA
+      const logo = document.createElement('img');
+      logo.src = 'logo.png';
+      logo.className = 'logo-irda';
+      logo.alt = 'Logo IRDA';
+      frontPage.appendChild(logo);
+      
+      // Add image couverture
+      const imgCouverture = document.createElement('img');
+      imgCouverture.src = 'image_couverture.png';
+      imgCouverture.className = 'image-couverture';
+      imgCouverture.alt = 'Image de couverture';
+      frontPage.appendChild(imgCouverture);
+    }
+
+    // ============================================
+    // PAGE BREAK HANDLING
+    // ============================================
+    document.querySelectorAll('[data-break-before="recto"]').forEach(el => {
+      el.setAttribute('data-break-before', 'page');
+    });
+
+    document.querySelectorAll('.level1').forEach(el => {
+      el.classList.add('level1-noreset');
+      el.classList.remove('level1');
+    });
+    document.querySelectorAll('.chapter').forEach(el => {
+      el.classList.remove('chapter');
+    });
+
+    document.querySelectorAll('.section-break [data-break-before]').forEach(el => {
+      el.setAttribute('data-break-before', 'avoid');
+    });
+
+    // ============================================
+    // COUNTER RESET PREVENTION
+    // ============================================
+    document.querySelectorAll('[data-counter-page-reset]').forEach(el => {
+      el.removeAttribute('data-counter-page-reset');
+      el.style.counterReset = 'none';
+    });
+    document.querySelectorAll('[data-counter-reset]').forEach(el => {
+      const val = el.getAttribute('data-counter-reset');
+      if (val && val.indexOf('page') === 0) {
+        el.removeAttribute('data-counter-reset');
+        el.style.counterReset = 'none';
+      }
+    });
+  };
+
+  const priorAfter = window.PagedConfig.after;
+  window.PagedConfig.after = async (flow) => {
+    try {
+      if (priorAfter) await priorAfter(flow);
+
+      // ============================================
+      // HEADER AND FOOTER CONTENT
+      // Sets all header/footer positions from YAML
+      // Page number replaces footer-left or footer-right based on position
+      // ============================================
+      const headerLeft = document.body.dataset.headerLeft || '';
+      const headerMiddle = document.body.dataset.headerMiddle || '';
+      const headerRight = document.body.dataset.headerRight || '';
+      const footerLeft = document.body.dataset.footerLeft || '';
+      const footerMiddle = document.body.dataset.footerMiddle || '';
+      const footerRight = document.body.dataset.footerRight || '';
+      const pageNumPosition = document.body.dataset.pageNumPosition || 'right';
+      
+      document.querySelectorAll('.pagedjs_page').forEach((page, index) => {
+        // Skip first page (cover) - it has no headers/footers
+        if (index === 0) return;
+        
+        // Header elements
+        const headerLeftEl = page.querySelector('.pagedjs_margin-top-left .pagedjs_margin-content');
+        const headerCenterEl = page.querySelector('.pagedjs_margin-top-center .pagedjs_margin-content');
+        const headerRightEl = page.querySelector('.pagedjs_margin-top-right .pagedjs_margin-content');
+        
+        // Footer elements
+        const footerLeftEl = page.querySelector('.pagedjs_margin-bottom-left .pagedjs_margin-content');
+        const footerCenterEl = page.querySelector('.pagedjs_margin-bottom-center .pagedjs_margin-content');
+        const footerRightEl = page.querySelector('.pagedjs_margin-bottom-right .pagedjs_margin-content');
+        
+        const pageNum = index + 1;
+        
+        // Set headers
+        if (headerLeftEl) headerLeftEl.textContent = headerLeft;
+        if (headerCenterEl) headerCenterEl.textContent = headerMiddle;
+        if (headerRightEl) headerRightEl.textContent = headerRight;
+        
+        // Set footers based on page number position
+        if (pageNumPosition === 'right') {
+          // Page number always on right - footer-right is replaced by page number
+          if (footerLeftEl) footerLeftEl.textContent = footerLeft;
+          if (footerCenterEl) footerCenterEl.textContent = footerMiddle;
+          if (footerRightEl) {
+            footerRightEl.textContent = pageNum;
+            footerRightEl.style.fontWeight = '600';
+            footerRightEl.style.fontSize = '10pt';
+            footerRightEl.style.color = '#2c3e50';
+          }
+        } else if (pageNumPosition === 'alternate') {
+          // Book-style: alternate page number position
+          if (pageNum % 2 === 0) {
+            // Even pages: page number on LEFT - footer-left is replaced
+            if (footerLeftEl) {
+              footerLeftEl.textContent = pageNum;
+              footerLeftEl.style.fontWeight = '600';
+              footerLeftEl.style.fontSize = '10pt';
+              footerLeftEl.style.color = '#2c3e50';
+            }
+            if (footerCenterEl) footerCenterEl.textContent = footerMiddle;
+            if (footerRightEl) {
+              footerRightEl.textContent = footerRight;
+              footerRightEl.style.fontWeight = 'normal';
+              footerRightEl.style.fontSize = '8pt';
+              footerRightEl.style.color = '#7f8c8d';
+            }
+          } else {
+            // Odd pages: page number on RIGHT - footer-right is replaced
+            if (footerLeftEl) {
+              footerLeftEl.textContent = footerLeft;
+              footerLeftEl.style.fontWeight = 'normal';
+              footerLeftEl.style.fontSize = '8pt';
+              footerLeftEl.style.color = '#7f8c8d';
+            }
+            if (footerCenterEl) footerCenterEl.textContent = footerMiddle;
+            if (footerRightEl) {
+              footerRightEl.textContent = pageNum;
+              footerRightEl.style.fontWeight = '600';
+              footerRightEl.style.fontSize = '10pt';
+              footerRightEl.style.color = '#2c3e50';
+            }
+          }
+        }
+      });
+
+      // ============================================
+      // FOOTNOTE PLACEMENT
+      // Move footnotes to bottom of their respective pages
+      // ============================================
+      document.querySelectorAll('.pagedjs_page').forEach(page => {
+        const pageContent = page.querySelector('.pagedjs_page_content');
+        if (!pageContent) return;
+        
+        const refs = pageContent.querySelectorAll('sup.footnote-ref');
+        if (refs.length === 0) return;
+        
+        // Hide footer content but keep page number on pages with footnotes
+        const footerLeftEl = page.querySelector('.pagedjs_margin-bottom-left .pagedjs_margin-content');
+        const footerCenterEl = page.querySelector('.pagedjs_margin-bottom-center .pagedjs_margin-content');
+        const footerRightEl = page.querySelector('.pagedjs_margin-bottom-right .pagedjs_margin-content');
+        
+        // Clear left and center footer, keep right (page number)
+        if (footerLeftEl) footerLeftEl.textContent = '';
+        if (footerCenterEl) footerCenterEl.textContent = '';
+        
+        const footnoteArea = document.createElement('div');
+        footnoteArea.className = 'page-footnotes';
+        
+        refs.forEach(ref => {
+          const fnId = ref.getAttribute('data-fn-id');
+          const originalFn = document.querySelector('span.footnote-hidden[data-fn-id="' + fnId + '"]');
+          if (originalFn) {
+            const fnContent = originalFn.getAttribute('data-fn-content');
+            const fnItem = document.createElement('div');
+            fnItem.className = 'footnote-item';
+            fnItem.innerHTML = '<sup>' + fnId + '</sup> ' + fnContent;
+            footnoteArea.appendChild(fnItem);
+          }
+        });
+        
+        if (footnoteArea.children.length > 0) {
+          const area = page.querySelector('.pagedjs_area');
+          if (area) {
+            area.appendChild(footnoteArea);
+          }
+        }
+      });
+    } catch (e) {
+      console.error('After hook error:', e);
+    }
+
+    // ============================================
+    // SECTION NUMBERING via JavaScript (more reliable than CSS counters)
+    // ============================================
+    
+    // Step 1: Number ALL headings in the document first
+    let h1Num = 0, h2Num = 0, h3Num = 0;
+    const headingNumbers = new Map(); // Store numbers for each heading ID
+    
+    // Find all h1, h2, h3 elements (skip TOC, front-page, section-break)
+    document.querySelectorAll('h1, h2, h3').forEach(heading => {
+      // Skip headings in TOC
+      if (heading.closest('.toc') || heading.closest('#TOC')) {
+        return;
+      }
+      // Skip headings in front-page
+      if (heading.closest('.front-page')) {
+        return;
+      }
+
+      // Skip if already numbered
+      if (heading.querySelector('.heading-number')) {
+        return;
+      }
+      
+      const tag = heading.tagName.toLowerCase();
+      
+      // Get section ID from parent .section element
+      const section = heading.closest('.section');
+      const sectionId = section ? section.id : null;
+      
+      // Also check for data-id (paged.js cloned elements) or heading's own id
+      const headingId = heading.id;
+      const dataId = heading.getAttribute('data-id') || (section ? section.getAttribute('data-id') : null);
+      
+      let numberStr = '';
+      
+      if (tag === 'h1') {
+        h1Num++;
+        h2Num = 0;
+        h3Num = 0;
+        numberStr = h1Num + '.';
+        heading.insertAdjacentHTML('afterBegin', '<span class="heading-number">' + numberStr + '&#160;</span>');
+      } else if (tag === 'h2') {
+        h2Num++;
+        h3Num = 0;
+        numberStr = h1Num + '.' + h2Num;
+        heading.insertAdjacentHTML('afterBegin', '<span class="heading-number">' + numberStr + '&#160;</span>');
+      } else if (tag === 'h3') {
+        h3Num++;
+        numberStr = h1Num + '.' + h2Num + '.' + h3Num;
+        heading.insertAdjacentHTML('afterBegin', '<span class="heading-number">' + numberStr + '&#160;</span>');
+      }
+      
+      // Store the number for all possible IDs (both encoded and decoded versions)
+      if (sectionId) {
+        headingNumbers.set(sectionId, numberStr);
+        // Also store encoded version
+        headingNumbers.set(encodeURIComponent(sectionId), numberStr);
+      }
+      if (headingId && headingId !== sectionId) {
+        headingNumbers.set(headingId, numberStr);
+        headingNumbers.set(encodeURIComponent(headingId), numberStr);
+      }
+      if (dataId && dataId !== sectionId && dataId !== headingId) {
+        headingNumbers.set(dataId, numberStr);
+        headingNumbers.set(encodeURIComponent(dataId), numberStr);
+      }
+    });
+    
+    // Step 2: Copy heading numbers to TOC items
+    const tocLis = document.querySelectorAll('.toc li, #TOC li');
+    
+    tocLis.forEach(li => {
+      const link = li.querySelector('a[href^="#"]');
+      if (!link || link.querySelector('.toc-num')) return;
+      
+      const href = link.getAttribute('href');
+      if (!href || !href.startsWith('#')) return;
+      
+      // Decode URL to handle accents (e.g., %C3%A9 -> é)
+      let targetId = href.substring(1);
+      try {
+        targetId = decodeURIComponent(targetId);
+      } catch (e) {
+        // If decoding fails, use as-is
+      }
+      
+      let numberStr = headingNumbers.get(targetId);
+      
+      // If not found with decoded, try with encoded version
+      if (!numberStr) {
+        const encodedId = href.substring(1);
+        numberStr = headingNumbers.get(encodedId);
+      }
+      
+      // If still not found, try to find by link text content (for accents)
+      if (!numberStr) {
+        const linkText = link.textContent.trim();
+        // Find heading with matching text
+        document.querySelectorAll('h1, h2, h3').forEach(heading => {
+          if (heading.textContent.trim().replace(/\d+\.(\d+\.)?\s*/, '') === linkText) {
+            const numSpan = heading.querySelector('.heading-number');
+            if (numSpan) {
+              numberStr = numSpan.textContent.trim().replace(/\u00A0/g, '');
+            }
+          }
+        });
+      }
+      
+      // Last resort: try to find the element by ID
+      if (!numberStr) {
+        // Try both encoded and decoded versions
+        let target = document.getElementById(targetId);
+        if (!target) {
+          // Try with encoded version
+          target = document.getElementById(href.substring(1));
+        }
+        if (target) {
+          // Check if target is a heading
+          let heading = target;
+          if (!['H1', 'H2', 'H3'].includes(target.tagName)) {
+            // Look for heading inside
+            heading = target.querySelector('h1, h2, h3');
+          }
+          if (heading) {
+            const numSpan = heading.querySelector('.heading-number');
+            if (numSpan) {
+              numberStr = numSpan.textContent.trim().replace(/\u00A0/g, '');
+            }
+          }
+        }
+      }
+      
+      if (numberStr) {
+        link.insertAdjacentHTML('afterBegin', '<span class="toc-num">' + numberStr + '&#160;</span>');
+      }
+    });
+    
+    // ============================================
+    // FIX PAGE NUMBERS for TOC links with accents (paged.js bug)
+    // ============================================
+    document.querySelectorAll('.toc a[href^="#"], #TOC a[href^="#"]').forEach(link => {
+      const pageNum = link.getAttribute('data-page');
+      if (pageNum === '0') {
+        const href = link.getAttribute('href');
+        if (!href) return;
+        
+        // Try to find the target element
+        let targetId = href.substring(1);
+        try {
+          targetId = decodeURIComponent(targetId);
+        } catch (e) {}
+        
+        let target = document.getElementById(targetId);
+        if (!target) {
+          target = document.getElementById(href.substring(1));
+        }
+        
+        // If found, get its page number from parent page element
+        if (target) {
+          const pageEl = target.closest('.pagedjs_page');
+          if (pageEl) {
+            const pageNumAttr = pageEl.getAttribute('data-page-number');
+            if (pageNumAttr && pageNumAttr !== '0') {
+              link.setAttribute('data-page', pageNumAttr);
+            } else {
+              // If still 0, remove the attribute to hide it
+              link.removeAttribute('data-page');
+            }
+          } else {
+            // No page element found, remove the 0
+            link.removeAttribute('data-page');
+          }
+        } else {
+          // Target not found, remove the 0
+          link.removeAttribute('data-page');
+        }
+      }
+    });
+    
+    // ============================================
+    // TOC INDENTATION FOR H2 ENTRIES
+    // H1 (years) = no indent, H2 (fields) = 1.5em indent
+    // ============================================
+    const tocContainer = document.querySelector('.toc') || document.querySelector('#TOC');
+    if (tocContainer) {
+      const tocLinks = tocContainer.querySelectorAll('a[href^="#"]');
+      tocLinks.forEach(link => {
+        const href = link.getAttribute('href');
+        if (!href || href === '#') return;
+        
+        const li = link.closest('li');
+        if (!li) return;
+        
+        // Decode the target ID
+        let targetId = href.substring(1);
+        try {
+          targetId = decodeURIComponent(targetId);
+        } catch (e) {}
+        
+        // Find target element
+        let target = document.getElementById(targetId) || document.getElementById(href.substring(1));
+        
+        if (target) {
+          const tagName = target.tagName ? target.tagName.toLowerCase() : '';
+          
+          // Check if it's H2 or inside .level2
+          if (tagName === 'h2' || target.closest('.level2')) {
+            li.style.paddingLeft = '1.5em';
+            li.style.fontSize = '11pt';
+          } else if (tagName === 'h1' || target.closest('.level1')) {
+            li.style.paddingLeft = '0';
+            li.style.fontWeight = 'bold';
+          }
+        } else {
+          // Fallback: use href pattern
+          if (href.indexOf('#year-') === 0) {
+            li.style.paddingLeft = '0';
+            li.style.fontWeight = 'bold';
+          } else {
+            // Assume H2 for non-year sections
+            li.style.paddingLeft = '1.5em';
+            li.style.fontSize = '11pt';
+          }
+        }
+      });
+    }
+
+    // ============================================
+    // COUNTER RESET CLEANUP
+    // ============================================
+    document.querySelectorAll('[data-counter-page-reset]').forEach(el => {
+      el.removeAttribute('data-counter-page-reset');
+      el.style.counterReset = 'none';
+    });
+    document.querySelectorAll('[data-counter-reset]').forEach(el => {
+      const val = el.getAttribute('data-counter-reset');
+      if (val && val.indexOf('page') === 0) {
+        el.removeAttribute('data-counter-reset');
+        el.style.counterReset = 'none';
+      }
+    });
+
+    Array.from(document.styleSheets).forEach(sheet => {
+      let rules;
+      try { rules = sheet.cssRules; } catch (e) { return; }
+      for (let i = rules.length - 1; i >= 0; i -= 1) {
+        const text = rules[i].cssText || '';
+        if (text.indexOf('counter-reset: page') !== -1) {
+          sheet.deleteRule(i);
+        }
+      }
+    });
+
+    document.querySelectorAll('[data-page-number]').forEach(el => {
+      el.removeAttribute('data-page-number');
+      el.style.counterReset = 'none';
+    });
+
+    document.querySelectorAll('.pagedjs_page, .pagedjs_pagebox, .pagedjs_page_content').forEach(el => {
+      el.style.counterReset = 'none';
+    });
+  };
+})();
+</script>

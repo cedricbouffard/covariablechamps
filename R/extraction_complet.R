@@ -418,7 +418,7 @@ extraire_covariables_complet <- function(
           0  # Nord par défaut
         }
 
-        distances_vent <- calculer_distances_amont_aval(
+        distances_vent <- calculer_distances_vent(
           arbres_sf = resultats$arbres$trees_sf,
           angle_vent = angle_vent,
           champ_bbox = polygone_projete,

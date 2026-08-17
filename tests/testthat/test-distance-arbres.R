@@ -167,13 +167,13 @@ test_that("calculer_distances_vent fonctionne", {
     champ_bbox = champ,
     resolution = 10,
     max_distance = 50,
-    ouverture_angulaire = 45
+    angle_focal = 45
   )
   
   expect_type(result, "list")
-  expect_true("distance_totale" %in% names(result))
-  expect_true("distance_amont" %in% names(result))
-  expect_true("distance_aval" %in% names(result))
+  expect_true("totale" %in% names(result))
+  expect_true("amont" %in% names(result))
+  expect_true("aval" %in% names(result))
   expect_true("angle_vent" %in% names(result))
   expect_equal(result$angle_vent, 270)
 })

@@ -2,7 +2,7 @@
 % Please edit documentation in R/orientation.R
 \name{calculer_orientation_champ}
 \alias{calculer_orientation_champ}
-\title{Calculer l'orientation principale d'un champ}
+\title{Calculer l'orientation d'un champ}
 \usage{
 calculer_orientation_champ(
   polygone,
@@ -12,26 +12,34 @@ calculer_orientation_champ(
 )
 }
 \arguments{
-\item{polygone}{Un objet `sf` représentant le champ ou un chemin vers un fichier vectoriel}
+\item{polygone}{Objet sf (polygone) ou chemin vers un fichier vectoriel}
 
-\item{methode}{Méthode de calcul: "mbr" (Minimum Bounding Rectangle, défaut) ou "pca" (analyse en composantes principales)}
+\item{methode}{Méthode de calcul: "mbr" (défaut) ou "pca"}
 
-\item{unite}{Unité de sortie: "degres" (défaut) ou "radians"}
+\item{unite}{Unité de l'angle: "degres" (défaut) ou "radians"}
 
-\item{orientation}{Référence d'orientation: "geographique" (0=Nord, 90=Est, défaut) ou "mathematique" (0=Est, 90=Nord)}
+\item{orientation}{Référence d'orientation: "geographique" (0=Nord, 90=Est, défaut)
+ou "mathematique" (0=Est, 90=Nord)}
 }
 \value{
 Une liste contenant:
-\item{angle}{L'angle principal en degrés ou radians}
-\item{angle_perpendiculaire}{L'angle perpendiculaire (±90°)}
-\item{longueur}{La longueur selon l'axe principal}
-\item{largeur}{La largeur selon l'axe perpendiculaire}
-\item{rapport_aspect}{Le rapport longueur/largeur}
-\item{geometry}{La géométrie de la bounding box orientée}
+  \itemize{
+    \item angle: L'angle principal en degrés ou radians
+    \item angle_perpendiculaire: L'angle perpendiculaire (±90°)
+    \item longueur: La longueur selon l'axe principal
+    \item largeur: La largeur selon l'axe perpendiculaire
+    \item rapport_aspect: Le rapport longueur/largeur
+    \item geometry: La géométrie de la bounding box orientée
+  }
 }
 \description{
-Calcule l'orientation principale (azimut) d'un champ agricole à partir de sa géométrie.
-Utilise la bounding box orientée ou les moments d'inertie pour déterminer l'angle principal.
+Détermine l'orientation principale d'un polygone de champ selon la méthode
+du Minimum Bounding Rectangle (MBR) ou de l'analyse en composantes principales (PCA).
+}
+\details{
+Le polygone est projeté en UTM (zone détectée automatiquement) pour garantir
+des angles conformes et des dimensions métriques. Si le polygone n'a pas de
+CRS, les coordonnées sont traitées comme des coordonnées planaires locales.
 }
 \examples{
 \dontrun{

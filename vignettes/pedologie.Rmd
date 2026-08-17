@@ -123,6 +123,18 @@ Le triangle textural montre la classification des sols selon les proportions de 
 | Sableuse | 50-100 | 0-50 | 0-50 |
 | Franco-argilo-limoneuse | 20-45 | 30-50 | 30-45 |
 
+## Utilisation des données gouvernementales (Québec)
+
+Le package facilite l'accès aux données de la couverture pédologique du Québec via la fonction `telecharger_pedologie_quebec()`. Elle utilise `vsicurl` pour ne télécharger que les données nécessaires à l'emprise de votre champ.
+
+```{r telechargement-quebec, eval = FALSE}
+# Télécharger les polygones et préparer la table des séries
+donnees_sol <- telecharger_pedologie_quebec(champ)
+
+polygones_sols <- donnees_sol$polygones
+table_series <- donnees_sol$table_series
+```
+
 ## Calcul de la désagrégation
 
 La fonction `proba_et_classement_serie_quota_ilr()` effectue la désagrégation:
@@ -135,21 +147,10 @@ mnt <- telecharger_lidar(champ)
 resultat <- proba_et_classement_serie_quota_ilr(
   polygones_sf = polygones_sols,
   table_series = table_series,
-  mnt = mnt,
-  id_col = "Code.polygone",
-  serie_col = "Composante",
-  poids_col = "Pourcentage",
-  sable_col = "Sable",
-  limon_col = "Limon",
-  argile_col = "Argile"
+  mnt = mnt
 )
-
-# Visualiser les probabilités
-plot(resultat$prob)
-
-# Visualiser la classification finale
-plot(resultat$closest_label)
 ```
+
 
 ### Paramètres de la fonction
 

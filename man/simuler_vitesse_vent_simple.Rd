@@ -23,6 +23,7 @@ Liste avec: vitesse (raster), vitesse_ref, coef_protection
 \description{
 Cette fonction est utilisée avec le résultat de \code{calculer_distance_arbres()}.
 Pour les distances directionnelles (amont/aval), utilisez plutôt
-\code{simuler_vitesse_vent()} qui prend le résultat de
-\code{calculer_distances_amont_aval()}.
+\code{simuler_vitesse_vent_fetch()} qui prend le résultat de
+\code{calculer_fetch_vent()}, ou \code{calculer_distances_vent()} pour
+les distances amont/aval brutes.
 }

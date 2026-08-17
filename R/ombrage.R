@@ -370,19 +370,19 @@ calculer_ombrage_visualisation <- function(resultats_ombrage, couche_heure = 1, 
   graphics::par(mfrow = c(2, 2))
 
   # 1. MNE
-  terra::plot(resultats_ombrage$mne, main = "MNE (Modele Numerique de Surface)")
+  suppressWarnings(terra::plot(resultats_ombrage$mne, main = "MNE (Modele Numerique de Surface)"))
 
   # 2. Ombrage a une heure specifique
   if (terra::nlyr(resultats_ombrage$ombrage_par_heure) >= couche_heure) {
-    terra::plot(resultats_ombrage$ombrage_par_heure[[couche_heure]],
-                main = paste("Ombrage a", names(resultats_ombrage$ombrage_par_heure)[couche_heure]))
+    suppressWarnings(terra::plot(resultats_ombrage$ombrage_par_heure[[couche_heure]],
+                main = paste("Ombrage a", names(resultats_ombrage$ombrage_par_heure)[couche_heure])))
   }
 
   # 3. Ombrage moyen
-  terra::plot(resultats_ombrage$ombrage_moyen, main = "Ombrage moyen journalier")
+  suppressWarnings(terra::plot(resultats_ombrage$ombrage_moyen, main = "Ombrage moyen journalier"))
 
   # 4. Heures d'ensoleillement
-  terra::plot(resultats_ombrage$heures_ensoleillement, main = "Heures d'ensoleillement")
+  suppressWarnings(terra::plot(resultats_ombrage$heures_ensoleillement, main = "Heures d'ensoleillement"))
 
   # Titre global
   if (!is.null(titre)) {

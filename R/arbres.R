@@ -549,216 +549,6 @@ extraire_ligne_centrale_haies <- function(haies_rectangles, output_type = c("tou
 }
 
 
-#' Calculer les zones d'influence du vent sur les haies avec une forme de demi-lune
-#'
-#' A partir des rectangles de haies, calcule des zones de protection/d'influence
-#' en forme de demi-lune dans le sens du vent dominant. La forme part des deux 
-#' extrémités de la haie et s'étend en courbe dans le sens du vent avec une 
-#' distance H (multiple de la hauteur), créant une forme spline arrondie.
-#'
-#' Cette fonction permet de créer plusieurs couches de zones avec différents 
-#' facteurs de hauteur (1H, 2H, 3H, etc. jusqu'à max_H).
-#'
-#' @param haies_rectangles Objet sf avec les rectangles des haies (résultat de extraire_classifier_haies_lidar)
-#' @param direction_vent Direction du vent dominant en degrés (0-360, 0 = Nord, 90 = Est, etc.)
-#' @param facteur_hauteur Vecteur de multiplicateurs de la hauteur pour calculer les distances H (ex: 1:40)
-#' @param champ_centroid Point central du champ (sf POINT ou vecteur c(x, y)) pour déterminer le sens de la protection
-#' @param n_points Nombre de points pour la courbe spline (défaut: 50)
-#'
-#' @return sf POLYGON avec les zones de protection pour tous les facteurs. Attributs:
-#' - cluster, n_arbres, hauteur_p95, largeur, longueur, angle_deg (de la haie)
-#' - facteur_h: le multiple de H utilisé pour cette zone (1, 2, 3, etc.)
-#' - direction_vent: direction utilisée
-#' - distance_H: distance H calculée pour ce facteur
-#' - orientation_protection: "amont" ou "aval" selon la position du champ
-#'
-#' @export
-calculer_zones_vent_spline <- function(haies_rectangles, 
-                                         direction_vent = 225,
-                                         facteur_hauteur = 1:40,
-                                         champ_centroid = NULL,
-                                         n_points = 50) {
-  
-  if (is.null(haies_rectangles) || nrow(haies_rectangles) == 0) {
-    warning("Aucune haie à traiter")
-    return(NULL)
-  }
-  
-  if (!requireNamespace("sf", quietly = TRUE))
-    stop("Le package 'sf' est requis.")
-  if (!requireNamespace("dplyr", quietly = TRUE))
-    stop("Le package 'dplyr' est requis.")
-  if (!requireNamespace("purrr", quietly = TRUE))
-    stop("Le package 'purrr' est requis.")
-  
-  crs_haies <- sf::st_crs(haies_rectangles)
-  
-  # Convertir la direction du vent en radians (pointe vers où le vent souffle)
-  angle_vent_rad <- (90 - direction_vent) * pi / 180 + pi
-  
-  # Si un centroid de champ est fourni, calculer l'orientation de protection
-  if (!is.null(champ_centroid)) {
-    if (is.vector(champ_centroid) && length(champ_centroid) == 2) {
-      champ_centroid <- sf::st_point(champ_centroid)
-    }
-    if (!inherits(champ_centroid, "sf")) {
-      champ_centroid <- sf::st_sf(geometry = sf::st_sfc(champ_centroid), crs = crs_haies)
-    }
-    centroid_coords <- sf::st_coordinates(champ_centroid)
-  } else {
-    centroid_coords <- NULL
-  }
-  
-  # Helper: Créer une demi-lune avec spline (version originale sans aplatissement)
-  create_demilune_spline <- function(x1, y1, x2, y2, x_apex, y_apex, n = 50) {
-    # Points de contrôle pour le spline
-    # Ordre: extrémité1 -> apex -> extrémité2
-    x_ctrl <- c(x1, x_apex, x2)
-    y_ctrl <- c(y1, y_apex, y2)
-    
-    # Créer un spline paramétrique
-    t_ctrl <- c(0, 0.5, 1)  # Paramètre t pour chaque point de contrôle
-    t_interp <- seq(0, 1, length.out = n)
-    
-    # Interpolation spline pour x et y
-    x_spline <- stats::spline(t_ctrl, x_ctrl, xout = t_interp, method = "natural")$y
-    y_spline <- stats::spline(t_ctrl, y_ctrl, xout = t_interp, method = "natural")$y
-    
-    # Combiner les points du spline avec la base (ligne entre les extrémités)
-    # La base est formée par une ligne droite entre (x1,y1) et (x2,y2)
-    n_base <- round(n / 2)  # Nombre de points pour la base
-    t_base <- seq(0, 1, length.out = n_base)
-    x_base <- x2 + t_base * (x1 - x2)  # De x2 vers x1
-    y_base <- y2 + t_base * (y1 - y2)  # De y2 vers y1
-    
-    # Combiner: base (droite) + courbe (spline)
-    # On enlève les points de début et fin de la base car ils sont déjà aux extrémités
-    x_poly <- c(x_base[-length(x_base)], x_spline[-1])
-    y_poly <- c(y_base[-length(y_base)], y_spline[-1])
-    
-    # Créer le polygone
-    coords <- matrix(c(x_poly, y_poly), ncol = 2)
-    # Fermer le polygone
-    coords <- rbind(coords, coords[1, ])
-    
-    sf::st_polygon(list(coords))
-  }
-  
-  # Initialiser les listes pour stocker toutes les zones
-  all_zones_list <- list()
-  all_zones_data <- list()
-  zone_counter <- 0
-  
-  message("Création des zones de vent avec multiples facteurs H...")
-  message("  Facteurs: ", min(facteur_hauteur), " à ", max(facteur_hauteur), "H")
-  message("  Nombre de haies: ", nrow(haies_rectangles))
-  
-  # Pour chaque haie
-  for (i in seq_len(nrow(haies_rectangles))) {
-    haie <- haies_rectangles[i, ]
-    
-    # Récupérer les informations de la haie
-    x_center <- haie$x_center
-    y_center <- haie$y_center
-    hauteur <- haie$hauteur_p95
-    angle_haie_rad <- haie$angle_deg * pi / 180
-    L <- haie$longueur
-    
-    # Calculer les extrémités de la ligne centrale (communes à tous les facteurs)
-    half_L <- L / 2
-    cos_haie <- cos(angle_haie_rad)
-    sin_haie <- sin(angle_haie_rad)
-    
-    # Extrémité 1 (début) et 2 (fin)
-    x1 <- x_center - half_L * cos_haie
-    y1 <- y_center - half_L * sin_haie
-    x2 <- x_center + half_L * cos_haie
-    y2 <- y_center + half_L * sin_haie
-    
-    # Déterminer le sens de la protection (amont ou aval)
-    orientation_protection <- "aval"
-    angle_vent_calc <- angle_vent_rad
-    
-    if (!is.null(centroid_coords)) {
-      # Calculer la direction du champ par rapport à la haie
-      dx_champ <- centroid_coords[1] - x_center
-      dy_champ <- centroid_coords[2] - y_center
-      angle_champ <- atan2(dy_champ, dx_champ) * 180 / pi
-      angle_champ <- (angle_champ + 360) %% 360
-      
-      # Si le champ est dans le sens du vent par rapport à la haie
-      diff_angles <- abs(angle_champ - direction_vent)
-      if (diff_angles > 180) diff_angles <- 360 - diff_angles
-      
-      if (diff_angles < 90) {
-        orientation_protection <- "aval"
-      } else {
-        orientation_protection <- "amont"
-        angle_vent_calc <- angle_vent_rad + pi
-      }
-    }
-    
-    # Calculer l'apex de base (pour la direction)
-    cos_vent <- cos(angle_vent_calc)
-    sin_vent <- sin(angle_vent_calc)
-    
-    # Créer une zone pour chaque facteur de hauteur
-    for (facteur in facteur_hauteur) {
-      # Calculer la distance H pour ce facteur
-      distance_H <- hauteur * facteur
-      
-      # Calculer l'apex pour ce facteur
-      x_apex <- x_center + distance_H * cos_vent
-      y_apex <- y_center + distance_H * sin_vent
-      
-      # Créer la demi-lune avec spline
-      demilune <- create_demilune_spline(x1, y1, x2, y2, x_apex, y_apex, n = n_points)
-      
-      zone_counter <- zone_counter + 1
-      all_zones_list[[zone_counter]] <- demilune
-      
-      # Stocker les attributs
-      all_zones_data[[zone_counter]] <- tibble::tibble(
-        id_zone = zone_counter,
-        cluster = haie$cluster,
-        n_arbres = haie$n_arbres,
-        hauteur_p95 = hauteur,
-        largeur = haie$largeur,
-        longueur = L,
-        angle_haie_deg = haie$angle_deg,
-        facteur_h = facteur,
-        direction_vent = direction_vent,
-        distance_H = distance_H,
-        orientation_protection = orientation_protection,
-        x_apex = x_apex,
-        y_apex = y_apex,
-        x1 = x1, y1 = y1,
-        x2 = x2, y2 = y2
-      )
-    }
-    
-    if (i %% 10 == 0 || i == nrow(haies_rectangles)) {
-      message("  Haie ", i, "/", nrow(haies_rectangles), " traitée (", length(facteur_hauteur), " zones chacune)")
-    }
-  }
-  
-  # Combiner les données
-  all_zones_data <- dplyr::bind_rows(all_zones_data)
-  
-  # Créer l'objet sf
-  zones_sf <- sf::st_sf(
-    all_zones_data,
-    geometry = sf::st_sfc(all_zones_list, crs = crs_haies)
-  )
-  
-  message("✓ ", nrow(zones_sf), " zones de vent créées au total")
-  message("  ", length(unique(zones_sf$cluster)), " haies × ", length(facteur_hauteur), " facteurs H")
-  message("  Direction du vent: ", direction_vent, "°")
-  
-  return(zones_sf)
-}
-
-
 #' Rasteriser les zones de vent avec le facteur H minimum par pixel
 #'
 #' Convertit les zones de vent (demi-lunes avec multiples facteurs H) en raster.
@@ -814,24 +604,27 @@ rasteriser_zones_gradient <- function(zones_sf, resolution = 1, extent_bbox = NU
   zones_vect <- terra::vect(zones_sf)
   facteurs_h <- zones_sf$facteur_h
   
-  # Pour chaque zone, mettre à jour le raster avec le minimum
+  # Rasteriser chaque zone avec sa valeur de facteur_h,
+  # puis prendre le minimum par pixel (les pixels non couverts restent Inf)
+  raster_list <- list()
   for (i in seq_len(nrow(zones_sf))) {
-    # Rasteriser cette zone avec sa valeur de facteur_h
     zone_raster <- terra::rasterize(
-      zones_vect[i], 
-      r_template, 
+      zones_vect[i],
+      r_template,
       field = facteurs_h[i],
-      background = NA,
-      update = TRUE,
-      min = TRUE  # Prend le minimum entre la valeur existante et la nouvelle
+      background = NA
     )
-    
-    # Mettre à jour le raster
-    r_template <- zone_raster
+    raster_list[[i]] <- zone_raster
     
     if (i %% 100 == 0 || i == nrow(zones_sf)) {
       message("  Zone ", i, "/", nrow(zones_sf), " rasterisée")
     }
+  }
+  
+  # Minimum par pixel
+  if (length(raster_list) > 0) {
+    r_stack <- terra::rast(raster_list)
+    r_template <- terra::app(r_stack, fun = min, na.rm = TRUE)
   }
   
   # Remplacer Inf par NA (pixels non couverts par aucune zone)

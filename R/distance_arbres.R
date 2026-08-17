@@ -171,8 +171,9 @@ visualiser_distance_arbres <- function(result,
 #'
 #' Cette fonction est utilisée avec le résultat de \code{calculer_distance_arbres()}.
 #' Pour les distances directionnelles (amont/aval), utilisez plutôt
-#' \code{simuler_vitesse_vent()} qui prend le résultat de
-#' \code{calculer_distances_amont_aval()}.
+#' \code{simuler_vitesse_vent_fetch()} qui prend le résultat de
+#' \code{calculer_fetch_vent()}, ou \code{calculer_distances_vent()} pour
+#' les distances amont/aval brutes.
 #'
 #' @param dist_result Résultat de calculer_distance_arbres()
 #' @param vitesse_ref Vitesse de référence (m/s)
@@ -212,11 +213,11 @@ simuler_vitesse_vent_simple <- function(dist_result,
 #'
 #' \itemize{
 #'   \item calculer_distance_arbres(): Distance euclidienne simple aux arbres
-#'   \item calculer_distances_amont_aval(): Distance directionnelle (amont/aval)
+#'   \item calculer_distances_vent(): Distance directionnelle (amont/aval)
 #'   \item visualiser_distance_arbres(): Visualiser la distance simple
-#'   \item visualiser_distances_vent(): Visualiser la distance directionnelle
+#'   \item tracer_carte_vent(): Visualiser la distance directionnelle
 #'   \item simuler_vitesse_vent_simple(): Simuler la vitesse du vent (distance simple)
-#'   \item simuler_vitesse_vent(): Simuler la vitesse du vent (amont/aval)
+#'   \item simuler_vitesse_vent_fetch(): Simuler la vitesse du vent (fetch)
 #' }
 #'
 #' @name distance_arbres-package
@@ -230,10 +231,11 @@ simuler_vitesse_vent_simple <- function(dist_result,
 #' vitesse <- simuler_vitesse_vent_simple(dist, vitesse_ref = 5, coef_protection = 0.5)
 #'
 #' # Distance directionnelle (amont/aval)
-#' dist_dir <- calculer_distances_amont_aval(arbres, 245, champ, buffer_arbre = 3)
-#' visualiser_distances_vent(dist_dir, type = "comparaison")
+#' dist_dir <- calculer_distances_vent(arbres, 245, champ, buffer_arbre = 3)
+#' tracer_carte_vent(dist_dir, type = "les_deux")
 #'
-#' # Vitesse du vent (direction du vent)
-#' vitesse <- simuler_vitesse_vent(dist_dir, vitesse_ref = 5)
+#' # Fetch de vent et vitesse associée
+#' fetch <- calculer_fetch_vent(arbres, 245, champ, max_fetch = 200)
+#' vitesse <- simuler_vitesse_vent_fetch(fetch, vitesse_ref = 5)
 #' }
 NULL

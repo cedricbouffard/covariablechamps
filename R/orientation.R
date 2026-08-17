@@ -29,6 +29,75 @@
 #' plot(orientation$geometry, add = TRUE, border = "red", lwd = 2)
 #' }
 #'
+#' @importFrom sf st_read st_crs st_transform st_bbox st_convex_hull st_coordinates st_as_sf st_union st_is_longlat st_centroid st_geometry st_cast st_linestring st_sfc st_sf st_polygon st_distance st_nearest_points
+#' @importFrom methods is
+
+# Détecter le code EPSG UTM approprié pour un objet sf
+detecter_utm_epsg <- function(sf_obj) {
+  # Si pas de CRS, on assume WGS84 par défaut
+  if (is.na(sf::st_crs(sf_obj))) {
+    sf::st_crs(sf_obj) <- 4326
+  }
+  
+  # On travaille sur l'union pour avoir un centroïde global
+  # Utiliser st_convex_hull pour plus de stabilité sur le centroïde
+  poly_union <- sf::st_union(sf_obj)
+  poly_hull <- sf::st_convex_hull(poly_union)
+  centroid_sf <- sf::st_centroid(poly_hull)
+  
+  # Transformer en WGS84 pour calculer la zone UTM
+  centroid_wgs84 <- sf::st_transform(centroid_sf, 4326)
+  coords <- sf::st_coordinates(centroid_wgs84)
+  
+  lon <- coords[1, 1]
+  lat <- coords[1, 2]
+  
+  # Calculer la zone UTM
+  utm_zone <- floor((lon + 180) / 6) + 1
+  epsg_code <- ifelse(lat >= 0, 32600 + utm_zone, 32700 + utm_zone)
+  
+  return(epsg_code)
+}
+
+#' Calculer l'orientation d'un champ
+#'
+#' Détermine l'orientation principale d'un polygone de champ selon la méthode
+#' du Minimum Bounding Rectangle (MBR) ou de l'analyse en composantes principales (PCA).
+#'
+#' @param polygone Objet sf (polygone) ou chemin vers un fichier vectoriel
+#' @param methode Méthode de calcul: "mbr" (défaut) ou "pca"
+#' @param unite Unité de l'angle: "degres" (défaut) ou "radians"
+#' @param orientation Référence d'orientation: "geographique" (0=Nord, 90=Est, défaut)
+#'   ou "mathematique" (0=Est, 90=Nord)
+#'
+#' @return Une liste contenant:
+#'   \itemize{
+#'     \item angle: L'angle principal en degrés ou radians
+#'     \item angle_perpendiculaire: L'angle perpendiculaire (±90°)
+#'     \item longueur: La longueur selon l'axe principal
+#'     \item largeur: La largeur selon l'axe perpendiculaire
+#'     \item rapport_aspect: Le rapport longueur/largeur
+#'     \item geometry: La géométrie de la bounding box orientée
+#'   }
+#'
+#' @details
+#' Le polygone est projeté en UTM (zone détectée automatiquement) pour garantir
+#' des angles conformes et des dimensions métriques. Si le polygone n'a pas de
+#' CRS, les coordonnées sont traitées comme des coordonnées planaires locales.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' champ <- sf::st_read("champ.shp")
+#' orientation <- calculer_orientation_champ(champ)
+#' print(paste("Orientation principale:", round(orientation$angle, 1), "degrés"))
+#'
+#' # Avec visualisation
+#' plot(champ)
+#' plot(orientation$geometry, add = TRUE, border = "red", lwd = 2)
+#' }
+#'
 #' @importFrom sf st_read st_crs st_transform st_bbox st_convex_hull st_coordinates st_as_sf st_union st_is_longlat
 #' @importFrom methods is
 calculer_orientation_champ <- function(polygone, methode = "mbr", 
@@ -45,29 +114,16 @@ calculer_orientation_champ <- function(polygone, methode = "mbr",
     stop("Le polygone doit être un objet sf ou un chemin vers un fichier vectoriel")
   }
   
-  # Transformer en coordonnées projetées pour des calculs précis
+  # Mémoriser le CRS original
   crs_orig <- sf::st_crs(polygone)
-  if (is.na(crs_orig)) {
-    sf::st_crs(polygone) <- 4326
-    crs_orig <- sf::st_crs(polygone)
-  }
   
-  # Utiliser un CRS projeté local pour les calculs
-  # Pour le Québec, on utilise généralement MTM ou Lambert
-  # On essaie de détecter automatiquement ou on utilise UTM
-  if (sf::st_is_longlat(polygone)) {
-    # Calculer le centroïde pour choisir le bon UTM
-    centroid <- sf::st_coordinates(sf::st_centroid(sf::st_union(polygone)))
-    lon <- centroid[1]
-    lat <- centroid[2]
-    
-    # Calculer la zone UTM
-    utm_zone <- floor((lon + 180) / 6) + 1
-    epsg_code <- ifelse(lat >= 0, 32600 + utm_zone, 32700 + utm_zone)
-    
-    polygone_proj <- sf::st_transform(polygone, epsg_code)
-  } else {
+  if (is.na(crs_orig)) {
+    # Pas de CRS: travailler en coordonnées planaires locales (angles préservés)
     polygone_proj <- polygone
+  } else {
+    # Toujours projeter en UTM pour garantir des calculs métriques et des angles conformes
+    epsg_utm <- detecter_utm_epsg(polygone)
+    polygone_proj <- sf::st_transform(polygone, epsg_utm)
   }
   
   # Unir les géométries si plusieurs
@@ -83,6 +139,14 @@ calculer_orientation_champ <- function(polygone, methode = "mbr",
     stop("Méthode non reconnue. Utilisez 'mbr' ou 'pca'")
   }
   
+  # Appliquer la référence d'orientation
+  if (orientation == "geographique") {
+    # Convertir de mathématique (0=Est, 90=Nord) à géographique (0=Nord, 90=Est)
+    # Azimuth = (90 - AngleMath) %% 180
+    result$angle <- (90 - result$angle) %% 180
+    result$angle_perpendiculaire <- (90 - result$angle_perpendiculaire) %% 180
+  }
+  
   # Convertir l'angle si nécessaire
   if (unite == "radians") {
     result$angle <- result$angle * pi / 180
@@ -90,77 +154,23 @@ calculer_orientation_champ <- function(polygone, methode = "mbr",
   }
   
   # Reprojeter la géométrie dans le CRS original
-  if (!is.null(result$geometry)) {
+  if (!is.null(result$geometry) && !is.na(crs_orig)) {
     result$geometry <- sf::st_transform(result$geometry, crs_orig)
   }
   
   return(result)
 }
 
-#' Calculer le Minimum Bounding Rectangle
+#' Créer la géométrie d'un rectangle orienté
 #' @noRd
-calculer_mbr <- function(polygone) {
-  # Obtenir les coordonnées
-  coords <- sf::st_coordinates(polygone)[, 1:2]
-  
-  # Calculer le centroïde
-  centroid <- colMeans(coords)
-  
-  # Centrer les coordonnées
-  coords_centered <- coords - matrix(centroid, nrow = nrow(coords), ncol = 2, byrow = TRUE)
-  
-  # Tester différents angles pour trouver le rectangle d'aire minimale
-  angles_test <- seq(0, 90, by = 0.5)  # Tester tous les demi-degrés
-  
-  meilleur_angle <- 0
-  meilleure_aire <- Inf
-  meilleures_dims <- c(0, 0)
-  
-  for (angle in angles_test) {
-    # Rotation
-    angle_rad <- angle * pi / 180
-    rotation_matrix <- matrix(c(cos(angle_rad), -sin(angle_rad),
-                                sin(angle_rad), cos(angle_rad)), nrow = 2)
-    coords_rotated <- coords_centered %*% rotation_matrix
-    
-    # Calculer les dimensions
-    x_range <- diff(range(coords_rotated[, 1]))
-    y_range <- diff(range(coords_rotated[, 2]))
-    aire <- x_range * y_range
-    
-    if (aire < meilleure_aire) {
-      meilleure_aire <- aire
-      meilleur_angle <- angle
-      meilleures_dims <- c(x_range, y_range)
-    }
-  }
-  
-  # Déterminer l'axe principal (le plus long)
-  if (meilleures_dims[1] >= meilleures_dims[2]) {
-    longueur <- meilleures_dims[1]
-    largeur <- meilleures_dims[2]
-    angle_principal <- meilleur_angle
-  } else {
-    longueur <- meilleures_dims[2]
-    largeur <- meilleures_dims[1]
-    angle_principal <- meilleur_angle + 90
-  }
-  
-  # Normaliser l'angle entre 0 et 180
-  angle_principal <- angle_principal %% 180
-  
-  # Calculer l'angle perpendiculaire
-  angle_perp <- (angle_principal + 90) %% 180
-  
-  # Créer la géométrie de la bounding box orientée pour visualisation
-  angle_rad <- angle_principal * pi / 180
+creer_geometrie_rect <- function(center, angle_math, longueur, largeur, crs) {
+  angle_rad <- angle_math * pi / 180
   cos_a <- cos(angle_rad)
   sin_a <- sin(angle_rad)
   
-  # Calculer les coins du rectangle
+  # Coins du rectangle centré sur (0,0)
   dx <- longueur / 2
   dy <- largeur / 2
-  
   corners <- matrix(c(
     -dx, -dy,
     dx, -dy,
@@ -169,19 +179,84 @@ calculer_mbr <- function(polygone) {
     -dx, -dy
   ), ncol = 2, byrow = TRUE)
   
-  # Rotation et translation
-  rotation_matrix <- matrix(c(cos_a, -sin_a, sin_a, cos_a), nrow = 2)
-  corners_rotated <- corners %*% t(rotation_matrix)
-  corners_final <- corners_rotated + matrix(centroid, nrow = 5, ncol = 2, byrow = TRUE)
+  # Rotation
+  rot_matrix <- matrix(c(cos_a, -sin_a, sin_a, cos_a), nrow = 2)
+  corners_rotated <- corners %*% rot_matrix
   
-  # Créer le polygon
-  mbr_poly <- sf::st_polygon(list(corners_final))
-  mbr_sf <- sf::st_sfc(mbr_poly, crs = sf::st_crs(polygone))
-  mbr_sf <- sf::st_sf(geometry = mbr_sf)
+  # Translation vers le centre réel
+  corners_final <- corners_rotated + matrix(center, nrow = 5, ncol = 2, byrow = TRUE)
+  
+  # Créer le polygon sf
+  poly <- sf::st_polygon(list(corners_final))
+  sfc <- sf::st_sfc(poly, crs = crs)
+  return(sf::st_sf(geometry = sfc))
+}
+
+#' Calculer le Minimum Bounding Rectangle
+#' @noRd
+calculer_mbr <- function(polygone) {
+  # Obtenir les coordonnées
+  coords <- sf::st_coordinates(polygone)[, 1:2]
+  
+  # Calculer le centroïde des points pour centrer les calculs (stabilité numérique)
+  centroid_pts <- colMeans(coords)
+  coords_centered <- coords - matrix(centroid_pts, nrow = nrow(coords), ncol = 2, byrow = TRUE)
+  
+  # Tester différents angles pour trouver le rectangle d'aire minimale
+  angles_test <- seq(0, 89.5, by = 0.5)
+  
+  meilleur_angle <- 0
+  meilleure_aire <- Inf
+  meilleures_dims <- c(0, 0)
+  meilleur_center_rot <- c(0, 0)
+  
+  for (angle in angles_test) {
+    # Rotation (mathématique)
+    angle_rad <- angle * pi / 180
+    # On utilise la transposée de la matrice de rotation pour tourner les points
+    # ou on définit la matrice pour une rotation anti-horaire
+    rot <- matrix(c(cos(angle_rad), sin(angle_rad), -sin(angle_rad), cos(angle_rad)), nrow = 2)
+    coords_rotated <- coords_centered %*% rot
+    
+    # Calculer les dimensions et le centre du rectangle dans l'espace tourné
+    r_x <- range(coords_rotated[, 1])
+    r_y <- range(coords_rotated[, 2])
+    x_range <- diff(r_x)
+    y_range <- diff(r_y)
+    aire <- x_range * y_range
+    
+    if (aire < meilleure_aire) {
+      meilleure_aire <- aire
+      meilleur_angle <- angle
+      meilleures_dims <- c(x_range, y_range)
+      meilleur_center_rot <- c(mean(r_x), mean(r_y))
+    }
+  }
+  
+  # Déterminer l'axe principal (le plus long)
+  if (meilleures_dims[1] >= meilleures_dims[2]) {
+    longueur <- meilleures_dims[1]
+    largeur <- meilleures_dims[2]
+    angle_math <- meilleur_angle
+  } else {
+    longueur <- meilleures_dims[2]
+    largeur <- meilleures_dims[1]
+    angle_math <- (meilleur_angle + 90) %% 180
+  }
+  
+  # Calculer le centre du rectangle dans l'espace original
+  # On doit inverser la rotation du meilleur_center_rot
+  angle_rad_meilleur <- meilleur_angle * pi / 180
+  rot_inv <- matrix(c(cos(angle_rad_meilleur), -sin(angle_rad_meilleur), 
+                       sin(angle_rad_meilleur), cos(angle_rad_meilleur)), nrow = 2)
+  rect_center_orig <- (matrix(meilleur_center_rot, nrow = 1) %*% rot_inv) + matrix(centroid_pts, nrow = 1)
+  
+  # Créer la géométrie
+  mbr_sf <- creer_geometrie_rect(as.numeric(rect_center_orig), angle_math, longueur, largeur, sf::st_crs(polygone))
   
   list(
-    angle = angle_principal,
-    angle_perpendiculaire = angle_perp,
+    angle = angle_math,
+    angle_perpendiculaire = (angle_math + 90) %% 180,
     longueur = longueur,
     largeur = largeur,
     rapport_aspect = longueur / largeur,
@@ -198,7 +273,8 @@ calculer_pca_orientation <- function(polygone) {
   coords <- sf::st_coordinates(polygone)[, 1:2]
   
   # Centrer les données
-  coords_centered <- scale(coords, center = TRUE, scale = FALSE)
+  centroid_pts <- colMeans(coords)
+  coords_centered <- scale(coords, center = centroid_pts, scale = FALSE)
   
   # Calculer la matrice de covariance
   cov_matrix <- cov(coords_centered)
@@ -210,37 +286,51 @@ calculer_pca_orientation <- function(polygone) {
   pc1 <- eigen_decomp$vectors[, 1]
   pc2 <- eigen_decomp$vectors[, 2]
   
-  # Calculer l'angle
-  angle_principal <- atan2(pc1[2], pc1[1]) * 180 / pi
+  # Calculer l'angle mathématique
+  angle_math <- atan2(pc1[2], pc1[1]) * 180 / pi
+  angle_math <- angle_math %% 180
   
-  # Normaliser entre 0 et 180
-  angle_principal <- angle_principal %% 180
-  
-  # Calculer les dimensions
+  # Projeter pour obtenir les dimensions
   proj1 <- coords_centered %*% pc1
   proj2 <- coords_centered %*% pc2
   
   longueur <- diff(range(proj1))
   largeur <- diff(range(proj2))
   
+  # Centre du rectangle dans l'espace des composantes
+  c1 <- mean(range(proj1))
+  c2 <- mean(range(proj2))
+  
   # S'assurer que longueur >= largeur
   if (largeur > longueur) {
     temp <- longueur
     longueur <- largeur
     largeur <- temp
-    angle_principal <- (angle_principal + 90) %% 180
+    angle_math <- (angle_math + 90) %% 180
+    
+    # Si on a pivoté de 90, le centre change aussi d'axe
+    temp_c <- c1
+    c1 <- c2
+    c2 <- -temp_c # Rotation de 90 deg
   }
   
-  angle_perp <- (angle_principal + 90) %% 180
+  # Reconvertir le centre en coordonnées originales
+  # Coordonnées dans l'espace PCA vers espace centré
+  # pts_centered = proj %*% t(vectors)
+  pca_center_centered <- c(c1, c2) %*% t(eigen_decomp$vectors)
+  rect_center_orig <- pca_center_centered + centroid_pts
+  
+  # Créer la géométrie
+  pca_geom <- creer_geometrie_rect(as.numeric(rect_center_orig), angle_math, longueur, largeur, sf::st_crs(polygone))
   
   list(
-    angle = angle_principal,
-    angle_perpendiculaire = angle_perp,
+    angle = angle_math,
+    angle_perpendiculaire = (angle_math + 90) %% 180,
     longueur = longueur,
     largeur = largeur,
     rapport_aspect = longueur / largeur,
     variance_expliquee = eigen_decomp$values[1] / sum(eigen_decomp$values),
-    geometry = NULL,
+    geometry = pca_geom,
     methode = "pca"
   )
 }
@@ -439,155 +529,200 @@ calculer_distance_bordures_orientee <- function(points_sf = NULL,
   
   message("Calcul de l'orientation du champ...")
   
-  # Calculer l'orientation du champ
-  orientation <- calculer_orientation_champ(champ_poly, methode = "mbr")
+  # Toujours projeter le champ en UTM pour assurer des calculs de distance métriques corrects
+  crs_orig <- sf::st_crs(champ_poly)
+  epsg_utm <- NULL
+  if (is.na(crs_orig)) {
+    # Pas de CRS: travailler en coordonnées planaires locales (CRS factice pour les calculs)
+    epsg_utm <- 32618
+    champ_poly_proj <- sf::st_set_crs(champ_poly, epsg_utm)
+  } else {
+    epsg_utm <- detecter_utm_epsg(champ_poly)
+    champ_poly_proj <- sf::st_transform(champ_poly, epsg_utm)
+  }
+  
+  # Calculer l'orientation du champ (en mode mathématique pour les vecteurs de projection)
+  orientation_math <- calculer_orientation_champ(champ_poly_proj, methode = "mbr", orientation = "mathematique")
+  
+  # Créer une version géographique pour l'affichage et le retour
+  orientation <- orientation_math
+  orientation$angle <- (90 - orientation_math$angle) %% 180
+  orientation$angle_perpendiculaire <- (90 - orientation_math$angle_perpendiculaire) %% 180
+  orientation$orientation <- "geographique"
   
   message(sprintf("Angle principal: %.1f° | Longueur: %.1fm | Largeur: %.1fm",
                   orientation$angle, orientation$longueur, orientation$largeur))
   
-  # Extraire les axes principal et perpendiculaire
-  angle_principal <- orientation$angle  # En degrés, 0-180
-  angle_perp <- orientation$angle_perpendiculaire
-  
-  # Convertir en radians pour les calculs trigonométriques
-  angle_principal_rad <- angle_principal * pi / 180
-  angle_perp_rad <- angle_perp * pi / 180
+  # Extraire les axes (utiliser les angles mathématiques pour cos/sin)
+  angle_principal_rad <- orientation_math$angle * pi / 180
+  angle_perp_rad <- orientation_math$angle_perpendiculaire * pi / 180
   
   # Vecteurs directeurs des axes
-  # Axe principal (sens long): direction de la longueur
   vecteur_long <- c(cos(angle_principal_rad), sin(angle_principal_rad))
-  # Axe perpendiculaire (sens large): direction de la largeur
   vecteur_large <- c(cos(angle_perp_rad), sin(angle_perp_rad))
   
-  # Convertir le champ en ligne (bordures)
+  # Convertir le champ en ligne (bordures) sur la version projetée
   message("Extraction des bordures du champ...")
-  bordures <- sf::st_cast(champ_poly, "MULTILINESTRING")
-  bordures <- sf::st_cast(bordures, "LINESTRING")
+  bordures <- sf::st_cast(champ_poly_proj, "MULTILINESTRING")
   
-  # Créer un buffer autour du champ pour les calculs
-  champ_buffer <- sf::st_buffer(champ_poly, dist = buffer)
+  # Créer un buffer autour du champ pour les calculs (sur la version projetée)
+  champ_buffer_proj <- sf::st_buffer(champ_poly_proj, dist = buffer)
   
-  # Si pas de points fournis, créer un raster
+  # Si pas de points fournis, travailler directement en mode raster (beaucoup plus rapide)
   if (is.null(points_sf)) {
-    message(sprintf("Création d'un raster de résolution %dm...", resolution))
+    message(sprintf("Création d'un raster de résolution %.1fm...", resolution))
     
     # Bounding box avec buffer
-    bbox <- sf::st_bbox(champ_buffer)
+    bbox <- sf::st_bbox(champ_buffer_proj)
     
-    # Créer le raster
+    # Créer le raster template
     r_template <- terra::rast(
       ncols = ceiling((bbox["xmax"] - bbox["xmin"]) / resolution),
       nrows = ceiling((bbox["ymax"] - bbox["ymin"]) / resolution),
       xmin = bbox["xmin"], xmax = bbox["xmax"],
       ymin = bbox["ymin"], ymax = bbox["ymax"],
-      crs = sf::st_crs(champ_poly)$wkt
+      crs = sf::st_crs(champ_poly_proj)$wkt
     )
     
-    # Rasteriser le champ pour masquer
-    champ_vect <- terra::vect(champ_poly)
-    champ_raster <- terra::rasterize(champ_vect, r_template, field = 1, background = NA)
+    # Calculer la distance minimale globale
+    message("Calcul de la distance minimale globale...")
+    bordures_vect <- terra::vect(bordures)
+    r_min <- terra::distance(r_template, bordures_vect)
     
-    # Convertir en points
-    points_sf <- terra::as.points(champ_raster)
-    points_sf <- sf::st_as_sf(points_sf)
+    # Identifier les bordures selon leur orientation par rapport à l'axe principal
+    message("Classification des segments de bordure...")
+    bordures_lignes <- sf::st_cast(bordures, "LINESTRING")
     
-    mode_raster <- TRUE
-  } else {
-    mode_raster <- FALSE
-    # S'assurer que c'est un objet sf
-    if (methods::is(points_sf, "SpatVector") || methods::is(points_sf, "SpatRaster")) {
-      points_sf <- sf::st_as_sf(points_sf)
+    segments_transversaux <- list() # Perpendiculaires à l'axe long (extrémités)
+    segments_longitudinaux <- list() # Parallèles à l'axe long (côtés)
+    
+    for (j in seq_len(length(bordures_lignes))) {
+      ligne <- bordures_lignes[j]
+      coords_b <- sf::st_coordinates(ligne)
+      if (nrow(coords_b) < 2) next
+      
+      for (i in 1:(nrow(coords_b)-1)) {
+        p1 <- coords_b[i, 1:2]
+        p2 <- coords_b[i+1, 1:2]
+        v_seg <- p2 - p1
+        if (all(v_seg == 0)) next
+        
+        angle_seg <- (atan2(v_seg[2], v_seg[1]) * 180 / pi) %% 180
+        diff_angle <- abs(angle_seg - orientation_math$angle) %% 180
+        if (diff_angle > 90) diff_angle <- 180 - diff_angle
+        
+        seg <- sf::st_linestring(matrix(c(p1, p2), ncol = 2, byrow = TRUE))
+        # Si diff_angle est proche de 90° (> 45°), le segment est transversal (extrémité)
+        if (diff_angle > 45) {
+          segments_transversaux[[length(segments_transversaux) + 1]] <- seg
+        } else {
+          # Sinon il est parallèle à la longueur (côté)
+          segments_longitudinaux[[length(segments_longitudinaux) + 1]] <- seg
+        }
+      }
     }
-  }
-  
-  message(sprintf("Calcul des distances pour %d points...", nrow(points_sf)))
-  
-  # Obtenir les coordonnées
-  coords <- sf::st_coordinates(points_sf)
-  n_points <- nrow(coords)
-  
-  # Pour chaque point, calculer la distance projetée sur les axes
-  distances_long <- numeric(n_points)
-  distances_large <- numeric(n_points)
-  distances_min <- numeric(n_points)
-  
-  # Calculer la distance à la bordure la plus proche pour chaque point
-  for (i in seq_len(n_points)) {
-    point <- sf::st_point(coords[i, 1:2])
-    point_sfc <- sf::st_sfc(point, crs = sf::st_crs(points_sf))
     
-    # Distance minimale à n'importe quelle bordure
-    dist_min <- min(sf::st_distance(point_sfc, bordures))
-    distances_min[i] <- as.numeric(dist_min)
+    # Calcul des distances aux deux types de bordures
+    message("Calcul des distances par type de bordure...")
     
-    # Pour trouver les distances orientées, on projette sur les axes
-    # Trouver la bordure la plus proche
-    idx_proche <- which.min(sf::st_distance(point_sfc, bordures))
-    bordure_proche <- bordures[idx_proche, ]
+    if (length(segments_transversaux) > 0) {
+      b_trans_vect <- terra::vect(sf::st_sfc(segments_transversaux, crs = epsg_utm))
+      r_long <- terra::distance(r_template, b_trans_vect)
+    } else {
+      r_long <- r_min
+    }
     
-    # Trouver le point sur la bordure le plus proche
-    coords_bordure <- sf::st_coordinates(bordure_proche)
+    if (length(segments_longitudinaux) > 0) {
+      b_long_vect <- terra::vect(sf::st_sfc(segments_longitudinaux, crs = epsg_utm))
+      r_large <- terra::distance(r_template, b_long_vect)
+    } else {
+      r_large <- r_min
+    }
     
-    # Calculer le vecteur du point vers la bordure
-    # On prend le point de la bordure le plus proche
-    dists_bordure <- apply(coords_bordure[, 1:2], 1, function(pt) {
-      sqrt(sum((pt - coords[i, 1:2])^2))
-    })
-    pt_bordure <- coords_bordure[which.min(dists_bordure), 1:2]
+    # Masquer par le champ original
+    champ_vect <- terra::vect(champ_poly_proj)
+    r_long <- terra::mask(r_long, champ_vect)
+    r_large <- terra::mask(r_large, champ_vect)
+    r_min <- terra::mask(r_min, champ_vect)
     
-    # Vecteur du point vers la bordure
-    vecteur_vers_bordure <- pt_bordure - coords[i, 1:2]
+    message("Terminé!")
     
-    # Projeter sur l'axe long et l'axe large
-    # Distance signée: positive si on va dans le sens du vecteur
-    proj_long <- sum(vecteur_vers_bordure * vecteur_long)
-    proj_large <- sum(vecteur_vers_bordure * vecteur_large)
-    
-    # Distance absolue projetée (composante de la distance sur chaque axe)
-    # Utiliser la valeur absolue pour la distance
-    distances_long[i] <- abs(proj_long)
-    distances_large[i] <- abs(proj_large)
-  }
-  
-  message("Terminé!")
-  
-  # Si mode raster, retourner des rasters
-  if (mode_raster) {
-    # Créer les rasters de sortie à partir du template
-    r_long <- terra::rast(r_template)
-    r_large <- terra::rast(r_template)
-    r_min <- terra::rast(r_template)
-    
-    # Initialiser avec NA
-    terra::values(r_long) <- NA
-    terra::values(r_large) <- NA
-    terra::values(r_min) <- NA
-    
-    # Obtenir les cellules valides (non-NA dans champ_raster)
-    cells_valides <- terra::cells(champ_raster)
-    
-    # Assigner les valeurs uniquement aux cellules valides
-    r_long[cells_valides] <- distances_long
-    r_large[cells_valides] <- distances_large
-    r_min[cells_valides] <- distances_min
+    if (is.na(crs_orig)) {
+      # Pas de CRS: retourner les rasters sans CRS (CRS factice utilisé pour les calculs)
+      terra::crs(r_long) <- ""
+      terra::crs(r_large) <- ""
+      terra::crs(r_min) <- ""
+    }
     
     return(list(
       distance_long = r_long,
       distance_large = r_large,
       distance_min = r_min,
       orientation = orientation,
-      champ_buffer = champ_buffer
+      champ_buffer = if (!is.na(crs_orig)) sf::st_transform(champ_buffer_proj, crs_orig) else sf::st_set_crs(champ_buffer_proj, NA)
     ))
+    
   } else {
-    # Mode points: ajouter les colonnes au sf
-    points_sf$distance_long <- distances_long
-    points_sf$distance_large <- distances_large
-    points_sf$distance_min <- distances_min
+    # Mode points
+    if (methods::is(points_sf, "SpatVector") || methods::is(points_sf, "SpatRaster")) {
+      points_sf <- sf::st_as_sf(points_sf)
+    }
+    
+    # Projeter les points dans le même UTM que le champ
+    if (is.na(crs_orig)) {
+      points_sf_proj <- sf::st_set_crs(points_sf, epsg_utm)
+    } else {
+      points_sf_proj <- sf::st_transform(points_sf, epsg_utm)
+    }
+    
+    message(sprintf("Calcul pour %d points...", nrow(points_sf_proj)))
+    
+    # Même logique de classification des segments pour les points
+    bordures_lignes <- sf::st_cast(bordures, "LINESTRING")
+    segments_transversaux <- list()
+    segments_longitudinaux <- list()
+    
+    for (j in seq_len(length(bordures_lignes))) {
+      ligne <- bordures_lignes[j]
+      coords_b <- sf::st_coordinates(ligne)
+      if (nrow(coords_b) < 2) next
+      for (i in 1:(nrow(coords_b)-1)) {
+        p1 <- coords_b[i, 1:2]; p2 <- coords_b[i+1, 1:2]
+        v_seg <- p2 - p1
+        if (all(v_seg == 0)) next
+        angle_seg <- (atan2(v_seg[2], v_seg[1]) * 180 / pi) %% 180
+        diff_angle <- abs(angle_seg - orientation_math$angle) %% 180
+        if (diff_angle > 90) diff_angle <- 180 - diff_angle
+        seg <- sf::st_linestring(matrix(c(p1, p2), ncol = 2, byrow = TRUE))
+        if (diff_angle > 45) {
+          segments_transversaux[[length(segments_transversaux) + 1]] <- seg
+        } else {
+          segments_longitudinaux[[length(segments_longitudinaux) + 1]] <- seg
+        }
+      }
+    }
+    
+    # Distances vectorisées
+    points_sf_proj$distance_min <- as.numeric(sf::st_distance(points_sf_proj, sf::st_union(bordures)))
+    
+    if (length(segments_transversaux) > 0) {
+      points_sf_proj$distance_long <- as.numeric(sf::st_distance(points_sf_proj, sf::st_union(sf::st_sfc(segments_transversaux, crs=epsg_utm))))
+    } else {
+      points_sf_proj$distance_long <- points_sf_proj$distance_min
+    }
+    
+    if (length(segments_longitudinaux) > 0) {
+      points_sf_proj$distance_large <- as.numeric(sf::st_distance(points_sf_proj, sf::st_union(sf::st_sfc(segments_longitudinaux, crs=epsg_utm))))
+    } else {
+      points_sf_proj$distance_large <- points_sf_proj$distance_min
+    }
+    
+    message("Terminé!")
     
     return(list(
-      points = points_sf,
+      points = if (!is.na(crs_orig)) sf::st_transform(points_sf_proj, crs_orig) else sf::st_set_crs(points_sf_proj, NA),
       orientation = orientation,
-      champ_buffer = champ_buffer
+      champ_buffer = if (!is.na(crs_orig)) sf::st_transform(champ_buffer_proj, crs_orig) else sf::st_set_crs(champ_buffer_proj, NA)
     ))
   }
 }

@@ -129,13 +129,13 @@ visualiser_distance_arbres(dist_simple, type = "buffer")
 
 ## Distances amont/aval avec direction du vent
 
-La fonction `calculer_distances_amont_aval()` distingue les distances selon la direction du vent:
+La fonction `calculer_distances_vent()` distingue les distances selon la direction du vent:
 
 - **Amont**: Vent qui vient DE l'arbre (protection contre le vent)
 - **Aval**: Vent qui va VERS l'arbre (accélération après l'arbre)
 
 ```{r distances-amont-aval, cache = TRUE}
-dist_dir <- calculer_distances_amont_aval(
+dist_dir <- calculer_distances_vent(
   arbres_sf = arbres,
   angle_vent = 270,
   champ_bbox = champ,
@@ -145,18 +145,14 @@ dist_dir <- calculer_distances_amont_aval(
   max_distance = 100,
   taille_lissage = 5
 )
-
-viz <- visualiser_distances_vent(dist_dir, type = "comparaison")
-viz$amont
-viz$aval
 ```
 
 ### Visualiser chaque type séparément
 
 ```{r visualisation-separee}
-visualiser_distances_vent(dist_dir, type = "amont")
-visualiser_distances_vent(dist_dir, type = "aval")
-visualiser_distances_vent(dist_dir, type = "totale")
+tracer_carte_vent(dist_dir, type = "amont")
+tracer_carte_vent(dist_dir, type = "aval")
+tracer_carte_vent(dist_dir, type = "total")
 ```
 
 ## Fetch de vent elliptique
@@ -206,7 +202,7 @@ plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 | Fonction | Usage | Avantage |
 |----------|-------|----------|
 | `calculer_distance_arbres()` | Distance simple sans direction | Rapide, bon pour ombrage |
-| `calculer_distances_amont_aval()` | Distances avec effet tampon et lissage | Plus précis pour vent |
+| `calculer_distances_vent()` | Distances avec effet tampon et lissage | Plus précis pour vent |
 | `calculer_fetch_vent()` | Buffer elliptique pour effet directionnel | Modélisation physically-based |
 | `calculer_distances_vent()` | Version simple des distances directionnelles | Bon compromis |
 

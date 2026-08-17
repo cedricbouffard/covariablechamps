@@ -129,6 +129,50 @@ obtenir_rose_vents <- function(polygone,
   return(resultat)
 }
 
+#' Obtenir la direction du vent dominant
+#'
+#' Extrait la direction la plus fréquente (vent dominant) depuis le résultat
+#' de la fonction `obtenir_rose_vents()`.
+#'
+#' @param rose_vents Résultat de la fonction `obtenir_rose_vents()`
+#' @param format Format de sortie: "angle" (degrés), "label" (ex: "SO"), ou "both" (défaut)
+#'
+#' @return La direction dominante (numérique, caractère ou liste)
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' rose <- obtenir_rose_vents(champ)
+#' vent_dom <- obtenir_vent_dominant(rose)
+#' print(vent_dom$label)
+#' }
+obtenir_vent_dominant <- function(rose_vents, format = c("both", "angle", "label")) {
+  format <- match.arg(format)
+  
+  # Labels des directions
+  dir_names <- c(
+    "Nord", "N-NE", "NE", "E-NE", "Est", "E-SE", "SE", "S-SE",
+    "Sud", "S-SO", "SO", "O-SO", "Ouest", "O-NO", "NO", "N-NO"
+  )
+  
+  # Trouver l'index du maximum de wd_pct
+  idx_max <- which.max(rose_vents$wd_pct)
+  
+  angle <- rose_vents$directions[idx_max]
+  label <- dir_names[idx_max]
+  freq <- rose_vents$wd_pct[idx_max]
+  
+  if (format == "angle") return(angle)
+  if (format == "label") return(label)
+  
+  return(list(
+    angle = angle,
+    label = label,
+    frequence_pct = freq,
+    vitesse_moyenne = rose_vents$wd_avg[idx_max]
+  ))
+}
+
 #' Obtenir le centroïde d'un polygone en WGS84
 #' @noRd
 obtenir_centroide <- function(polygone) {

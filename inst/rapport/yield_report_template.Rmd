@@ -1,0 +1,189 @@
+---
+# ==============================================================================
+# PROFESSIONAL REPORT TEMPLATE
+# ==============================================================================
+# 
+# This template provides styled components for professional paged reports.
+#
+# FILES REQUIRED:
+#   - brochure.css (component styles)
+#   - header_overrides.html (headers/footers/footnotes)
+#
+# AVAILABLE COMPONENTS (see examples below):
+#   - Infoboxes: .infobox .info|.success|.warning|.danger|.primary|.secondary
+#   - Callouts: .callout .tip|.warning|.danger|.info|.success
+#   - Value boxes: .value-box .primary|.secondary|.accent|.warning|.danger
+#   - Badges: .badge .primary|.success|.warning|.danger|.info|.light
+#   - Progress bars: .progress-container with .progress-fill
+#   - Timeline: .timeline with .timeline-item
+#   - Process steps: .process-steps with .process-step
+#   - Metric cards: .metric-card
+#   - Key findings: .key-finding .success|.warning|.danger|.info
+#   - Summary box: .summary-box
+#   - Quote box: .quote-box
+#   - Scorecard: .scorecard with .scorecard-item
+#   - Tables: standard or .comparison-table
+#   - Lists: .striped-list, .feature-list, .icon-list
+#   - Grids: .grid-2, .grid-3, .grid-4
+#   - Section breaks: .section-break .primary|.secondary|.accent
+#   - Footnotes: <span class="footnote">text</span>
+#
+# ==============================================================================
+
+# --- Document Metadata ---
+title: "Rapport de nettoyage des rendements"
+subtitle: "Analyse des donnees de rendement"
+author: "YieldCleanr"
+date: "Date : Février 2026"
+
+# --- Header/Footer Text ---
+header-left: "Rapport de nettoyage des rendements"           # Top-left
+header-middle: ""                         # Top-center (optional)
+header-right: "IRDA"                      # Top-right
+footer-left: ""                           # Bottom-left (hidden when page number is here)
+footer-middle: ""                         # Bottom-center (optional)
+footer-right: "Février 2026"              # Bottom-right (hidden when page number is here)
+
+# --- Page Number Position ---
+# "right" = always right | "alternate" = book-style (left on even, right on odd)
+page-number-position: "alternate"
+
+# --- Output Settings ---
+output:
+  pagedown::html_paged:
+    css: 
+      - "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      - "default-page"
+      - "default"
+      - "brochure.css"
+    number_sections: false
+    toc: true
+    toc_depth: 2
+    toc_title: "Table des matières"
+    includes:
+      in_header: header_overrides.html
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.width = 6, fig.height = 2.5, out.width = "100%")
+library(ggplot2)
+library(sf)
+library(dplyr)
+library(fontawesome)
+library(ggspatial)
+library(covariablechamps)
+```
+
+
+
+
+
+
+```{r calculate-orientation, include=FALSE}
+champ <- st_read(system.file("extdata", "M2.shp", package = "covariablechamps"))
+orientation <- calculer_orientation_champ(champ, methode = "mbr")
+        rot <- ggbasemap::coord_rotate(champ, orientation$angle_perpendiculaire+180, ratio = 5/7)
+        
+        p <- ggplot() +
+          ggbasemap::add_basemap(
+            bbox = rot$bbox,
+            url = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            alpha = 0.3, 
+            zoom_offset = 0) +
+          geom_sf(data = champ, color = NA, size = 0.1)+
+          ggspatial::annotation_north_arrow(
+            which_north = "true",
+            location = "tr",
+            pad_x = unit(0.4, "cm"),
+            pad_y = unit(0.4, "cm"),
+            height = unit(1.8, "cm"),
+            width = unit(1.5, "cm"),
+            style = ggspatial::north_arrow_fancy_orienteering(
+              fill = c("#002752", "white"),
+              line_col = "#002752",
+              line_width = 1,
+              text_col = "#002752",
+              text_face = "bold",
+              text_size = 12
+            )
+          )+
+          ggspatial::annotation_scale(
+            location = "br",
+            pad_x = unit(0.4, "cm"),
+            pad_y = unit(0.4, "cm"),
+            width_hint = 0.2,
+            line_width = 1,
+            line_col = "#002752",
+            text_col = "#002752",
+            text_cex = 0.9
+          )+
+          annotate(
+            "text",
+            x = -Inf,
+            y = -Inf,
+            label = "Source: Esri World Imagery",
+            hjust = 0,
+            vjust = -0.5,
+            size = 3,
+            color = "#002752",
+            fontface = "italic"
+          )+
+          rot$coord +
+          theme_minimal() +
+          theme(
+            axis.text = element_blank(),
+            axis.title = element_blank(),
+            panel.grid = element_blank(),
+            legend.position = "none",
+            plot.margin = margin(2, 0, 2, 0)
+          )
+        
+```
+
+<div style="border-radius: 8pt; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+```{r yield-map, fig.height=7, eval=TRUE}
+tryCatch({
+        print(p)
+}, error = function(e) {
+  message("Error in yield-map: ", e$message)
+  NULL
+})
+```
+
+```{r}
+rose <- obtenir_rose_vents(
+  polygone = champ,
+  date_debut = "20250101",
+  date_fin = "20251231",
+  hauteur = "10m"
+)
+# 1. Télécharger les données LiDAR ponctuelles
+lidar <- telecharger_lidar_ponctuel(champ)
+
+# 2. Détecter et classifier les haies
+resultat <- extraire_classifier_haies_lidar(
+  nuage_points = lidar$nuage_points,
+  res_dtm = 1,
+  res_chm = 0.25,
+  hmin = 2,
+  eps_dbscan = 6,
+  minPts_dbscan = 3,
+  seuil_aspect = 6,
+  seuil_largeur_max = 22
+)
+
+# 3. Récupérer les arbres classifiés
+arbres <- resultat$trees_sf
+haies <- resultat$haies_rectangles
+lignes_haies <- extraire_ligne_centrale_haies(resultat$haies_rectangles)
+
+zones <- calculer_zones_vent_spline(
+  haies_rectangles = lignes_haies$lignes,
+  direction_vent = vent$angle,
+  facteur_hauteur  = 1:100
+)
+
+a=fusionner_zones_vent(zones)
+```
+

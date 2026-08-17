@@ -31,8 +31,9 @@ test_that("calculer_orientation_champ fonctionne avec un rectangle simple", {
   expect_equal(result$largeur, 50, tolerance = 1)
   expect_equal(result$rapport_aspect, 2, tolerance = 0.1)
   
-  # L'angle devrait être proche de 0 ou 180 (horizontal)
-  expect_true(result$angle < 5 || result$angle > 175)
+  # L'angle devrait être proche de 90 (référence géographique: 0=Nord, 90=Est)
+  # Le rectangle horizontal a son axe long orienté Est-Ouest
+  expect_equal(result$angle, 90, tolerance = 1)
 })
 
 
