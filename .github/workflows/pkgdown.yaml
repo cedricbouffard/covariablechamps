@@ -37,6 +37,22 @@ jobs:
           extra-packages: any::pkgdown, local::.
           needs: website
 
+      - name: Diagnostic du build
+        if: always()
+        run: |
+          library(pak, lib.loc = Sys.getenv("R_LIB_FOR_PAK"))
+          res <- tryCatch(
+            pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE),
+            error = function(e) e
+          )
+          if (inherits(res, "error")) {
+            msg <- substr(gsub("\n", " | ", conditionMessage(res)), 1, 1500)
+            cat("::error::BUILD_FAIL: ", msg, "\n", sep = "")
+            quit(status = 1)
+          }
+          cat("::notice::BUILD_OK\n")
+        shell: Rscript {0}
+
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
