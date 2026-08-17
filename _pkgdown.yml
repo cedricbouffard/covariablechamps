@@ -50,6 +50,7 @@ reference:
       - telecharger_lidar_ponctuel
       - verifier_disponibilite_lidar
       - vider_cache_lidar
+      - detecter_utm_epsg
 
   - title: "Analyse du terrain"
     desc: "Fonctions pour calculer les covariables terrain a partir du MNT"
@@ -76,6 +77,7 @@ reference:
       - extraire_classifier_haies_lidar
       - extraire_ligne_centrale_haies
       - calculer_zones_vent_spline
+      - fusionner_zones_vent
       - rasteriser_zones_gradient
       - rasteriser_zones_gradient_v2
 
@@ -110,11 +112,13 @@ reference:
       - obtenir_rose_vents
       - tracer_rose_vents
       - tracer_rose_vents_stacked
+      - obtenir_vent_dominant
 
   - title: "Pedologie et sols"
     desc: "Fonctions pour l'extraction et la desagregation des donnees pedologiques"
     contents:
       - proba_et_classement_serie_quota_ilr
+      - telecharger_pedologie_quebec
 
   - title: "Extraction complete"
     desc: "Fonctions d'orchestration pour extraire toutes les covariables"

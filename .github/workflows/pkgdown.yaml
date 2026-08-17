@@ -37,47 +37,6 @@ jobs:
           extra-packages: any::pkgdown, local::.
           needs: website
 
-      - name: Diagnostic dependencies (reproduit l'echec de setup-r-dependencies)
-        if: always()
-        run: |
-          library(pak, lib.loc = Sys.getenv("R_LIB_FOR_PAK"))
-          lib <- tempfile("pkglib")
-          dir.create(lib)
-          err <- function(label, e) {
-            msg <- substr(gsub("\n", " | ", conditionMessage(e)), 1, 1500)
-            cat("::error::", label, ": ", msg, "\n", sep = "")
-          }
-          res1 <- tryCatch(pak::lockfile_create(
-            c("deps::.", "any::sessioninfo", "any::pkgdown", "local::."),
-            lockfile = tempfile(fileext = ".lock"),
-            dependencies = c("Config/Needs/website", "all"),
-            upgrade = FALSE, lib = NULL
-          ), error = function(e) e)
-          if (inherits(res1, "error")) {
-            err("LOCKFILE_FAIL", res1)
-          } else {
-            cat("::notice::LOCKFILE_OK\n")
-            res2 <- tryCatch(pak::pkg_install(
-              c("r-lidar/rlas", "r-lidar/lidR", "cran/lidaRtRee"),
-              lib = lib
-            ), error = function(e) e)
-            if (inherits(res2, "error")) {
-              err("GH_INSTALL_FAIL", res2)
-            } else {
-              cat("::notice::GH_INSTALL_OK\n")
-              res3 <- tryCatch(
-                pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE),
-                error = function(e) e
-              )
-              if (inherits(res3, "error")) {
-                err("BUILD_FAIL", res3)
-              } else {
-                cat("::notice::BUILD_OK\n")
-              }
-            }
-          }
-        shell: Rscript {0}
-
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
