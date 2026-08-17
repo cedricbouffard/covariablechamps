@@ -43,8 +43,6 @@ Suggests:
     ggplot2,
     tidyr
 VignetteBuilder: knitr
-Remotes:
-    brownag/rgeomorphon
 Config/testthat/edition: 3
 URL: https://cedricbouffard.github.io/covariablechamps, https://github.com/cedricbouffard/covariablechamps
 BugReports: https://github.com/cedricbouffard/covariablechamps/issues

@@ -110,7 +110,7 @@ calculer_geomorphons <- function(mnt, search_radius = 100, skip_radius = 0,
   # Vérifier que rgeomorphon est disponible
   if (!requireNamespace("rgeomorphon", quietly = TRUE)) {
     stop("Le package 'rgeomorphon' est requis. Installez-le avec:\n",
-         "remotes::install_github('brownag/rgeomorphon')")
+         "install.packages('rgeomorphon')")
   }
   
   # Convertir le seuil de platitude de pourcent à degrés
