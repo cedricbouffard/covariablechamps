@@ -555,6 +555,23 @@ telecharger_lidar_donnees_quebec <- function(polygone_buffer, dossier = NULL) {
     return(nuages_points[[1]])
   }
 
+  # Uniformiser le CRS: des tuiles voisines peuvent être dans des zones (MTM/UTM) différentes
+  crs_ref <- sf::st_crs(nuages_points[[1]])
+  if (is.na(crs_ref)) {
+    for (l in nuages_points) {
+      crs_ref <- sf::st_crs(l)
+      if (!is.na(crs_ref)) break
+    }
+  }
+  if (!is.na(crs_ref)) {
+    nuages_points <- lapply(nuages_points, function(l) {
+      if (is.na(sf::st_crs(l)) || sf::st_crs(l) != crs_ref) {
+        l <- sf::st_transform(l, crs_ref)
+      }
+      l
+    })
+  }
+
   noms <- lapply(nuages_points, function(l) names(l@data))
   commun <- Reduce(intersect, noms)
 
