@@ -60,7 +60,8 @@ Par défaut, ne retient que la couverture la plus récente et complète.</p>
 <span>  dossier <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  mne <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  recent <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  epsg <span class="op">=</span> <span class="fl">4326</span></span>
+<span>  epsg <span class="op">=</span> <span class="fl">4326</span>,</span>
+<span>  annee <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -81,11 +82,15 @@ Par défaut, ne retient que la couverture la plus récente et complète.</p>
 
 
 <dt id="arg-recent">recent<a class="anchor" aria-label="anchor" href="#arg-recent"></a></dt>
-<dd><p>Logique. Si TRUE (par défaut), conserve uniquement la version la plus récente.</p></dd>
+<dd><p>Logique. Si TRUE (par défaut), conserve uniquement la version la plus récente. Ignoré si `annee` est fourni.</p></dd>
 
 
 <dt id="arg-epsg">epsg<a class="anchor" aria-label="anchor" href="#arg-epsg"></a></dt>
 <dd><p>Code EPSG pour la projection de sortie (défaut: 4326 - WGS84)</p></dd>
+
+
+<dt id="arg-annee">annee<a class="anchor" aria-label="anchor" href="#arg-annee"></a></dt>
+<dd><p>Optionnel. Année spécifique à télécharger (ex: 2018). Si fourni, ignore le paramètre `recent`.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -99,6 +104,9 @@ Par défaut, ne retient que la couverture la plus récente et complète.</p>
 <span class="r-in"><span><span class="co"># Télécharger le MNT pour un champ</span></span></span>
 <span class="r-in"><span><span class="va">champ</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"champ.shp"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">mnt</span> <span class="op">&lt;-</span> <span class="fu">telecharger_lidar</span><span class="op">(</span><span class="va">champ</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Télécharger une année spécifique</span></span></span>
+<span class="r-in"><span><span class="va">mnt_2018</span> <span class="op">&lt;-</span> <span class="fu">telecharger_lidar</span><span class="op">(</span><span class="va">champ</span>, annee <span class="op">=</span> <span class="fl">2018</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Télécharger le MNE</span></span></span>
 <span class="r-in"><span><span class="va">mne</span> <span class="op">&lt;-</span> <span class="fu">telecharger_lidar</span><span class="op">(</span><span class="va">champ</span>, mne <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>

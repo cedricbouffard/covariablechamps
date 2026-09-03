@@ -13,7 +13,8 @@ telecharger_lidar(
   dossier = NULL,
   mne = FALSE,
   recent = TRUE,
-  epsg = 4326
+  epsg = 4326,
+  annee = NULL
 )
 ```
 
@@ -36,11 +37,16 @@ telecharger_lidar(
 - recent:
 
   Logique. Si TRUE (par défaut), conserve uniquement la version la plus
-  récente.
+  récente. Ignoré si \`annee\` est fourni.
 
 - epsg:
 
   Code EPSG pour la projection de sortie (défaut: 4326 - WGS84)
+
+- annee:
+
+  Optionnel. Année spécifique à télécharger (ex: 2018). Si fourni,
+  ignore le paramètre \`recent\`.
 
 ## Value
 
@@ -53,6 +59,9 @@ if (FALSE) { # \dontrun{
 # Télécharger le MNT pour un champ
 champ <- sf::st_read("champ.shp")
 mnt <- telecharger_lidar(champ)
+
+# Télécharger une année spécifique
+mnt_2018 <- telecharger_lidar(champ, annee = 2018)
 
 # Télécharger le MNE
 mne <- telecharger_lidar(champ, mne = TRUE)
