@@ -561,7 +561,8 @@ telecharger_lidar_donnees_quebec <- function(polygone_buffer, dossier = NULL) {
   nuages_points <- lapply(nuages_points, function(l) {
     a_supprimer <- setdiff(names(l@data), commun)
     if (length(a_supprimer) > 0) {
-      l@data[, (a_supprimer) := NULL]
+      cols_gardees <- setdiff(names(l@data), a_supprimer)
+      l@data <- l@data[, cols_gardees, with = FALSE]
       l <- lidR::las_update(l)
     }
     l
