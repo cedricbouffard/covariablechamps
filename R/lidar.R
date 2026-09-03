@@ -100,10 +100,10 @@ telecharger_lidar <- function(polygone, dossier = NULL, mne = FALSE, recent = TR
   }
   
   # Organiser les URLs par année
-  annees_uniques <- sort(unique(annees), decreasing = TRUE)
+  annees_uniques <- sort(unique(annees), decreasing = recent)
   message("\nAnnées disponibles: ", paste(annees_uniques, collapse = ", "))
   
-  # Essayer chaque année (de la plus récente à la plus ancienne)
+  # Essayer chaque année
   r <- NULL
   annee_selectionnee <- NULL
   
