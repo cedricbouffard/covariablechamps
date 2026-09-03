@@ -7,16 +7,16 @@ distances aux arbres.
 
 - calculer_distance_arbres(): Distance euclidienne simple aux arbres
 
-- calculer_distances_amont_aval(): Distance directionnelle (amont/aval)
+- calculer_distances_vent(): Distance directionnelle (amont/aval)
 
 - visualiser_distance_arbres(): Visualiser la distance simple
 
-- visualiser_distances_vent(): Visualiser la distance directionnelle
+- tracer_carte_vent(): Visualiser la distance directionnelle
 
 - simuler_vitesse_vent_simple(): Simuler la vitesse du vent (distance
   simple)
 
-- simuler_vitesse_vent(): Simuler la vitesse du vent (amont/aval)
+- simuler_vitesse_vent_fetch(): Simuler la vitesse du vent (fetch)
 
 ## Examples
 
@@ -30,10 +30,11 @@ visualiser_distance_arbres(dist, type = "buffer")
 vitesse <- simuler_vitesse_vent_simple(dist, vitesse_ref = 5, coef_protection = 0.5)
 
 # Distance directionnelle (amont/aval)
-dist_dir <- calculer_distances_amont_aval(arbres, 245, champ, buffer_arbre = 3)
-visualiser_distances_vent(dist_dir, type = "comparaison")
+dist_dir <- calculer_distances_vent(arbres, 245, champ, buffer_arbre = 3)
+tracer_carte_vent(dist_dir, type = "les_deux")
 
-# Vitesse du vent (direction du vent)
-vitesse <- simuler_vitesse_vent(dist_dir, vitesse_ref = 5)
+# Fetch de vent et vitesse associée
+fetch <- calculer_fetch_vent(arbres, 245, champ, max_fetch = 200)
+vitesse <- simuler_vitesse_vent_fetch(fetch, vitesse_ref = 5)
 } # }
 ```

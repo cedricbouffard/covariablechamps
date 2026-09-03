@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Analyse Pédologique et Séries de Sols • covariablechamps</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Analyse Pédologique et Séries de Sols">
 </head>
@@ -251,11 +251,25 @@ proportions de sable, limon et argile.</p>
 </table>
 </div>
 <div class="section level2">
+<h2 id="utilisation-des-données-gouvernementales-québec">Utilisation des données gouvernementales (Québec)<a class="anchor" aria-label="anchor" href="#utilisation-des-donn%C3%A9es-gouvernementales-qu%C3%A9bec"></a>
+</h2>
+<p>Le package facilite l’accès aux données de la couverture pédologique
+du Québec via la fonction <code><a href="../reference/telecharger_pedologie_quebec.html">telecharger_pedologie_quebec()</a></code>.
+Elle utilise <code>vsicurl</code> pour ne télécharger que les données
+nécessaires à l’emprise de votre champ.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Télécharger les polygones et préparer la table des séries</span></span>
+<span><span class="va">donnees_sol</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/telecharger_pedologie_quebec.html">telecharger_pedologie_quebec</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">polygones_sols</span> <span class="op">&lt;-</span> <span class="va">donnees_sol</span><span class="op">$</span><span class="va">polygones</span></span>
+<span><span class="va">table_series</span> <span class="op">&lt;-</span> <span class="va">donnees_sol</span><span class="op">$</span><span class="va">table_series</span></span></code></pre></div>
+</div>
+<div class="section level2">
 <h2 id="calcul-de-la-désagrégation">Calcul de la désagrégation<a class="anchor" aria-label="anchor" href="#calcul-de-la-d%C3%A9sagr%C3%A9gation"></a>
 </h2>
 <p>La fonction <code><a href="../reference/proba_et_classement_serie_quota_ilr.html">proba_et_classement_serie_quota_ilr()</a></code>
 effectue la désagrégation:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Charger le MNT (via LiDAR)</span></span>
 <span><span class="va">mnt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/telecharger_lidar.html">telecharger_lidar</a></span><span class="op">(</span><span class="va">champ</span><span class="op">)</span></span>
 <span></span>
@@ -263,20 +277,8 @@ effectue la désagrégation:</p>
 <span><span class="va">resultat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/proba_et_classement_serie_quota_ilr.html">proba_et_classement_serie_quota_ilr</a></span><span class="op">(</span></span>
 <span>  polygones_sf <span class="op">=</span> <span class="va">polygones_sols</span>,</span>
 <span>  table_series <span class="op">=</span> <span class="va">table_series</span>,</span>
-<span>  mnt <span class="op">=</span> <span class="va">mnt</span>,</span>
-<span>  id_col <span class="op">=</span> <span class="st">"Code.polygone"</span>,</span>
-<span>  serie_col <span class="op">=</span> <span class="st">"Composante"</span>,</span>
-<span>  poids_col <span class="op">=</span> <span class="st">"Pourcentage"</span>,</span>
-<span>  sable_col <span class="op">=</span> <span class="st">"Sable"</span>,</span>
-<span>  limon_col <span class="op">=</span> <span class="st">"Limon"</span>,</span>
-<span>  argile_col <span class="op">=</span> <span class="st">"Argile"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Visualiser les probabilités</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">resultat</span><span class="op">$</span><span class="va">prob</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Visualiser la classification finale</span></span>
-<span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">resultat</span><span class="op">$</span><span class="va">closest_label</span><span class="op">)</span></span></code></pre></div>
+<span>  mnt <span class="op">=</span> <span class="va">mnt</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="paramètres-de-la-fonction">Paramètres de la fonction<a class="anchor" aria-label="anchor" href="#param%C3%A8tres-de-la-fonction"></a>
 </h3>
@@ -400,7 +402,7 @@ sols</li>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

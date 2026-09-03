@@ -61,6 +61,7 @@ des bordures) au rouge (distances élevées, centre du champ).
 
 Pour combiner les trois graphiques de "comparaison", utilisez:
 
+
     library(patchwork)
     plots <- visualiser_distances_bordures(dist, "comparaison")
     plots$long + plots$large + plots$min

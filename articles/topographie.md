@@ -1,6 +1,7 @@
 # Analyse Topographique des Champs Agricoles
 
 ``` r
+
 library(covariablechamps)
 library(sf)
 library(terra)
@@ -25,6 +26,7 @@ soleil et au vent - La sensibilité à l’érosion - Le choix des cultures
 Le package inclut un champ d’exemple (`M2`) situé au Québec.
 
 ``` r
+
 champ <- st_read(system.file("extdata", "M2.shp", package = "covariablechamps"))
 #> Reading layer `M2' from data source 
 #>   `/home/runner/work/_temp/Library/covariablechamps/extdata/M2.shp' 
@@ -53,6 +55,7 @@ LiDAR du DataCube du Canada.
 taille de la zone.
 
 ``` r
+
 # Télécharger le MNT depuis LiDAR
 mnt <- telecharger_lidar(
   polygone = champ,
@@ -73,6 +76,7 @@ La fonction
 calcule l’inclinaison du terrain en degrés.
 
 ``` r
+
 pente <- calculer_pente(mnt)
 
 plot(pente, main = "Pente (degrés)",
@@ -85,6 +89,7 @@ plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 ### Distribution des pentes
 
 ``` r
+
 vals_pente <- terra::values(pente)
 vals_pente <- vals_pente[!is.na(vals_pente)]
 
@@ -96,6 +101,7 @@ hist(vals_pente, breaks = 30, main = "Distribution des pentes",
 ![](topographie_files/figure-html/distribution-pente-1.png)
 
 ``` r
+
 
 cat("Statistiques de la pente:\n")
 #> Statistiques de la pente:
@@ -116,6 +122,7 @@ La fonction
 calcule l’orientation du terrain.
 
 ``` r
+
 aspect <- calculer_aspect(mnt)
 
 plot(aspect, main = "Aspect (degrés - direction du Nord)",
@@ -135,6 +142,7 @@ Les valeurs manquantes (NA) indiquent les zones plates.
 ## Visualisation combinée
 
 ``` r
+
 par(mfrow = c(2, 2), mar = c(3, 3, 3, 3))
 
 plot(mnt, main = "MNT (élévation)", col = hcl.colors(100, "Terrain"))
@@ -162,6 +170,7 @@ La fonction
 calcule toutes les covariables en une seule commande:
 
 ``` r
+
 result <- extraire_covariables_terrain(
   polygone = champ,
   dossier = NULL  # Sans sauvegarder
@@ -173,12 +182,14 @@ plot(result$mnt, main = "MNT")
 ![](topographie_files/figure-html/extract-all-1.png)
 
 ``` r
+
 plot(result$pente, main = "Pente")
 ```
 
 ![](topographie_files/figure-html/extract-all-2.png)
 
 ``` r
+
 plot(result$aspect, main = "Aspect")
 ```
 

@@ -13,6 +13,8 @@ gouvernementaux
   : Vérifier la disponibilité des données LiDAR
 - [`vider_cache_lidar()`](https://cedricbouffard.github.io/covariablechamps/reference/vider_cache_lidar.md)
   : Vider le cache LiDAR
+- [`detecter_utm_epsg()`](https://cedricbouffard.github.io/covariablechamps/reference/detecter_utm_epsg.md)
+  : Calculer l'orientation principale d'un champ
 
 ## Analyse du terrain
 
@@ -35,7 +37,7 @@ Fonctions pour analyser l’orientation des champs et calculer les
 distances aux bordures
 
 - [`calculer_orientation_champ()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_orientation_champ.md)
-  : Calculer l'orientation principale d'un champ
+  : Calculer l'orientation d'un champ
 - [`visualiser_orientation()`](https://cedricbouffard.github.io/covariablechamps/reference/visualiser_orientation.md)
   : Visualiser l'orientation d'un champ
 - [`calculer_distance_bordures_orientee()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_distance_bordures_orientee.md)
@@ -57,8 +59,9 @@ brise-vent
 - [`extraire_ligne_centrale_haies()`](https://cedricbouffard.github.io/covariablechamps/reference/extraire_ligne_centrale_haies.md)
   : Extraire la ligne centrale d'un rectangle de haie
 - [`calculer_zones_vent_spline()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_zones_vent_spline.md)
-  : Calculer les zones d'influence du vent sur les haies avec une forme
-  de demi-lune
+  : Calculer les zones de vent avec une spline pour chaque haie
+- [`fusionner_zones_vent()`](https://cedricbouffard.github.io/covariablechamps/reference/fusionner_zones_vent.md)
+  : Fusionner et disjoindre les zones de vent par facteur H
 - [`rasteriser_zones_gradient()`](https://cedricbouffard.github.io/covariablechamps/reference/rasteriser_zones_gradient.md)
   : Rasteriser les zones de vent avec le facteur H minimum par pixel
 - [`rasteriser_zones_gradient_v2()`](https://cedricbouffard.github.io/covariablechamps/reference/rasteriser_zones_gradient_v2.md)
@@ -71,18 +74,16 @@ Fonctions pour calculer les distances aux arbres et l’effet du vent
 
 - [`calculer_distance_arbres()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_distance_arbres.md)
   : Calculer la distance aux arbres avec buffer
-- [`calculer_distances_amont_aval()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_distances_amont_aval.md)
-  : Calculer les distances amont/aval avec buffer et lissage
+- [`calculer_distances_vent()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_distances_vent.md)
+  : Calculer les distances amont/aval avec lissage
 - [`visualiser_distance_arbres()`](https://cedricbouffard.github.io/covariablechamps/reference/visualiser_distance_arbres.md)
   : Visualiser la distance aux arbres
-- [`visualiser_distances_vent()`](https://cedricbouffard.github.io/covariablechamps/reference/visualiser_distances_vent.md)
-  : Visualiser les distances amont/aval
+- [`tracer_carte_vent()`](https://cedricbouffard.github.io/covariablechamps/reference/tracer_carte_vent.md)
+  : Visualiser les distances amont/aval avec les flèches de vent
 - [`simuler_vitesse_vent_simple()`](https://cedricbouffard.github.io/covariablechamps/reference/simuler_vitesse_vent_simple.md)
   : Simuler la vitesse du vent basée sur la distance simple aux arbres
-- [`simuler_vitesse_vent()`](https://cedricbouffard.github.io/covariablechamps/reference/simuler_vitesse_vent.md)
-  : Simuler la vitesse du vent
-- [`calculer_distances_vent()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_distances_vent.md)
-  : Calculer les distances aux arbres selon la direction du vent
+- [`simuler_vitesse_vent_fetch()`](https://cedricbouffard.github.io/covariablechamps/reference/simuler_vitesse_vent_fetch.md)
+  : Simuler la vitesse du vent avec effet de fetch
 - [`calculer_fetch_vent()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_fetch_vent.md)
   : Créer une carte de fetch de vent avec effet directionnel
   (elliptique)
@@ -121,6 +122,8 @@ Fonctions pour obtenir et visualiser les donnees de vent
   : Créer un graphique radar de la rose des vents
 - [`tracer_rose_vents_stacked()`](https://cedricbouffard.github.io/covariablechamps/reference/tracer_rose_vents_stacked.md)
   : Créer une rose des vents complète avec barres empilées
+- [`obtenir_vent_dominant()`](https://cedricbouffard.github.io/covariablechamps/reference/obtenir_vent_dominant.md)
+  : Obtenir la direction du vent dominant
 
 ## Pedologie et sols
 
@@ -128,6 +131,8 @@ Fonctions pour l’extraction et la desagregation des donnees pedologiques
 
 - [`proba_et_classement_serie_quota_ilr()`](https://cedricbouffard.github.io/covariablechamps/reference/proba_et_classement_serie_quota_ilr.md)
   : Calculer les probabilités et le classement des séries avec quota ILR
+- [`telecharger_pedologie_quebec()`](https://cedricbouffard.github.io/covariablechamps/reference/telecharger_pedologie_quebec.md)
+  : Télécharger et traiter les données pédologiques pour un champ
 
 ## Extraction complete
 

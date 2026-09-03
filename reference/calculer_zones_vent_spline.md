@@ -1,10 +1,7 @@
-# Calculer les zones d'influence du vent sur les haies avec une forme de demi-lune
+# Calculer les zones de vent avec une spline pour chaque haie
 
-A partir des rectangles de haies, calcule des zones de
-protection/d'influence en forme de demi-lune dans le sens du vent
-dominant. La forme part des deux extrémités de la haie et s'étend en
-courbe dans le sens du vent avec une distance H (multiple de la
-hauteur), créant une forme spline arrondie.
+Crée des zones de vent (demi-lunes) derrière chaque haie. Les zones sont
+construites par facteurs de la hauteur H de la haie (ex: 1H, 2H, ...).
 
 ## Usage
 
@@ -22,37 +19,37 @@ calculer_zones_vent_spline(
 
 - haies_rectangles:
 
-  Objet sf avec les rectangles des haies (résultat de
-  extraire_classifier_haies_lidar)
+  Objet sf avec les haies rectangulaires (colonnes: x_center, y_center,
+  hauteur_p95, etc.)
 
 - direction_vent:
 
-  Direction du vent dominant en degrés (0-360, 0 = Nord, 90 = Est, etc.)
+  Direction du vent en degrés (degrés géographiques, 0=Nord, 90=Est)
+  (défaut: 225)
 
 - facteur_hauteur:
 
-  Vecteur de multiplicateurs de la hauteur pour calculer les distances H
-  (ex: 1:40)
+  Vecteur des facteurs H à calculer (défaut: 1:40)
 
 - champ_centroid:
 
-  Point central du champ (sf POINT ou vecteur c(x, y)) pour déterminer
-  le sens de la protection
+  Centroïde du champ pour déterminer le sens de protection (aval/amont)
+  (défaut: NULL)
 
 - n_points:
 
-  Nombre de points pour la courbe spline (défaut: 50)
+  Nombre de points pour le spline de l'apex (défaut: 50)
 
 ## Value
 
-sf POLYGON avec les zones de protection pour tous les facteurs.
-Attributs: - cluster, n_arbres, hauteur_p95, largeur, longueur,
-angle_deg (de la haie) - facteur_h: le multiple de H utilisé pour cette
-zone (1, 2, 3, etc.) - direction_vent: direction utilisée - distance_H:
-distance H calculée pour ce facteur - orientation_protection: "amont" ou
-"aval" selon la position du champ
+Un objet sf avec les polygones des zones de vent. Attributs:
 
-## Details
+- cluster, n_arbres, hauteur_p95, largeur, longueur, angle_haie_deg
 
-Cette fonction permet de créer plusieurs couches de zones avec
-différents facteurs de hauteur (1H, 2H, 3H, etc. jusqu'à max_H).
+- facteur_h: multiple de la hauteur H pour cette zone
+
+- direction_vent: direction utilisée
+
+- distance_H: distance H calculée pour ce facteur
+
+- orientation_protection: "amont" ou "aval" selon la position du champ

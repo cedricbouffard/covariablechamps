@@ -3,9 +3,12 @@
 Cette fonction est utilisée avec le résultat de
 [`calculer_distance_arbres()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_distance_arbres.md).
 Pour les distances directionnelles (amont/aval), utilisez plutôt
-[`simuler_vitesse_vent()`](https://cedricbouffard.github.io/covariablechamps/reference/simuler_vitesse_vent.md)
+[`simuler_vitesse_vent_fetch()`](https://cedricbouffard.github.io/covariablechamps/reference/simuler_vitesse_vent_fetch.md)
 qui prend le résultat de
-[`calculer_distances_amont_aval()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_distances_amont_aval.md).
+[`calculer_fetch_vent()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_fetch_vent.md),
+ou
+[`calculer_distances_vent()`](https://cedricbouffard.github.io/covariablechamps/reference/calculer_distances_vent.md)
+pour les distances amont/aval brutes.
 
 ## Usage
 

@@ -1,6 +1,7 @@
 # Analyse Pédologique et Séries de Sols
 
 ``` r
+
 library(covariablechamps)
 library(sf)
 library(terra)
@@ -46,6 +47,7 @@ vous avez besoin de:
 Le package inclut un champ d’exemple (`M2`) situé au Québec.
 
 ``` r
+
 champ <- st_read(system.file("extdata", "M2.shp", package = "covariablechamps"))
 #> Reading layer `M2' from data source 
 #>   `/home/runner/work/_temp/Library/covariablechamps/extdata/M2.shp' 
@@ -73,6 +75,7 @@ réelles (polygones de séries de sols du gouvernement).
 ### Préparer les données
 
 ``` r
+
 # 1. Charger les polygones de sols (source: gouvernement du Québec)
 polygones_sols <- st_read("sols_poly.shp")
 
@@ -100,6 +103,7 @@ La table des séries doit contenir:
 Exemple:
 
 ``` r
+
 table_series <- data.frame(
   Code.polygone = 1:3,
   Composante = c("Soulange", "Kamouraska", "Saint-André"),
@@ -123,6 +127,23 @@ proportions de sable, limon et argile.
 | Sableuse                | 50-100 | 0-50   | 0-50   |
 | Franco-argilo-limoneuse | 20-45  | 30-50  | 30-45  |
 
+## Utilisation des données gouvernementales (Québec)
+
+Le package facilite l’accès aux données de la couverture pédologique du
+Québec via la fonction
+[`telecharger_pedologie_quebec()`](https://cedricbouffard.github.io/covariablechamps/reference/telecharger_pedologie_quebec.md).
+Elle utilise `vsicurl` pour ne télécharger que les données nécessaires à
+l’emprise de votre champ.
+
+``` r
+
+# Télécharger les polygones et préparer la table des séries
+donnees_sol <- telecharger_pedologie_quebec(champ)
+
+polygones_sols <- donnees_sol$polygones
+table_series <- donnees_sol$table_series
+```
+
 ## Calcul de la désagrégation
 
 La fonction
@@ -130,6 +151,7 @@ La fonction
 effectue la désagrégation:
 
 ``` r
+
 # Charger le MNT (via LiDAR)
 mnt <- telecharger_lidar(champ)
 
@@ -137,20 +159,8 @@ mnt <- telecharger_lidar(champ)
 resultat <- proba_et_classement_serie_quota_ilr(
   polygones_sf = polygones_sols,
   table_series = table_series,
-  mnt = mnt,
-  id_col = "Code.polygone",
-  serie_col = "Composante",
-  poids_col = "Pourcentage",
-  sable_col = "Sable",
-  limon_col = "Limon",
-  argile_col = "Argile"
+  mnt = mnt
 )
-
-# Visualiser les probabilités
-plot(resultat$prob)
-
-# Visualiser la classification finale
-plot(resultat$closest_label)
 ```
 
 ### Paramètres de la fonction

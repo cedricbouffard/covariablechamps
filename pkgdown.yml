@@ -1,5 +1,5 @@
-pandoc: 3.1.11
-pkgdown: 2.2.0
+pandoc: 3.8.3
+pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   covariables-terrain: covariables-terrain.html
@@ -10,7 +10,7 @@ articles:
   pedologie: pedologie.html
   topographie: topographie.html
   vent-meteo: vent-meteo.html
-last_built: 2026-04-18T12:15Z
+last_built: 2026-09-03T17:29Z
 urls:
   reference: https://cedricbouffard.github.io/covariablechamps/reference
   article: https://cedricbouffard.github.io/covariablechamps/articles

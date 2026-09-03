@@ -1,8 +1,8 @@
-# Calculer l'orientation principale d'un champ
+# Calculer l'orientation d'un champ
 
-Calcule l'orientation principale (azimut) d'un champ agricole à partir
-de sa géométrie. Utilise la bounding box orientée ou les moments
-d'inertie pour déterminer l'angle principal.
+Détermine l'orientation principale d'un polygone de champ selon la
+méthode du Minimum Bounding Rectangle (MBR) ou de l'analyse en
+composantes principales (PCA).
 
 ## Usage
 
@@ -19,17 +19,15 @@ calculer_orientation_champ(
 
 - polygone:
 
-  Un objet \`sf\` représentant le champ ou un chemin vers un fichier
-  vectoriel
+  Objet sf (polygone) ou chemin vers un fichier vectoriel
 
 - methode:
 
-  Méthode de calcul: "mbr" (Minimum Bounding Rectangle, défaut) ou "pca"
-  (analyse en composantes principales)
+  Méthode de calcul: "mbr" (défaut) ou "pca"
 
 - unite:
 
-  Unité de sortie: "degres" (défaut) ou "radians"
+  Unité de l'angle: "degres" (défaut) ou "radians"
 
 - orientation:
 
@@ -40,29 +38,24 @@ calculer_orientation_champ(
 
 Une liste contenant:
 
-- angle:
+- angle: L'angle principal en degrés ou radians
 
-  L'angle principal en degrés ou radians
+- angle_perpendiculaire: L'angle perpendiculaire (±90°)
 
-- angle_perpendiculaire:
+- longueur: La longueur selon l'axe principal
 
-  L'angle perpendiculaire (±90°)
+- largeur: La largeur selon l'axe perpendiculaire
 
-- longueur:
+- rapport_aspect: Le rapport longueur/largeur
 
-  La longueur selon l'axe principal
+- geometry: La géométrie de la bounding box orientée
 
-- largeur:
+## Details
 
-  La largeur selon l'axe perpendiculaire
-
-- rapport_aspect:
-
-  Le rapport longueur/largeur
-
-- geometry:
-
-  La géométrie de la bounding box orientée
+Le polygone est projeté en UTM (zone détectée automatiquement) pour
+garantir des angles conformes et des dimensions métriques. Si le
+polygone n'a pas de CRS, les coordonnées sont traitées comme des
+coordonnées planaires locales.
 
 ## Examples
 

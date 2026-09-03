@@ -23,6 +23,7 @@ aux bordures en distinguant:
 ## Installation et chargement
 
 ``` r
+
 library(covariablechamps)
 library(sf)
 library(terra)
@@ -34,6 +35,7 @@ library(ggplot2)
 ### Créer ou charger un champ
 
 ``` r
+
 # Charger un champ depuis un fichier
 champ <- st_read("chemin/vers/champ.shp")
 
@@ -70,6 +72,7 @@ champ <- st_sf(
 Avant de calculer les distances, voyons l’orientation détectée:
 
 ``` r
+
 orientation <- calculer_orientation_champ(champ, methode = "mbr")
 
 cat("Angle principal:", round(orientation$angle, 1), "degrés\n")
@@ -85,6 +88,7 @@ visualiser_orientation(champ, orientation)
 ### Calculer les distances aux bordures
 
 ``` r
+
 # Calculer les distances avec une résolution de 2m
 dist_bordures <- calculer_distance_bordures_orientee(
   champ_poly = champ,
@@ -102,6 +106,7 @@ cat("- distance_min:", terra::ncell(dist_bordures$distance_min), "cellules\n")
 ### Visualiser les distances
 
 ``` r
+
 # Visualiser les trois distances
 plots <- visualiser_distances_bordures(dist_bordures, type = "comparaison")
 
@@ -133,6 +138,7 @@ Pour faciliter l’analyse, vous pouvez classifier les distances en
 catégories:
 
 ``` r
+
 # Classification avec les seuils par défaut
 classes <- classifier_distances_bordures(dist_bordures)
 
@@ -145,6 +151,7 @@ head(classes$table_classes)
 Adaptez les seuils à votre contexte:
 
 ``` r
+
 # Pour un petit champ avec haies brise-vent
 classes_haie <- classifier_distances_bordures(
   dist_bordures,
@@ -164,6 +171,7 @@ visualiser_classes_bordures(classes_haie, type = "large")
 La classe combinée encode les deux dimensions:
 
 ``` r
+
 # La classe combinée = (classe_long × 10) + classe_large
 # Exemple: code 23 = classe 2 en long, classe 3 en large
 
@@ -180,6 +188,7 @@ Vous pouvez aussi calculer les distances pour des points spécifiques
 plutôt que pour tout le raster:
 
 ``` r
+
 # Créer des points d'échantillonnage
 points_echantillon <- st_sample(champ, size = 50, type = "regular")
 points_echantillon <- st_as_sf(points_echantillon)
@@ -200,6 +209,7 @@ head(dist_points$points[, c("id", "distance_long", "distance_large", "distance_m
 ### Avec les données de haies
 
 ``` r
+
 # Si vous avez extrait les haies avec extraire_classifier_haies_lidar()
 # Vous pouvez combiner les analyses
 
@@ -217,6 +227,7 @@ dist_bordures <- calculer_distance_bordures_orientee(champ_poly = champ)
 ### Export des résultats
 
 ``` r
+
 # Sauvegarder les rasters
 terra::writeRaster(dist_bordures$distance_long, "output/distance_long.tif", overwrite = TRUE)
 terra::writeRaster(dist_bordures$distance_large, "output/distance_large.tif", overwrite = TRUE)
@@ -249,10 +260,10 @@ pour tester, puis affinez.
 
 Les seuils par défaut sont:
 
-| Direction | Seuils (m)      | Signification                                          |
-|-----------|-----------------|--------------------------------------------------------|
-| Long      | 10, 25, 50, 100 | Zone de bordure, proche, intermédiaire, éloigné        |
-| Large     | 5, 15, 30, 50   | Zone de bordure, influence directe, transition, centre |
+| Direction | Seuils (m) | Signification |
+|----|----|----|
+| Long | 10, 25, 50, 100 | Zone de bordure, proche, intermédiaire, éloigné |
+| Large | 5, 15, 30, 50 | Zone de bordure, influence directe, transition, centre |
 
 Adaptez selon:
 
@@ -268,6 +279,7 @@ distance précis. Les CRS géographiques (lat/lon) donneront des résultats
 incorrects.
 
 ``` r
+
 # Vérifier le CRS
 st_crs(champ)
 

@@ -1,6 +1,7 @@
 # Detection et analyse des haies brise-vent
 
 ``` r
+
 library(covariablechamps)
 library(sf)
 library(terra)
@@ -19,6 +20,7 @@ partir des données LiDAR.
 Le package inclut un champ d’exemple (`M2`) situé au Québec.
 
 ``` r
+
 champ <- st_read(system.file("extdata", "M2.shp", package = "covariablechamps"))
 #> Reading layer `M2' from data source 
 #>   `/home/runner/work/_temp/Library/covariablechamps/extdata/M2.shp' 
@@ -49,6 +51,7 @@ nuage de points LiDAR.
 être téléchargées. Elle n’est pas exécutée dans cet article.
 
 ``` r
+
 # 1. Télécharger les données LiDAR ponctuelles
 lidar <- telecharger_lidar_ponctuel(champ)
 
@@ -99,6 +102,7 @@ Pour les analyses de distance au vent, vous pouvez extraire les lignes
 centrales des haies:
 
 ``` r
+
 # Extraire les lignes centrales des haies
 lignes_haies <- extraire_ligne_centrale_haies(resultat$haies_rectangles)
 
@@ -113,6 +117,7 @@ Une fois les haies détectées, vous pouvez calculer les zones de
 protection:
 
 ``` r
+
 # Définir la direction du vent (degrés, 0 = Nord, 90 = Est)
 direction_vent <- 270  # Vent d'ouest
 
@@ -138,6 +143,7 @@ plot(st_geometry(lignes_haies), add = TRUE, col = "black", lwd = 2)
 Pour une analyse plus fine de l’effet du vent:
 
 ``` r
+
 # Distance simple aux arbres
 dist_arbres <- calculer_distance_arbres(
   arbres_sf = arbres,
@@ -164,6 +170,7 @@ visualiser_distance_arbres(dist_arbres, type = "buffer")
 ## Workflow complet
 
 ``` r
+
 library(covariablechamps)
 library(sf)
 library(terra)

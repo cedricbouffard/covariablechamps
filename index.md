@@ -51,6 +51,7 @@ sources de données (LiDAR, pédologiques, etc.).
 Installez d’abord le package `rgeomorphon` depuis GitHub:
 
 ``` r
+
 if (!requireNamespace("remotes", quietly = TRUE)) {
   install.packages("remotes")
 }
@@ -60,6 +61,7 @@ remotes::install_github("brownag/rgeomorphon")
 ### Installation
 
 ``` r
+
 # Installer depuis GitHub
 remotes::install_github("cedricbouffard/covariablechamps")
 ```
@@ -67,6 +69,7 @@ remotes::install_github("cedricbouffard/covariablechamps")
 ## Utilisation rapide
 
 ``` r
+
 library(covariablechamps)
 
 # Charger votre champ
@@ -84,6 +87,7 @@ plot(covariables$geomorphons, main = "Géomorphons")
 ### Calculer l’ombrage d’une parcelle
 
 ``` r
+
 library(covariablechamps)
 
 # Charger votre champ
@@ -128,6 +132,7 @@ calculer_ombrage_visualisation(resultats, titre = "Ombrage du 21 juin 2024")
 ### Calculer l’ombrage sur une période
 
 ``` r
+
 # Calculer sur un mois complet (moyenne des heures d'ensoleillement)
 resultats_mois <- calculer_ombrage_periode(
   polygone = champ,

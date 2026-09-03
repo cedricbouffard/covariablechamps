@@ -1,6 +1,7 @@
 # Calcul de l'ombrage des parcelles
 
 ``` r
+
 library(covariablechamps)
 library(sf)
 library(terra)
@@ -30,6 +31,7 @@ Le calcul de l’ombrage repose sur:
 Le package inclut un champ d’exemple (`M2`) situé au Québec.
 
 ``` r
+
 champ <- st_read(system.file("extdata", "M2.shp", package = "covariablechamps"))
 #> Reading layer `M2' from data source 
 #>   `/home/runner/work/_temp/Library/covariablechamps/extdata/M2.shp' 
@@ -48,6 +50,7 @@ Le MNE inclut les arbres et permet de calculer les ombres projetées.
 **Note**: Le téléchargement peut prendre quelques minutes.
 
 ``` r
+
 # Télécharger le MNE (avec arbres)
 mne <- telecharger_lidar(
   polygone = champ,
@@ -66,6 +69,7 @@ plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 Le MNT est le terrain sans les arbres (sol nu).
 
 ``` r
+
 mnt <- telecharger_lidar(
   polygone = champ,
   mne = FALSE
@@ -83,6 +87,7 @@ plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 Pour calculer l’ombrage à une date donnée:
 
 ``` r
+
 ombrage <- calculer_ombrage(
   polygone = champ,
   date = "2024-06-21",
@@ -107,6 +112,7 @@ plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 Le nombre d’heures d’ensoleillement par pixel:
 
 ``` r
+
 plot(ombrage$heures_ensoleillement, 
      main = "Heures d'ensoleillement (21 juin 2024)",
      col = hcl.colors(100, "YlOrRd"))
@@ -120,6 +126,7 @@ plot(sf::st_geometry(champ), add = TRUE, border = "black", lwd = 2)
 L’ombrage varie considérablement selon la saison:
 
 ``` r
+
 # Été
 ombrage_ete <- calculer_ombrage(
   polygone = champ,
@@ -154,6 +161,7 @@ La fonction
 calcule l’ombrage moyen sur une période:
 
 ``` r
+
 resultat <- calculer_ombrage_periode(
   polygone = champ,
   date_debut = "2024-06-01",

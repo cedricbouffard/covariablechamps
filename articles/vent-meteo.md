@@ -1,6 +1,7 @@
 # Analyse du Vent et Données Météorologiques
 
 ``` r
+
 library(covariablechamps)
 library(sf)
 library(terra)
@@ -23,6 +24,7 @@ visualiser les données de vent depuis **NASA POWER**.
 Le package inclut un champ d’exemple (`M2`) situé au Québec.
 
 ``` r
+
 champ <- st_read(system.file("extdata", "M2.shp", package = "covariablechamps"))
 #> Reading layer `M2' from data source 
 #>   `/home/runner/work/_temp/Library/covariablechamps/extdata/M2.shp' 
@@ -51,6 +53,7 @@ récupère les données de rose des vents depuis l’API NASA POWER.
 **Note**: Nécessite une connexion internet.
 
 ``` r
+
 rose <- obtenir_rose_vents(
   polygone = champ,
   date_debut = "20230101",
@@ -69,6 +72,7 @@ cat("Directions analysées:", length(rose$directions), "\n")
 ### Rose des vents (fréquence)
 
 ``` r
+
 tracer_rose_vents(rose, type = "pct")
 ```
 
@@ -77,6 +81,7 @@ tracer_rose_vents(rose, type = "pct")
 ### Rose des vents (vitesse moyenne)
 
 ``` r
+
 tracer_rose_vents(rose, type = "avg")
 ```
 
@@ -85,6 +90,7 @@ tracer_rose_vents(rose, type = "avg")
 ## Direction dominante
 
 ``` r
+
 direction_dom <- rose$directions[which.max(rose$wd_pct)]
 freq_max <- max(rose$wd_pct, na.rm = TRUE)
 
@@ -108,6 +114,7 @@ cat("  270° = Ouest\n")
 ## Distribution des directions
 
 ``` r
+
 df_rose <- data.frame(
   direction = rose$directions,
   frequence = rose$wd_pct
@@ -141,6 +148,7 @@ ggplot(df_rose, aes(x = direction, y = frequence, fill = direction_cardinale)) +
 ## Comparaison saisonnière
 
 ``` r
+
 # Hiver (décembre-février)
 rose_hiver <- obtenir_rose_vents(
   polygone = champ,

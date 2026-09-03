@@ -1,6 +1,6 @@
-# Calculer les distances aux arbres selon la direction du vent
+# Calculer les distances amont/aval avec lissage
 
-Calculer les distances aux arbres selon la direction du vent
+Calculer les distances amont/aval avec lissage
 
 ## Usage
 
@@ -10,8 +10,10 @@ calculer_distances_vent(
   angle_vent,
   champ_bbox,
   resolution = 2,
-  max_distance = 100,
-  ouverture_angulaire = 45
+  buffer_arbre = 3,
+  angle_focal = 45,
+  max_distance = 200,
+  taille_lissage = 7
 )
 ```
 
@@ -19,11 +21,11 @@ calculer_distances_vent(
 
 - arbres_sf:
 
-  Objet sf POINT
+  Objet sf POINT avec les arbres
 
 - angle_vent:
 
-  Angle du vent en degrés (0-360)
+  Angle du vent en degrés (0=Nord, 90=Est)
 
 - champ_bbox:
 
@@ -33,14 +35,22 @@ calculer_distances_vent(
 
   Résolution du raster en mètres
 
+- buffer_arbre:
+
+  Rayon du buffer autour des arbres (m)
+
+- angle_focal:
+
+  Angle focal en degrés
+
 - max_distance:
 
-  Distance maximale à calculer
+  Distance maximale
 
-- ouverture_angulaire:
+- taille_lissage:
 
-  Angle d'ouverture en degrés
+  Taille de la fenêtre de lissage (cellules)
 
 ## Value
 
-Liste avec les distances
+Liste avec les rasters amont et aval
