@@ -4,7 +4,7 @@
 
 ### Module Terrain
 
-- `telecharger_lidar()`: Télécharge les données LiDAR (MNT ou MNE) depuis le DataCube du Canada pour une zone d'intérêt donnée.
+- `telecharger_lidar()`: Télécharge les données LiDAR (MNT ou MNE) depuis le DataCube du Canada pour une zone d'intérêt donnée. Nouveau paramètre `toutes = TRUE` pour télécharger toutes les années disponibles dans une liste nommée par année.
 - `verifier_disponibilite_lidar()`: Vérifie les années de couverture LiDAR disponibles pour une zone.
 - `calculer_pente()`: Calcule la pente en degrés à partir d'un MNT.
 - `calculer_aspect()`: Calcule l'aspect (orientation) en degrés à partir d'un MNT.

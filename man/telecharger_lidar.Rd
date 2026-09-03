@@ -10,7 +10,8 @@ telecharger_lidar(
   mne = FALSE,
   recent = TRUE,
   epsg = 4326,
-  annee = NULL
+  annee = NULL,
+  toutes = FALSE
 )
 }
 \arguments{
@@ -20,14 +21,16 @@ telecharger_lidar(
 
 \item{mne}{Logique. Si TRUE, télécharge le MNE (modèle de surface). Sinon, le MNT (modèle de terrain).}
 
-\item{recent}{Logique. Si TRUE (par défaut), conserve uniquement la version la plus récente. Ignoré si `annee` est fourni.}
+\item{recent}{Logique. Si TRUE (par défaut), conserve uniquement la version la plus récente. Ignoré si `annee` est fourni ou si `toutes = TRUE`.}
 
 \item{epsg}{Code EPSG pour la projection de sortie (défaut: 4326 - WGS84)}
 
-\item{annee}{Optionnel. Année spécifique à télécharger (ex: 2018). Si fourni, ignore le paramètre `recent`.}
+\item{annee}{Optionnel. Année spécifique à télécharger (ex: 2018). Si fourni, ignore les paramètres `recent` et `toutes`.}
+
+\item{toutes}{Logique. Si TRUE, télécharge toutes les années disponibles et retourne une liste nommée par année (ex: `mnt_2018`, `mnt_2021`). Défaut: FALSE.}
 }
 \value{
-Un objet `SpatRaster` contenant le MNT ou MNE recadré
+Un objet `SpatRaster` contenant le MNT ou MNE recadré, ou une liste de `SpatRaster` (une par année) si `toutes = TRUE`.
 }
 \description{
 Cette fonction interroge l'API STAC de RNCan pour télécharger les données LiDAR (MNE ou MNT)
@@ -42,6 +45,9 @@ mnt <- telecharger_lidar(champ)
 
 # Télécharger une année spécifique
 mnt_2018 <- telecharger_lidar(champ, annee = 2018)
+
+# Télécharger toutes les années disponibles dans une liste
+mnts <- telecharger_lidar(champ, toutes = TRUE)
 
 # Télécharger le MNE
 mne <- telecharger_lidar(champ, mne = TRUE)

@@ -7,11 +7,12 @@
 #' @param polygone Un objet `sf` représentant la zone d'intérêt ou un chemin vers un fichier vectoriel (`.shp`, `.gpkg`, etc.)
 #' @param dossier Dossier de sortie pour enregistrer les fichiers raster (optionnel)
 #' @param mne Logique. Si TRUE, télécharge le MNE (modèle de surface). Sinon, le MNT (modèle de terrain).
-#' @param recent Logique. Si TRUE (par défaut), conserve uniquement la version la plus récente. Ignoré si `annee` est fourni.
+#' @param recent Logique. Si TRUE (par défaut), conserve uniquement la version la plus récente. Ignoré si `annee` est fourni ou si `toutes = TRUE`.
 #' @param epsg Code EPSG pour la projection de sortie (défaut: 4326 - WGS84)
-#' @param annee Optionnel. Année spécifique à télécharger (ex: 2018). Si fourni, ignore le paramètre `recent`.
+#' @param annee Optionnel. Année spécifique à télécharger (ex: 2018). Si fourni, ignore les paramètres `recent` et `toutes`.
+#' @param toutes Logique. Si TRUE, télécharge toutes les années disponibles et retourne une liste nommée par année (ex: `mnt_2018`, `mnt_2021`). Défaut: FALSE.
 #'
-#' @return Un objet `SpatRaster` contenant le MNT ou MNE recadré
+#' @return Un objet `SpatRaster` contenant le MNT ou MNE recadré, ou une liste de `SpatRaster` (une par année) si `toutes = TRUE`.
 #' @export
 #'
 #' @examples
@@ -23,6 +24,9 @@
 #' # Télécharger une année spécifique
 #' mnt_2018 <- telecharger_lidar(champ, annee = 2018)
 #'
+#' # Télécharger toutes les années disponibles dans une liste
+#' mnts <- telecharger_lidar(champ, toutes = TRUE)
+#'
 #' # Télécharger le MNE
 #' mne <- telecharger_lidar(champ, mne = TRUE)
 #' }
@@ -32,7 +36,7 @@
 #' @importFrom lubridate as_datetime year
 #' @importFrom terra rast crop mask writeRaster varnames vect crs ext project
 #' @importFrom methods is
-telecharger_lidar <- function(polygone, dossier = NULL, mne = FALSE, recent = TRUE, epsg = 4326, annee = NULL) {
+telecharger_lidar <- function(polygone, dossier = NULL, mne = FALSE, recent = TRUE, epsg = 4326, annee = NULL, toutes = FALSE) {
   
   # Lire le polygone si c'est un chemin de fichier
   if (is.character(polygone)) {
@@ -104,137 +108,168 @@ telecharger_lidar <- function(polygone, dossier = NULL, mne = FALSE, recent = TR
   }
   
   # Organiser les URLs par année
+  annees_disponibles <- sort(unique(annees), decreasing = TRUE)
+
   if (!is.null(annee)) {
     if (!(annee %in% annees)) {
-      stop("L'année ", annee, " n'est pas disponible pour cette zone. Années disponibles: ", 
-           paste(sort(unique(annees)), collapse = ", "))
+      stop("L'année ", annee, " n'est pas disponible pour cette zone. Années disponibles: ",
+           paste(annees_disponibles, collapse = ", "))
     }
-    annees_uniques <- annee
+    annees_a_telecharger <- annee
+  } else if (toutes) {
+    annees_a_telecharger <- annees_disponibles
   } else {
-    annees_uniques <- sort(unique(annees), decreasing = recent)
+    annees_a_telecharger <- sort(unique(annees), decreasing = recent)
   }
-  
-  message("\nAnnées disponibles: ", paste(sort(unique(annees), decreasing = TRUE), collapse = ", "))
+
+  message("\nAnnées disponibles: ", paste(annees_disponibles, collapse = ", "))
   if (!is.null(annee)) {
     message("Année demandée: ", annee)
+  } else if (toutes) {
+    message("Téléchargement de toutes les années disponibles (", length(annees_a_telecharger), " année(s))")
   }
-  
-  # Essayer chaque année
-  r <- NULL
-  annee_selectionnee <- NULL
-  
-  for (annee_courante in annees_uniques) {
+
+  # Essayer chaque année et collecter les résultats
+  resultats <- list()
+
+  for (annee_courante in annees_a_telecharger) {
     message("\n", paste(rep("=", 60), collapse = ""))
     message("Test des données de l'année ", annee_courante)
     message(paste(rep("=", 60), collapse = ""))
-    
+
     # Filtrer les URLs pour cette année
     urls_annee <- urls[annees == annee_courante]
     message("Nombre de tuiles pour ", annee_courante, ": ", length(urls_annee))
-    
+
     # Afficher les URLs
     for (i in seq_along(urls_annee)) {
       message("  ", i, ": ", basename(urls_annee[i]))
     }
-    
-    # Essayer chaque tuile de cette année
-    for (i in seq_along(urls_annee)) {
-      url <- urls_annee[i]
-      message("\n  Essai tuile ", i, "/", length(urls_annee), ": ", basename(url))
-      
-      r_temp <- try(terra::rast(url, vsi = TRUE), silent = TRUE)
-      
-      if (inherits(r_temp, "try-error")) {
-        message("    ✗ Impossible de charger")
-        next
-      }
-      
-      # Transformer le polygone dans le CRS de cette tuile
-      polygone_test <- sf::st_transform(polygone_wgs84, terra::crs(r_temp))
-      bbox_poly_test <- sf::st_bbox(polygone_test)
-      bbox_r_test <- terra::ext(r_temp)
-      
-      # Vérifier si le polygone est dans cette tuile
-      if (bbox_poly_test[1] > bbox_r_test[2] || bbox_poly_test[3] < bbox_r_test[1] ||
-          bbox_poly_test[2] > bbox_r_test[4] || bbox_poly_test[4] < bbox_r_test[3]) {
-        message("    ✗ Polygone hors tuile")
-        next
-      }
-      
-      # Tester un crop sur une petite zone au centre du polygone
-      centroid_test <- sf::st_coordinates(sf::st_centroid(polygone_test))
-      x <- centroid_test[1]
-      y <- centroid_test[2]
-      test_ext <- terra::ext(x-10, x+10, y-10, y+10)
-      
-      r_test <- try(terra::crop(r_temp, test_ext), silent = TRUE)
-      if (!inherits(r_test, "try-error")) {
-        vals_test <- terra::values(r_test)
-        nb_na_test <- sum(!is.na(vals_test))
-        message("    Test zone 20x20m: ", nb_na_test, " pixels non-NA")
-        
-        if (nb_na_test > 0) {
-          message("    ✓✓✓ Données valides trouvées!")
-          r <- r_temp
-          annee_selectionnee <- annee_courante
-          break
-        }
-      }
-      
-      message("    ✗ Pas de données valides")
+
+    r <- .trouver_tuile_lidar(urls_annee, polygone_wgs84)
+
+    if (is.null(r)) {
+      message("\n  Aucune tuile valide pour l'année ", annee_courante, ", passage à l'année suivante...")
+      next
     }
-    
-    # Si on a trouvé une tuile valide, arrêter de chercher
-    if (!is.null(r)) {
+
+    r_crop <- .recadrer_lidar(r, annee_courante, polygone_wgs84, mne, epsg, crs_sortie, dossier)
+    if (is.null(r_crop)) {
+      next
+    }
+
+    resultats[[paste0(ifelse(mne, "mne_", "mnt_"), annee_courante)]] <- r_crop
+
+    # Arrêter après la première année valide si on n'en veut qu'une seule
+    if (!toutes) {
       break
     }
-    
-    message("\n  Aucune tuile valide pour l'année ", annee_courante, ", passage à l'année suivante...")
   }
-  
-  if (is.null(r)) {
+
+  if (length(resultats) == 0) {
     warning("\nAucune tuile de aucune année n'a pu être chargée avec des données valides.")
     return(NULL)
   }
-  
-  message("\n" , paste(rep("=", 60), collapse = ""))
+
+  if (toutes && is.null(annee)) {
+    message("\n", paste(rep("=", 60), collapse = ""))
+    message("✓✓✓ ", length(resultats), " année(s) téléchargée(s): ", paste(names(resultats), collapse = ", "), " ✓✓✓")
+    message(paste(rep("=", 60), collapse = ""))
+    return(resultats)
+  }
+
+  return(resultats[[1]])
+}
+
+# Trouver une tuile valide pour une année donnée
+.trouver_tuile_lidar <- function(urls_annee, polygone_wgs84) {
+  for (i in seq_along(urls_annee)) {
+    url <- urls_annee[i]
+    message("\n  Essai tuile ", i, "/", length(urls_annee), ": ", basename(url))
+
+    r_temp <- try(terra::rast(url, vsi = TRUE), silent = TRUE)
+
+    if (inherits(r_temp, "try-error")) {
+      message("    ✗ Impossible de charger")
+      next
+    }
+
+    # Transformer le polygone dans le CRS de cette tuile
+    polygone_test <- sf::st_transform(polygone_wgs84, terra::crs(r_temp))
+    bbox_poly_test <- sf::st_bbox(polygone_test)
+    bbox_r_test <- terra::ext(r_temp)
+
+    # Vérifier si le polygone est dans cette tuile
+    if (bbox_poly_test[1] > bbox_r_test[2] || bbox_poly_test[3] < bbox_r_test[1] ||
+        bbox_poly_test[2] > bbox_r_test[4] || bbox_poly_test[4] < bbox_r_test[3]) {
+      message("    ✗ Polygone hors tuile")
+      next
+    }
+
+    # Tester un crop sur une petite zone au centre du polygone
+    centroid_test <- sf::st_coordinates(sf::st_centroid(polygone_test))
+    x <- centroid_test[1]
+    y <- centroid_test[2]
+    test_ext <- terra::ext(x - 10, x + 10, y - 10, y + 10)
+
+    r_test <- try(terra::crop(r_temp, test_ext), silent = TRUE)
+    if (!inherits(r_test, "try-error")) {
+      vals_test <- terra::values(r_test)
+      nb_na_test <- sum(!is.na(vals_test))
+      message("    Test zone 20x20m: ", nb_na_test, " pixels non-NA")
+
+      if (nb_na_test > 0) {
+        message("    ✓✓✓ Données valides trouvées!")
+        return(r_temp)
+      }
+    }
+
+    message("    ✗ Pas de données valides")
+  }
+
+  NULL
+}
+
+# Recadrer un raster LiDAR valide à la zone d'intérêt
+.recadrer_lidar <- function(r, annee_selectionnee, polygone_wgs84, mne, epsg, crs_sortie, dossier) {
+  message("\n", paste(rep("=", 60), collapse = ""))
   message("✓✓✓ Année ", annee_selectionnee, " sélectionnée avec succès ✓✓✓")
   message(paste(rep("=", 60), collapse = ""))
-  
-  message("\n" , paste(rep("=", 50), collapse = ""))
+
+  message("\n", paste(rep("=", 50), collapse = ""))
   message("Tuile sélectionnée avec succès")
   message(paste(rep("=", 50), collapse = ""))
   message("Dimensions: ", terra::nrow(r), " x ", terra::ncol(r), " pixels")
   message("Résolution: ", paste(round(terra::res(r), 4), collapse = " x "), " m")
   message("CRS: ", terra::crs(r, describe = TRUE)$name)
   message("Extent: ", paste(round(terra::ext(r)[], 2), collapse = ", "))
-  
+
   # Transformer le polygone dans le CRS du raster
   message("\nTransformation du polygone dans le CRS du raster...")
   crs_raster <- terra::crs(r)
   message("CRS cible: ", substr(crs_raster, 1, 100), "...")
-  
+
   polygone_raster <- sf::st_transform(polygone_wgs84, crs_raster)
-  
+
   # Afficher les coordonnées du polygone dans les deux CRS
   centroid_wgs84 <- sf::st_centroid(polygone_wgs84)
   coords_wgs84 <- sf::st_coordinates(centroid_wgs84)
   message("Centroïde du polygone (WGS84): ", round(coords_wgs84[1], 6), ", ", round(coords_wgs84[2], 6))
-  
+
   centroid_raster <- sf::st_centroid(polygone_raster)
   coords_raster <- sf::st_coordinates(centroid_raster)
   message("Centroïde du polygone (CRS raster): ", round(coords_raster[1], 2), ", ", round(coords_raster[2], 2))
-  
+
   # Vérifier que le polygone est dans l'étendue du raster
   bbox_poly_r <- sf::st_bbox(polygone_raster)
   bbox_r <- terra::ext(r)
   message("\nBBox polygone (CRS raster): ", paste(round(bbox_poly_r, 2), collapse = ", "))
-  message("  Format sf: xmin=", bbox_poly_r[1], ", ymin=", bbox_poly_r[2], 
+  message("  Format sf: xmin=", bbox_poly_r[1], ", ymin=", bbox_poly_r[2],
           ", xmax=", bbox_poly_r[3], ", ymax=", bbox_poly_r[4])
   message("BBox raster: ", paste(round(bbox_r[], 2), collapse = ", "))
-  message("  Format terra: xmin=", bbox_r[1], ", xmax=", bbox_r[2], 
+  message("  Format terra: xmin=", bbox_r[1], ", xmax=", bbox_r[2],
           ", ymin=", bbox_r[3], ", ymax=", bbox_r[4])
-  
+
   # Vérifier l'intersection
   # bbox_poly_r (sf): [1]=xmin, [2]=ymin, [3]=xmax, [4]=ymax
   # bbox_r (terra): [1]=xmin, [2]=xmax, [3]=ymin, [4]=ymax
@@ -242,46 +277,46 @@ telecharger_lidar <- function(polygone, dossier = NULL, mne = FALSE, recent = TR
   poly_ymin <- bbox_poly_r[2]
   poly_xmax <- bbox_poly_r[3]
   poly_ymax <- bbox_poly_r[4]
-  
+
   rast_xmin <- bbox_r[1]
   rast_xmax <- bbox_r[2]
   rast_ymin <- bbox_r[3]
   rast_ymax <- bbox_r[4]
-  
+
   message("\nVérification de l'intersection:")
-  message("  Poly X [", round(poly_xmin, 0), ", ", round(poly_xmax, 0), "] dans Raster X [", 
+  message("  Poly X [", round(poly_xmin, 0), ", ", round(poly_xmax, 0), "] dans Raster X [",
           round(rast_xmin, 0), ", ", round(rast_xmax, 0), "] ?")
-  message("  Poly Y [", round(poly_ymin, 0), ", ", round(poly_ymax, 0), "] dans Raster Y [", 
+  message("  Poly Y [", round(poly_ymin, 0), ", ", round(poly_ymax, 0), "] dans Raster Y [",
           round(rast_ymin, 0), ", ", round(rast_ymax, 0), "] ?")
-  
+
   # Vérifier si le polygone est entièrement hors du raster
   if (poly_xmin > rast_xmax || poly_xmax < rast_xmin ||
       poly_ymin > rast_ymax || poly_ymax < rast_ymin) {
     warning("\nLe polygone est en dehors de l'étendue du raster!")
     return(NULL)
   }
-  
+
   message("  ✓ Le polygone est dans l'étendue du raster")
-  
+
   # Recadrer le raster
   message("\nRecadrage du raster...")
   polygone_vect <- terra::vect(polygone_raster)
-  
+
   # Utiliser crop avec mask=FALSE d'abord
   r_crop <- terra::crop(r, polygone_vect, snap = "out")
   message("Raster recadré: ", terra::ncol(r_crop), " x ", terra::nrow(r_crop), " pixels")
-  
+
   # Vérifier les valeurs après crop
   vals_crop <- terra::values(r_crop)
   nb_non_na <- sum(!is.na(vals_crop))
   message("Pixels non-NA après crop: ", nb_non_na, " sur ", length(vals_crop))
-  
+
   if (nb_non_na == 0) {
     warning("Toutes les valeurs sont NA après crop. Test avec une petite zone...")
     # Essayer de lire une petite zone autour du centroïde
     x <- coords_raster[1]
     y <- coords_raster[2]
-    small_ext <- terra::ext(x-50, x+50, y-50, y+50)
+    small_ext <- terra::ext(x - 50, x + 50, y - 50, y + 50)
     r_test <- terra::crop(r, small_ext)
     vals_test <- terra::values(r_test)
     message("Test avec zone 100x100m au centre: ", sum(!is.na(vals_test)), " pixels non-NA")
@@ -289,7 +324,7 @@ telecharger_lidar <- function(polygone, dossier = NULL, mne = FALSE, recent = TR
       message("Valeurs dans la zone test: ", paste(head(vals_test[!is.na(vals_test)], 5), collapse = ", "))
     }
   }
-  
+
   # Appliquer le masque
   if (nb_non_na > 0) {
     r_crop <- terra::mask(r_crop, polygone_vect)
@@ -297,32 +332,32 @@ telecharger_lidar <- function(polygone, dossier = NULL, mne = FALSE, recent = TR
     nb_non_na_mask <- sum(!is.na(vals_mask))
     message("Pixels non-NA après mask: ", nb_non_na_mask)
   }
-  
+
   # Transformer dans le CRS demandé si nécessaire
   if (!is.na(epsg) && epsg != crs_sortie) {
     message("\nReprojection vers EPSG:", epsg, "...")
     r_crop <- terra::project(r_crop, paste0("EPSG:", epsg))
   }
-  
+
   # Nommer le raster avec l'année
   names(r_crop) <- ifelse(mne, "MNE", "MNT")
   terra::varnames(r_crop) <- paste0(ifelse(mne, "mne_", "mnt_"), annee_selectionnee)
-  
+
   # Vérifier les valeurs finales
   vals <- terra::values(r_crop)
   nb_non_na_final <- sum(!is.na(vals))
   message("\n=== RÉSULTAT FINAL ===")
   message("Nombre de pixels non-NA: ", nb_non_na_final, " sur ", length(vals))
-  
+
   if (nb_non_na_final == 0) {
     warning("Toutes les valeurs sont NA après traitement!")
   } else {
     vals_non_na <- vals[!is.na(vals)]
-    message("Statistiques altitudes: min=", round(min(vals_non_na), 2), 
-            " max=", round(max(vals_non_na), 2), 
+    message("Statistiques altitudes: min=", round(min(vals_non_na), 2),
+            " max=", round(max(vals_non_na), 2),
             " moy=", round(mean(vals_non_na), 2))
   }
-  
+
   # Sauvegarder si un dossier est spécifié
   if (!is.null(dossier)) {
     fichier_sortie <- file.path(
@@ -332,6 +367,6 @@ telecharger_lidar <- function(polygone, dossier = NULL, mne = FALSE, recent = TR
     terra::writeRaster(r_crop, fichier_sortie, overwrite = TRUE)
     message("\nRaster sauvegardé: ", fichier_sortie)
   }
-  
-  return(r_crop)
+
+  r_crop
 }
