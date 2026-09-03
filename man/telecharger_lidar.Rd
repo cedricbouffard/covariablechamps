@@ -9,7 +9,8 @@ telecharger_lidar(
   dossier = NULL,
   mne = FALSE,
   recent = TRUE,
-  epsg = 4326
+  epsg = 4326,
+  annee = NULL
 )
 }
 \arguments{
@@ -19,9 +20,11 @@ telecharger_lidar(
 
 \item{mne}{Logique. Si TRUE, télécharge le MNE (modèle de surface). Sinon, le MNT (modèle de terrain).}
 
-\item{recent}{Logique. Si TRUE (par défaut), conserve uniquement la version la plus récente.}
+\item{recent}{Logique. Si TRUE (par défaut), conserve uniquement la version la plus récente. Ignoré si `annee` est fourni.}
 
 \item{epsg}{Code EPSG pour la projection de sortie (défaut: 4326 - WGS84)}
+
+\item{annee}{Optionnel. Année spécifique à télécharger (ex: 2018). Si fourni, ignore le paramètre `recent`.}
 }
 \value{
 Un objet `SpatRaster` contenant le MNT ou MNE recadré
@@ -36,6 +39,9 @@ Par défaut, ne retient que la couverture la plus récente et complète.
 # Télécharger le MNT pour un champ
 champ <- sf::st_read("champ.shp")
 mnt <- telecharger_lidar(champ)
+
+# Télécharger une année spécifique
+mnt_2018 <- telecharger_lidar(champ, annee = 2018)
 
 # Télécharger le MNE
 mne <- telecharger_lidar(champ, mne = TRUE)

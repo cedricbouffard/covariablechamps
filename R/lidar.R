@@ -7,8 +7,9 @@
 #' @param polygone Un objet `sf` représentant la zone d'intérêt ou un chemin vers un fichier vectoriel (`.shp`, `.gpkg`, etc.)
 #' @param dossier Dossier de sortie pour enregistrer les fichiers raster (optionnel)
 #' @param mne Logique. Si TRUE, télécharge le MNE (modèle de surface). Sinon, le MNT (modèle de terrain).
-#' @param recent Logique. Si TRUE (par défaut), conserve uniquement la version la plus récente.
+#' @param recent Logique. Si TRUE (par défaut), conserve uniquement la version la plus récente. Ignoré si `annee` est fourni.
 #' @param epsg Code EPSG pour la projection de sortie (défaut: 4326 - WGS84)
+#' @param annee Optionnel. Année spécifique à télécharger (ex: 2018). Si fourni, ignore le paramètre `recent`.
 #'
 #' @return Un objet `SpatRaster` contenant le MNT ou MNE recadré
 #' @export
@@ -19,6 +20,9 @@
 #' champ <- sf::st_read("champ.shp")
 #' mnt <- telecharger_lidar(champ)
 #'
+#' # Télécharger une année spécifique
+#' mnt_2018 <- telecharger_lidar(champ, annee = 2018)
+#'
 #' # Télécharger le MNE
 #' mne <- telecharger_lidar(champ, mne = TRUE)
 #' }
@@ -28,7 +32,7 @@
 #' @importFrom lubridate as_datetime year
 #' @importFrom terra rast crop mask writeRaster varnames vect crs ext project
 #' @importFrom methods is
-telecharger_lidar <- function(polygone, dossier = NULL, mne = FALSE, recent = TRUE, epsg = 4326) {
+telecharger_lidar <- function(polygone, dossier = NULL, mne = FALSE, recent = TRUE, epsg = 4326, annee = NULL) {
   
   # Lire le polygone si c'est un chemin de fichier
   if (is.character(polygone)) {
@@ -100,8 +104,20 @@ telecharger_lidar <- function(polygone, dossier = NULL, mne = FALSE, recent = TR
   }
   
   # Organiser les URLs par année
-  annees_uniques <- sort(unique(annees), decreasing = recent)
-  message("\nAnnées disponibles: ", paste(annees_uniques, collapse = ", "))
+  if (!is.null(annee)) {
+    if (!(annee %in% annees)) {
+      stop("L'année ", annee, " n'est pas disponible pour cette zone. Années disponibles: ", 
+           paste(sort(unique(annees)), collapse = ", "))
+    }
+    annees_uniques <- annee
+  } else {
+    annees_uniques <- sort(unique(annees), decreasing = recent)
+  }
+  
+  message("\nAnnées disponibles: ", paste(sort(unique(annees), decreasing = TRUE), collapse = ", "))
+  if (!is.null(annee)) {
+    message("Année demandée: ", annee)
+  }
   
   # Essayer chaque année
   r <- NULL
