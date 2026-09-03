@@ -49,7 +49,9 @@
 <div class="section level4">
 <h4 id="module-terrain-0-1-0">Module Terrain<a class="anchor" aria-label="anchor" href="#module-terrain-0-1-0"></a></h4>
 <ul><li>
-<code><a href="../reference/telecharger_lidar.html">telecharger_lidar()</a></code>: Télécharge les données LiDAR (MNT ou MNE) depuis le DataCube du Canada pour une zone d’intérêt donnée.</li>
+<code><a href="../reference/telecharger_lidar.html">telecharger_lidar()</a></code>: Télécharge les données LiDAR (MNT ou MNE) depuis le DataCube du Canada pour une zone d’intérêt donnée. Nouveau paramètre <code>toutes = TRUE</code> pour télécharger toutes les années disponibles dans une liste nommée par année.</li>
+<li>
+<code><a href="../reference/telecharger_lidar_ponctuel.html">telecharger_lidar_ponctuel()</a></code>: Nouveaux paramètres <code>annee</code> et <code>toutes_annees = TRUE</code> pour télécharger une année spécifique ou toutes les années disponibles (couche historique de Données Québec) dans une liste séparée par année.</li>
 <li>
 <code><a href="../reference/verifier_disponibilite_lidar.html">verifier_disponibilite_lidar()</a></code>: Vérifie les années de couverture LiDAR disponibles pour une zone.</li>
 <li>
@@ -68,6 +70,8 @@
 <h3 id="corrections-de-bogues-0-1-0">Corrections de bogues<a class="anchor" aria-label="anchor" href="#corrections-de-bogues-0-1-0"></a></h3>
 <ul><li>
 <code><a href="../reference/telecharger_lidar.html">telecharger_lidar()</a></code>: Correction du paramètre <code>recent</code> qui était ignoré. Il est maintenant possible de télécharger les données les plus anciennes en spécifiant <code>recent = FALSE</code>.</li>
+<li>
+<code><a href="../reference/telecharger_lidar_ponctuel.html">telecharger_lidar_ponctuel()</a></code>: Correction de l’erreur de fusion des nuages de points lorsque des tuiles ont des attributs différents (RGB, extra bytes). Les attributs non communs sont maintenant retirés et les nuages sont reprojetés vers un CRS commun avant la fusion.</li>
 <li>CI/CD: Correction de la résolution des dépendances rlas/lidR archivées sur le CRAN.</li>
 <li>Documentation: Ajout des dépendances manquantes (<code>viridis</code>, <code>patchwork</code>) pour la génération du site.</li>
 </ul></div>

@@ -12,7 +12,9 @@ telecharger_lidar_ponctuel(
   buffer = 50,
   source = "auto",
   dossier = NULL,
-  metriques = TRUE
+  metriques = TRUE,
+  annee = NULL,
+  toutes_annees = FALSE
 )
 ```
 
@@ -40,10 +42,22 @@ telecharger_lidar_ponctuel(
 
   Logique. Si TRUE, calcule les métriques de hauteur
 
+- annee:
+
+  Optionnel. Année spécifique à télécharger (ex: 2018). Si fourni,
+  ignore \`toutes_annees\`.
+
+- toutes_annees:
+
+  Logique. Si TRUE, télécharge toutes les années disponibles (données
+  historiques de Données Québec) et retourne une liste nommée par année.
+  Défaut: FALSE.
+
 ## Value
 
 Une liste contenant le nuage de points (objet LAS) et les métriques
-calculées
+calculées, ou une liste de ces listes (une par année) si \`toutes_annees
+= TRUE\`.
 
 ## Examples
 
@@ -52,6 +66,12 @@ if (FALSE) { # \dontrun{
 # Extraire le LiDAR ponctuel avec un buffer de 50m
 champ <- sf::st_read("champ.shp")
 lidar_points <- telecharger_lidar_ponctuel(champ, buffer = 50)
+
+# Extraire une année spécifique
+lidar_2018 <- telecharger_lidar_ponctuel(champ, annee = 2018)
+
+# Extraire toutes les années disponibles (séparées par année)
+lidar_toutes <- telecharger_lidar_ponctuel(champ, toutes_annees = TRUE)
 
 # Visualiser
 plot(lidar_points$nuage_points)

@@ -57,7 +57,9 @@ depuis CanElevation (Canada) ou Données Québec pour une zone d'intérêt donn�
 <span>  buffer <span class="op">=</span> <span class="fl">50</span>,</span>
 <span>  source <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  dossier <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  metriques <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  metriques <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  annee <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  toutes_annees <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -84,10 +86,18 @@ depuis CanElevation (Canada) ou Données Québec pour une zone d'intérêt donn�
 <dt id="arg-m-triques">métriques<a class="anchor" aria-label="anchor" href="#arg-m-triques"></a></dt>
 <dd><p>Logique. Si TRUE, calcule les métriques de hauteur</p></dd>
 
+
+<dt id="arg-annee">annee<a class="anchor" aria-label="anchor" href="#arg-annee"></a></dt>
+<dd><p>Optionnel. Année spécifique à télécharger (ex: 2018). Si fourni, ignore `toutes_annees`.</p></dd>
+
+
+<dt id="arg-toutes-annees">toutes_annees<a class="anchor" aria-label="anchor" href="#arg-toutes-annees"></a></dt>
+<dd><p>Logique. Si TRUE, télécharge toutes les années disponibles (données historiques de Données Québec) et retourne une liste nommée par année. Défaut: FALSE.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Une liste contenant le nuage de points (objet LAS) et les métriques calculées</p>
+    <p>Une liste contenant le nuage de points (objet LAS) et les métriques calculées, ou une liste de ces listes (une par année) si `toutes_annees = TRUE`.</p>
     </div>
 
     <div class="section level2">
@@ -96,6 +106,12 @@ depuis CanElevation (Canada) ou Données Québec pour une zone d'intérêt donn�
 <span class="r-in"><span><span class="co"># Extraire le LiDAR ponctuel avec un buffer de 50m</span></span></span>
 <span class="r-in"><span><span class="va">champ</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">st_read</a></span><span class="op">(</span><span class="st">"champ.shp"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">lidar_points</span> <span class="op">&lt;-</span> <span class="fu">telecharger_lidar_ponctuel</span><span class="op">(</span><span class="va">champ</span>, buffer <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Extraire une année spécifique</span></span></span>
+<span class="r-in"><span><span class="va">lidar_2018</span> <span class="op">&lt;-</span> <span class="fu">telecharger_lidar_ponctuel</span><span class="op">(</span><span class="va">champ</span>, annee <span class="op">=</span> <span class="fl">2018</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Extraire toutes les années disponibles (séparées par année)</span></span></span>
+<span class="r-in"><span><span class="va">lidar_toutes</span> <span class="op">&lt;-</span> <span class="fu">telecharger_lidar_ponctuel</span><span class="op">(</span><span class="va">champ</span>, toutes_annees <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Visualiser</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">lidar_points</span><span class="op">$</span><span class="va">nuage_points</span><span class="op">)</span></span></span>

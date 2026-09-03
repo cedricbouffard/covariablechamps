@@ -14,7 +14,8 @@ telecharger_lidar(
   mne = FALSE,
   recent = TRUE,
   epsg = 4326,
-  annee = NULL
+  annee = NULL,
+  toutes = FALSE
 )
 ```
 
@@ -37,7 +38,7 @@ telecharger_lidar(
 - recent:
 
   Logique. Si TRUE (par défaut), conserve uniquement la version la plus
-  récente. Ignoré si \`annee\` est fourni.
+  récente. Ignoré si \`annee\` est fourni ou si \`toutes = TRUE\`.
 
 - epsg:
 
@@ -46,11 +47,18 @@ telecharger_lidar(
 - annee:
 
   Optionnel. Année spécifique à télécharger (ex: 2018). Si fourni,
-  ignore le paramètre \`recent\`.
+  ignore les paramètres \`recent\` et \`toutes\`.
+
+- toutes:
+
+  Logique. Si TRUE, télécharge toutes les années disponibles et retourne
+  une liste nommée par année (ex: \`mnt_2018\`, \`mnt_2021\`). Défaut:
+  FALSE.
 
 ## Value
 
-Un objet \`SpatRaster\` contenant le MNT ou MNE recadré
+Un objet \`SpatRaster\` contenant le MNT ou MNE recadré, ou une liste de
+\`SpatRaster\` (une par année) si \`toutes = TRUE\`.
 
 ## Examples
 
@@ -62,6 +70,9 @@ mnt <- telecharger_lidar(champ)
 
 # Télécharger une année spécifique
 mnt_2018 <- telecharger_lidar(champ, annee = 2018)
+
+# Télécharger toutes les années disponibles dans une liste
+mnts <- telecharger_lidar(champ, toutes = TRUE)
 
 # Télécharger le MNE
 mne <- telecharger_lidar(champ, mne = TRUE)

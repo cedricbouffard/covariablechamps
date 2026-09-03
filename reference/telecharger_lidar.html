@@ -61,7 +61,8 @@ Par défaut, ne retient que la couverture la plus récente et complète.</p>
 <span>  mne <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  recent <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  epsg <span class="op">=</span> <span class="fl">4326</span>,</span>
-<span>  annee <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  annee <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  toutes <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -82,7 +83,7 @@ Par défaut, ne retient que la couverture la plus récente et complète.</p>
 
 
 <dt id="arg-recent">recent<a class="anchor" aria-label="anchor" href="#arg-recent"></a></dt>
-<dd><p>Logique. Si TRUE (par défaut), conserve uniquement la version la plus récente. Ignoré si `annee` est fourni.</p></dd>
+<dd><p>Logique. Si TRUE (par défaut), conserve uniquement la version la plus récente. Ignoré si `annee` est fourni ou si `toutes = TRUE`.</p></dd>
 
 
 <dt id="arg-epsg">epsg<a class="anchor" aria-label="anchor" href="#arg-epsg"></a></dt>
@@ -90,12 +91,16 @@ Par défaut, ne retient que la couverture la plus récente et complète.</p>
 
 
 <dt id="arg-annee">annee<a class="anchor" aria-label="anchor" href="#arg-annee"></a></dt>
-<dd><p>Optionnel. Année spécifique à télécharger (ex: 2018). Si fourni, ignore le paramètre `recent`.</p></dd>
+<dd><p>Optionnel. Année spécifique à télécharger (ex: 2018). Si fourni, ignore les paramètres `recent` et `toutes`.</p></dd>
+
+
+<dt id="arg-toutes">toutes<a class="anchor" aria-label="anchor" href="#arg-toutes"></a></dt>
+<dd><p>Logique. Si TRUE, télécharge toutes les années disponibles et retourne une liste nommée par année (ex: `mnt_2018`, `mnt_2021`). Défaut: FALSE.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Un objet `SpatRaster` contenant le MNT ou MNE recadré</p>
+    <p>Un objet `SpatRaster` contenant le MNT ou MNE recadré, ou une liste de `SpatRaster` (une par année) si `toutes = TRUE`.</p>
     </div>
 
     <div class="section level2">
@@ -107,6 +112,9 @@ Par défaut, ne retient que la couverture la plus récente et complète.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Télécharger une année spécifique</span></span></span>
 <span class="r-in"><span><span class="va">mnt_2018</span> <span class="op">&lt;-</span> <span class="fu">telecharger_lidar</span><span class="op">(</span><span class="va">champ</span>, annee <span class="op">=</span> <span class="fl">2018</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Télécharger toutes les années disponibles dans une liste</span></span></span>
+<span class="r-in"><span><span class="va">mnts</span> <span class="op">&lt;-</span> <span class="fu">telecharger_lidar</span><span class="op">(</span><span class="va">champ</span>, toutes <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Télécharger le MNE</span></span></span>
 <span class="r-in"><span><span class="va">mne</span> <span class="op">&lt;-</span> <span class="fu">telecharger_lidar</span><span class="op">(</span><span class="va">champ</span>, mne <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
