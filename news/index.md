@@ -23,6 +23,17 @@
 - [`labels_geomorphons()`](https://cedricbouffard.github.io/covariablechamps/reference/labels_geomorphons.md):
   Retourne les labels des 10 classes de géomorphons.
 
+### Corrections de bogues
+
+- [`telecharger_lidar()`](https://cedricbouffard.github.io/covariablechamps/reference/telecharger_lidar.md):
+  Correction du paramètre `recent` qui était ignoré. Il est maintenant
+  possible de télécharger les données les plus anciennes en spécifiant
+  `recent = FALSE`.
+- CI/CD: Correction de la résolution des dépendances rlas/lidR archivées
+  sur le CRAN.
+- Documentation: Ajout des dépendances manquantes (`viridis`,
+  `patchwork`) pour la génération du site.
+
 ### Documentation
 
 - Vignette complète en français: “Extraction des covariables terrain”
