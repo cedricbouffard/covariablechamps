@@ -267,16 +267,7 @@ telecharger_copc_canelevation <- function(polygone_buffer, dossier = NULL) {
   }
   
   message("\nFusion des nuages de points...")
-  if (length(nuages_points) == 1) {
-    nuage_final <- nuages_points[[1]]
-  } else {
-    # Fusionner avec lidR
-    if (requireNamespace("lidR", quietly = TRUE)) {
-      nuage_final <- do.call(rbind, nuages_points)
-    } else {
-      nuage_final <- nuages_points[[1]]
-    }
-  }
+  nuage_final <- .fusionner_las(nuages_points)
   
   message("Total: ", lidR::npoints(nuage_final), " points")
   
@@ -522,15 +513,7 @@ telecharger_lidar_donnees_quebec <- function(polygone_buffer, dossier = NULL) {
   }
   
   message("\nFusion des nuages de points...")
-  if (length(nuages_points) == 1) {
-    nuage_final <- nuages_points[[1]]
-  } else {
-    if (requireNamespace("lidR", quietly = TRUE)) {
-      nuage_final <- do.call(rbind, nuages_points)
-    } else {
-      nuage_final <- nuages_points[[1]]
-    }
-  }
+  nuage_final <- .fusionner_las(nuages_points)
   
   message("Total: ", lidR::npoints(nuage_final), " points")
   
@@ -556,6 +539,35 @@ telecharger_lidar_donnees_quebec <- function(polygone_buffer, dossier = NULL) {
     cache_dir = cache_dir,
     crs = sf::st_crs(nuage_final)$epsg
   )
+}
+
+# Fusionner plusieurs nuages de points LAS en ne gardant que les attributs communs.
+# Les tuiles peuvent avoir des attributs différents (ex. RGB ou extra bytes) qui
+# empêchent `rbind` de fonctionner. On les retire avant de fusionner.
+.fusionner_las <- function(nuages_points) {
+  if (length(nuages_points) == 0) {
+    stop("Aucun nuage de points à fusionner")
+  }
+  if (length(nuages_points) == 1) {
+    return(nuages_points[[1]])
+  }
+  if (!requireNamespace("lidR", quietly = TRUE)) {
+    return(nuages_points[[1]])
+  }
+
+  noms <- lapply(nuages_points, function(l) names(l@data))
+  commun <- Reduce(intersect, noms)
+
+  nuages_points <- lapply(nuages_points, function(l) {
+    a_supprimer <- setdiff(names(l@data), commun)
+    if (length(a_supprimer) > 0) {
+      l@data[, (a_supprimer) := NULL]
+      l <- lidR::las_update(l)
+    }
+    l
+  })
+
+  do.call(rbind, nuages_points)
 }
 
 #' Calculer les métriques du nuage de points LiDAR
