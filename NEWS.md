@@ -12,6 +12,12 @@
 - `extraire_covariables_terrain()`: Fonction principale qui extrait toutes les covariables terrain en une seule commande.
 - `labels_geomorphons()`: Retourne les labels des 10 classes de géomorphons.
 
+## Corrections de bogues
+
+- `telecharger_lidar()`: Correction du paramètre `recent` qui était ignoré. Il est maintenant possible de télécharger les données les plus anciennes en spécifiant `recent = FALSE`.
+- CI/CD: Correction de la résolution des dépendances rlas/lidR archivées sur le CRAN.
+- Documentation: Ajout des dépendances manquantes (`viridis`, `patchwork`) pour la génération du site.
+
 ## Documentation
 
 - Vignette complète en français: "Extraction des covariables terrain"

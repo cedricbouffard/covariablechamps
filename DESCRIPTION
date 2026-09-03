@@ -43,7 +43,8 @@ Suggests:
     tibble,
     lidaRtRee,
     ggplot2,
-    tidyr
+    tidyr,
+    patchwork
 VignetteBuilder: knitr
 Remotes:
     r-lidar/rlas,
