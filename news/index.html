@@ -72,6 +72,8 @@
 <code><a href="../reference/telecharger_lidar.html">telecharger_lidar()</a></code>: Correction du paramètre <code>recent</code> qui était ignoré. Il est maintenant possible de télécharger les données les plus anciennes en spécifiant <code>recent = FALSE</code>.</li>
 <li>
 <code><a href="../reference/telecharger_lidar_ponctuel.html">telecharger_lidar_ponctuel()</a></code>: Correction de l’erreur de fusion des nuages de points lorsque des tuiles ont des attributs différents (RGB, extra bytes). Les attributs non communs sont maintenant retirés et les nuages sont reprojetés vers un CRS commun avant la fusion.</li>
+<li>
+<code><a href="../reference/telecharger_lidar_ponctuel.html">telecharger_lidar_ponctuel()</a></code>: Correction de l’erreur “ReturnNumber is not an unsigned integer on 3 bits” causée par des tuiles anciennes dont les champs de retour sont mal décodés. Les valeurs de <code>ReturnNumber</code>/<code>NumberOfReturns</code> hors plage sont maintenant corrigées avant la fusion.</li>
 <li>CI/CD: Correction de la résolution des dépendances rlas/lidR archivées sur le CRAN.</li>
 <li>Documentation: Ajout des dépendances manquantes (<code>viridis</code>, <code>patchwork</code>) pour la génération du site.</li>
 </ul></div>
