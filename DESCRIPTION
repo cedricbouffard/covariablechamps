@@ -29,6 +29,7 @@ Imports:
     httr,
     jsonlite,
     dplyr,
+    data.table,
     suncalc,
     rayshader,
     viridis

@@ -621,6 +621,38 @@ telecharger_lidar_donnees_quebec <- function(polygone_buffer, dossier = NULL,
   )
 }
 
+# Nettoyer les champs de retour potentiellement corrompus. Certaines tuiles
+# anciennes sont mal décodées par rlas/lidR et présentent des ReturnNumber ou
+# NumberOfReturns hors des plages valides (1-7), ce qui fait échouer la
+# validation lors de la fusion ou de l'écriture.
+.nettoyer_las <- function(las) {
+  d <- las@data
+  modifie <- FALSE
+
+  if ("ReturnNumber" %in% names(d)) {
+    mauvais <- which(!is.na(d$ReturnNumber) & (d$ReturnNumber < 1L | d$ReturnNumber > 7L))
+    if (length(mauvais) > 0) {
+      data.table::set(d, mauvais, "ReturnNumber", 1L)
+      modifie <- TRUE
+    }
+  }
+
+  if ("NumberOfReturns" %in% names(d)) {
+    mauvais <- which(!is.na(d$NumberOfReturns) & (d$NumberOfReturns < 1L | d$NumberOfReturns > 7L))
+    if (length(mauvais) > 0) {
+      data.table::set(d, mauvais, "NumberOfReturns", 7L)
+      modifie <- TRUE
+    }
+  }
+
+  if (modifie && requireNamespace("lidR", quietly = TRUE)) {
+    message("  ✓ Champs de retour corrompus corrigés (ReturnNumber/NumberOfReturns)")
+    las <- lidR::las_update(las)
+  }
+
+  las
+}
+
 # Fusionner plusieurs nuages de points LAS en ne gardant que les attributs communs.
 # Les tuiles peuvent avoir des attributs différents (ex. RGB ou extra bytes) qui
 # empêchent `rbind` de fonctionner. On les retire avant de fusionner.
@@ -628,6 +660,9 @@ telecharger_lidar_donnees_quebec <- function(polygone_buffer, dossier = NULL,
   if (length(nuages_points) == 0) {
     stop("Aucun nuage de points à fusionner")
   }
+
+  nuages_points <- lapply(nuages_points, .nettoyer_las)
+
   if (length(nuages_points) == 1) {
     return(nuages_points[[1]])
   }
