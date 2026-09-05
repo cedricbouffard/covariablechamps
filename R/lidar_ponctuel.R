@@ -544,19 +544,34 @@ telecharger_lidar_donnees_quebec <- function(polygone_buffer, dossier = NULL,
     if (file.exists(chemin_local)) {
       message("  ✓ Fichier déjà en cache")
     } else {
-      message("  Téléchargement (fichier ~100 MB, patience...)...")
-      tryCatch({
-        old_timeout <- getOption("timeout")
-        options(timeout = 300)
-        on.exit(options(timeout = old_timeout))
+      message("  Téléchargement (fichier jusqu'à ~300 Mo, patience...)...")
+      old_timeout <- getOption("timeout")
+      options(timeout = 3600)   # 1 h : les tuiles peuvent être volumineuses et le réseau lent
+      on.exit(options(timeout = old_timeout), add = TRUE)
 
-        download.file(url_laz, chemin_local, mode = "wb", quiet = TRUE)
-        message("  ✓ Téléchargé (", round(file.size(chemin_local) / (1024^2), 1), " MB)")
-        fichiers_telecharges <- c(fichiers_telecharges, chemin_local)
-      }, error = function(e) {
-        message("  ✗ Erreur de téléchargement: ", conditionMessage(e))
+      ok <- FALSE
+      for (essai in 1:3) {
+        ok <- tryCatch({
+          utils::download.file(url_laz, chemin_local, mode = "wb", quiet = TRUE, method = "libcurl")
+          TRUE
+        }, error = function(e) {
+          message("    Tentative ", essai, " échouée: ", conditionMessage(e))
+          if (file.exists(chemin_local)) unlink(chemin_local)
+          FALSE
+        })
+        if (ok && file.exists(chemin_local) && file.size(chemin_local) > 0) break
         if (file.exists(chemin_local)) unlink(chemin_local)
-      })
+        ok <- FALSE
+        if (essai < 3) Sys.sleep(3)
+      }
+
+      if (ok) {
+        message("  ✓ Téléchargé (", round(file.size(chemin_local) / (1024^2), 1), " Mo)")
+        fichiers_telecharges <- c(fichiers_telecharges, chemin_local)
+      } else {
+        message("  ✗ Échec du téléchargement: ", basename(url_laz))
+        if (file.exists(chemin_local)) unlink(chemin_local)
+      }
     }
 
     # Lire le fichier LAZ avec lidR
